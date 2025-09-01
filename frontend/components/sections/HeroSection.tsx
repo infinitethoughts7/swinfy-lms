@@ -39,16 +39,8 @@ const HeroSection = () => {
                   <h1 className="font-sora font-black text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl text-text-primary leading-tight mb-4 lg:mb-6">
                     Future Learning.
                     <br />
-                    <span className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 shadow-lg transform rotate-2 hover:rotate-0 hover:scale-110 hover:shadow-2xl transition-all duration-500 ease-out font-bold animate-bounce hover:animate-none hover:-translate-y-1 cursor-pointer relative overflow-hidden mt-2">
-                      <span className="relative z-10">Today.</span>
-                      {/* Paint brush stroke effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-green-500 to-emerald-600 opacity-90"></div>
-                      <div className="absolute -top-3 -left-3 w-6 h-6 bg-green-300 rounded-full opacity-40"></div>
-                      <div className="absolute -bottom-2 -right-2 w-5 h-5 bg-emerald-400 rounded-full opacity-50"></div>
-                      <div className="absolute top-0 -right-3 w-3 h-3 bg-green-200 rounded-full opacity-30"></div>
-                      <div className="absolute -bottom-3 left-1 w-4 h-4 bg-emerald-300 rounded-full opacity-40"></div>
-                      <div className="absolute top-2 left-0 w-2 h-2 bg-green-100 rounded-full opacity-20"></div>
-                      <div className="absolute -top-1 right-1 w-2 h-2 bg-emerald-200 rounded-full opacity-25"></div>
+                    <span className="inline-block text-blue-600 hover:scale-110 transition-all duration-500 ease-out font-bold animate-bounce hover:animate-none hover:-translate-x-2 cursor-pointer mt-2">
+                      Today.
                     </span>
                   </h1>
               
