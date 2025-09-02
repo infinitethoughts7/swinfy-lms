@@ -10,7 +10,7 @@ export default function NotFound() {
             Course Not Found
           </h2>
           <p className="text-text-secondary font-inter max-w-md mx-auto">
-            The course you're looking for doesn't exist or has been moved.
+            The course you&apos;re looking for doesn&apos;t exist or has been moved.
           </p>
         </div>
         

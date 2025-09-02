@@ -192,7 +192,7 @@ const TestimonialsCarousel = () => {
           <div className="lg:col-span-2">
             <div className="mb-6">
               <p className="text-lg lg:text-xl text-gray-700 font-inter leading-relaxed mb-4 italic">
-                "{currentData.feedback}"
+                &ldquo;{currentData.feedback}&rdquo;
               </p>
               
               {/* 🎯 Key Achievement */}

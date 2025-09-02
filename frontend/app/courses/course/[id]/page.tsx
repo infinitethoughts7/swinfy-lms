@@ -385,7 +385,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
             {/* Course Highlights */}
             <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
-                What You'll Master
+                What You&apos;ll Master
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {course.highlights.map((highlight, index) => (
@@ -509,7 +509,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                         </svg>
                       ))}
                     </div>
-                    <p className="text-text-secondary font-inter mb-4 italic">"{review.text}"</p>
+                    <p className="text-text-secondary font-inter mb-4 italic">&ldquo;{review.text}&rdquo;</p>
                     <div>
                       <p className="font-sora font-semibold text-text-primary">{review.name}</p>
                       <p className="text-sm text-text-secondary font-inter">{review.role}</p>
