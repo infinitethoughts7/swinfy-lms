@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+
 // All courses data with proper images from the courses folder
 const allCourses = [
   // Top Priority Courses
@@ -604,6 +605,8 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+
+
 
       {/* Stats Section */}
       <div className="bg-gray-50 py-16 mt-16">
