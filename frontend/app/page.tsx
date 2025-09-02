@@ -11,13 +11,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <StaticNavbar />
-      <HeroSection />
-      <AlumniLogos />
-      <CompaniesHired />
-      <TestimonialsSection />
-      <RecognitionSection />
-      <ContactSection />
-      <Footer />
+      <div className="pt-20">
+        <HeroSection />
+        <AlumniLogos />
+        <CompaniesHired />
+        <TestimonialsSection />
+        <RecognitionSection />
+        <ContactSection />
+        <Footer />
+      </div>
     </div>
   );
 }

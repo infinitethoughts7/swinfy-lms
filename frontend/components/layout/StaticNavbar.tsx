@@ -4,12 +4,12 @@ import MobileMenuToggle from './MobileMenuToggle';
 const StaticNavbar = () => {
   return (
     <nav
-      className="relative z-50"
+      className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm"
       role="navigation"
       aria-label="Main navigation"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 lg:h-24">
+        <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center space-x-2">
             {/* Four Color Parallelogram Logo - Just 4 Dots */}
