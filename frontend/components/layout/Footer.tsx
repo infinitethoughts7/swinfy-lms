@@ -49,8 +49,12 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <footer className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
+      {/* Overlay for depth - similar to course page hero */}
+      <div className="absolute inset-0 bg-black opacity-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-indigo-600/90"></div>
+      
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row justify-between items-center">
           {/* Logo and Description */}
@@ -70,22 +74,22 @@ const Footer = () => {
             </div>
             <div>
               <h2 className="text-xl font-sora font-black text-white">OLLA</h2>
-              <p className="text-gray-400 text-sm">Empowering learners worldwide</p>
+              <p className="text-white/80 text-sm">Empowering learners worldwide</p>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
-            <Link href="/courses" className="text-gray-300 hover:text-white transition-colors text-sm">
+            <Link href="/courses" className="text-white/90 hover:text-white transition-colors text-sm">
               Courses
             </Link>
-            <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
+            <Link href="/team" className="text-white/90 hover:text-white transition-colors text-sm">
               Team
             </Link>
-            <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors text-sm">
+            <Link href="/pricing" className="text-white/90 hover:text-white transition-colors text-sm">
               Pricing
             </Link>
-            <Link href="/contact" className="text-gray-300 hover:text-white transition-colors text-sm">
+            <Link href="/contact" className="text-white/90 hover:text-white transition-colors text-sm">
               Contact
             </Link>
           </div>
@@ -96,7 +100,7 @@ const Footer = () => {
               <Link
                 key={index}
                 href={social.href}
-                className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition-all duration-200"
+                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all duration-200"
                 aria-label={social.name}
               >
                 {renderSocialIcon(social.icon)}
@@ -106,8 +110,8 @@ const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-800 mt-6 pt-6">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+        <div className="border-t border-white/20 mt-6 pt-6">
+          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white/70">
             <div>
               © {currentYear} OLLA. All rights reserved.
             </div>
