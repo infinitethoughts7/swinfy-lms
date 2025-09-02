@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../ui/card';
 import { BookOpen, Users, GraduationCap, Award } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const HeroSection = () => {
   return (
@@ -80,19 +81,19 @@ const HeroSection = () => {
                   
                   {/* CTAs - Simple anchor tags for better performance */}
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-6 mb-6">
-                    <a
+                    <Link
                       href="/courses"
                       className="inline-flex items-center justify-center bg-text-primary text-white hover:bg-text-primary/90 font-inter font-semibold text-sm sm:text-base lg:text-lg px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 focus:ring-4 focus:ring-text-primary/20 active:scale-95 rounded-md"
                     >
                       Start Learning →
-                    </a>
+                    </Link>
                     
-                    <a
+                    <Link
                       href="/courses"
                       className="inline-flex items-center justify-center border-2 border-text-primary/20 text-text-primary hover:bg-text-primary hover:text-white font-inter font-semibold text-sm sm:text-base lg:text-lg px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 focus:ring-4 focus:ring-text-primary/20 active:scale-95 rounded-md"
                     >
                       Browse Courses →
-                    </a>
+                    </Link>
                   </div>
               
                   {/* Stats Section */}

@@ -356,7 +356,7 @@ const ReviewPage = () => {
 
               {/* Review Text */}
               <blockquote className="text-text-secondary font-inter leading-relaxed mb-4 italic">
-                "{review.review}"
+                &ldquo;{review.review}&rdquo;
               </blockquote>
 
               {/* Course and LinkedIn */}
@@ -419,4 +419,3 @@ const ReviewPage = () => {
 };
 
 export default ReviewPage;
-re
