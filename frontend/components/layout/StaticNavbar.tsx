@@ -49,12 +49,7 @@ const StaticNavbar = () => {
             >
               Team
             </Link>
-            <Link
-              href="/pricing"
-              className="text-text-primary hover:text-black transition-all duration-300 font-inter font-medium text-base lg:text-lg hover:scale-105"
-            >
-              Pricing
-            </Link>
+            
             <Link
               href="/review"
               className="text-text-primary hover:text-black transition-all duration-300 font-inter font-medium text-base lg:text-lg hover:scale-105"
