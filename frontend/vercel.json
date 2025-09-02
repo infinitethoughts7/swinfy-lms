@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/courses/[category]/page.tsx": {
+      "maxDuration": 10
+    },
+    "app/courses/course/[id]/page.tsx": {
+      "maxDuration": 10
+    }
+  }
+}

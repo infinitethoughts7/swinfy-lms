@@ -3,34 +3,6 @@ import Link from 'next/link';
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  const footerLinks = {
-    company: [
-      { name: 'About Us', href: '/about' },
-      { name: 'Careers', href: '/careers' },
-      { name: 'Press', href: '/press' },
-      { name: 'Blog', href: '/blog' }
-    ],
-    courses: [
-      { name: 'All Courses', href: '/courses' },
-      { name: 'AI & ML', href: '/courses/ai-ml' },
-      { name: 'Data Science', href: '/courses/data-science' },
-      { name: 'Web Development', href: '/courses/web-development' },
-      { name: 'Life Skills', href: '/courses/life-skills' }
-    ],
-    team: [
-      { name: 'Our Team', href: '/team' },
-      { name: 'Mentors', href: '/mentors' },
-      { name: 'Join Us', href: '/join' },
-      { name: 'Partnerships', href: '/partnerships' }
-    ],
-    support: [
-      { name: 'Help Center', href: '/help' },
-      { name: 'Contact Us', href: '/contact' },
-      { name: 'Privacy Policy', href: '/privacy' },
-      { name: 'Terms of Service', href: '/terms' }
-    ]
-  };
-
   const socialLinks = [
     { name: 'LinkedIn', href: '/linkedin', icon: 'linkedin' },
     { name: 'Twitter', href: '/twitter', icon: 'twitter' },
