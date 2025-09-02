@@ -6,31 +6,7 @@ import Image from 'next/image';
 
 // All courses data with proper images from the courses folder
 const allCourses = [
-  // Technical Skills
-  {
-    id: 'advanced-excel',
-    title: 'Advanced Excel',
-    description: 'Master advanced Excel functions, pivot tables, and data analysis techniques',
-    image: '/assets/courses/excel.svg',
-    duration: '8 weeks',
-    level: 'Intermediate',
-    price: '$99',
-    category: 'Technical Skills',
-    rating: 4.8,
-    students: 1250
-  },
-  {
-    id: 'google-sheets',
-    title: 'Google Sheets',
-    description: 'Learn Google Sheets for collaborative data management and analysis',
-    image: '/assets/courses/google-sheets.svg',
-    duration: '6 weeks',
-    level: 'Beginner',
-    price: '$79',
-    category: 'Technical Skills',
-    rating: 4.6,
-    students: 890
-  },
+  // Top Priority Courses
   {
     id: 'sql',
     title: 'SQL',
@@ -39,9 +15,183 @@ const allCourses = [
     duration: '10 weeks',
     level: 'Intermediate',
     price: '$149',
-    category: 'Technical Skills',
+    category: 'Backend Development',
     rating: 4.9,
     students: 2100
+  },
+  {
+    id: 'python',
+    title: 'Python',
+    description: 'Learn Python programming for backend development and automation',
+    image: '/assets/courses/python.svg',
+    duration: '16 weeks',
+    level: 'Beginner',
+    price: '$249',
+    category: 'Backend Development',
+    rating: 4.9,
+    students: 3200
+  },
+  {
+    id: 'advanced-excel',
+    title: 'Advanced Excel',
+    description: 'Master advanced Excel functions, pivot tables, and data analysis techniques',
+    image: '/assets/courses/excel.svg',
+    duration: '8 weeks',
+    level: 'Intermediate',
+    price: '$99',
+    category: 'Data Analyst',
+    rating: 4.8,
+    students: 1250
+  },
+  {
+    id: 'react',
+    title: 'React',
+    description: 'Build modern web applications with React framework',
+    image: '/assets/courses/react.svg',
+    duration: '12 weeks',
+    level: 'Intermediate',
+    price: '$179',
+    category: 'Frontend Development',
+    rating: 4.7,
+    students: 1900
+  },
+  {
+    id: 'django',
+    title: 'Django',
+    description: 'Master Django framework for rapid web development',
+    image: '/assets/courses/python.svg',
+    duration: '14 weeks',
+    level: 'Intermediate',
+    price: '$199',
+    category: 'Backend Development',
+    rating: 4.8,
+    students: 1800
+  },
+  {
+    id: 'next-js',
+    title: 'Next.js',
+    description: 'Build full-stack React applications with Next.js framework',
+    image: '/assets/courses/react.svg',
+    duration: '14 weeks',
+    level: 'Intermediate',
+    price: '$189',
+    category: 'Frontend Development',
+    rating: 4.7,
+    students: 1600
+  },
+
+  // Frontend Development
+  {
+    id: 'html-css',
+    title: 'HTML & CSS',
+    description: 'Master the fundamentals of web development with HTML and CSS',
+    image: '/assets/courses/excel.svg',
+    duration: '6 weeks',
+    level: 'Beginner',
+    price: '$99',
+    category: 'Frontend Development',
+    rating: 4.8,
+    students: 2500
+  },
+  {
+    id: 'javascript',
+    title: 'JavaScript',
+    description: 'Master JavaScript for web development and interactive applications',
+    image: '/assets/courses/javascript.svg',
+    duration: '14 weeks',
+    level: 'Intermediate',
+    price: '$199',
+    category: 'Frontend Development',
+    rating: 4.8,
+    students: 2800
+  },
+  {
+    id: 'typescript',
+    title: 'TypeScript',
+    description: 'Learn TypeScript for scalable JavaScript applications',
+    image: '/assets/courses/typescript.svg',
+    duration: '8 weeks',
+    level: 'Intermediate',
+    price: '$149',
+    category: 'Frontend Development',
+    rating: 4.6,
+    students: 1100
+  },
+  {
+    id: 'vue-js',
+    title: 'Vue.js',
+    description: 'Build reactive user interfaces with Vue.js framework',
+    image: '/assets/courses/python.svg',
+    duration: '10 weeks',
+    level: 'Intermediate',
+    price: '$169',
+    category: 'Frontend Development',
+    rating: 4.5,
+    students: 1200
+  },
+  {
+    id: 'angular',
+    title: 'Angular',
+    description: 'Develop enterprise-grade applications with Angular',
+    image: '/assets/courses/tableau.svg',
+    duration: '16 weeks',
+    level: 'Advanced',
+    price: '$229',
+    category: 'Frontend Development',
+    rating: 4.6,
+    students: 1400
+  },
+
+  // Backend Development
+  {
+    id: 'node-js',
+    title: 'Node.js',
+    description: 'Build scalable server-side applications with Node.js',
+    image: '/assets/courses/javascript.svg',
+    duration: '12 weeks',
+    level: 'Intermediate',
+    price: '$189',
+    category: 'Backend Development',
+    rating: 4.7,
+    students: 2100
+  },
+  {
+    id: 'express-js',
+    title: 'Express.js',
+    description: 'Build web applications with Express.js framework',
+    image: '/assets/courses/javascript.svg',
+    duration: '10 weeks',
+    level: 'Intermediate',
+    price: '$159',
+    category: 'Backend Development',
+    rating: 4.6,
+    students: 1500
+  },
+  {
+    id: 'mongodb',
+    title: 'MongoDB',
+    description: 'Learn NoSQL database management with MongoDB',
+    image: '/assets/courses/sql.png',
+    duration: '8 weeks',
+    level: 'Intermediate',
+    price: '$139',
+    category: 'Backend Development',
+    rating: 4.5,
+    students: 1300
+  },
+
+  // Data Analyst
+  {
+    id: 'google-sheets',
+    title: 'Google Sheets',
+    description: 'Learn Google Sheets for collaborative data management and analysis',
+    image: '/assets/courses/google-sheets.svg',
+    duration: '6 weeks',
+    level: 'Beginner',
+    price: '$79',
+    category: 'Data Analyst',
+    rating: 4.6,
+    students: 890
   },
   {
     id: 'tableau',
@@ -51,7 +201,7 @@ const allCourses = [
     duration: '12 weeks',
     level: 'Advanced',
     price: '$199',
-    category: 'Technical Skills',
+    category: 'Data Analyst',
     rating: 4.7,
     students: 1450
   },
@@ -63,57 +213,59 @@ const allCourses = [
     duration: '10 weeks',
     level: 'Intermediate',
     price: '$179',
-    category: 'Technical Skills',
+    category: 'Data Analyst',
     rating: 4.8,
     students: 1200
   },
   {
-    id: 'python',
-    title: 'Python',
-    description: 'Learn Python programming for data science and automation',
+    id: 'sql-analyst',
+    title: 'SQL for Data Analysis',
+    description: 'Master SQL specifically for data analysis and reporting',
+    image: '/assets/courses/sql.png',
+    duration: '8 weeks',
+    level: 'Intermediate',
+    price: '$149',
+    category: 'Data Analyst',
+    rating: 4.8,
+    students: 1800
+  },
+  {
+    id: 'looker-studio',
+    title: 'Looker Studio',
+    description: 'Create beautiful reports and dashboards with Google Looker Studio',
+    image: '/assets/courses/google-sheets.svg',
+    duration: '6 weeks',
+    level: 'Beginner',
+    price: '$129',
+    category: 'Data Analyst',
+    rating: 4.6,
+    students: 1100
+  },
+
+  // Data Science
+  {
+    id: 'python-ds',
+    title: 'Python for Data Science',
+    description: 'Learn Python programming specifically for data science applications',
     image: '/assets/courses/python.svg',
     duration: '16 weeks',
     level: 'Beginner',
     price: '$249',
-    category: 'Technical Skills',
+    category: 'Data Science',
     rating: 4.9,
     students: 3200
   },
   {
-    id: 'javascript',
-    title: 'JavaScript',
-    description: 'Master JavaScript for web development and interactive applications',
-    image: '/assets/courses/javascript.svg',
-    duration: '14 weeks',
-    level: 'Intermediate',
-    price: '$199',
-    category: 'Technical Skills',
+    id: 'machine-learning',
+    title: 'Machine Learning',
+    description: 'Master machine learning algorithms and implementation',
+    image: '/assets/courses/python.svg',
+    duration: '20 weeks',
+    level: 'Advanced',
+    price: '$299',
+    category: 'Data Science',
     rating: 4.8,
-    students: 2800
-  },
-  {
-    id: 'react',
-    title: 'React',
-    description: 'Build modern web applications with React framework',
-    image: '/assets/courses/react.svg',
-    duration: '12 weeks',
-    level: 'Intermediate',
-    price: '$179',
-    category: 'Technical Skills',
-    rating: 4.7,
-    students: 1900
-  },
-  {
-    id: 'typescript',
-    title: 'TypeScript',
-    description: 'Learn TypeScript for scalable JavaScript applications',
-    image: '/assets/courses/typescript.svg',
-    duration: '8 weeks',
-    level: 'Intermediate',
-    price: '$149',
-    category: 'Technical Skills',
-    rating: 4.6,
-    students: 1100
+    students: 2500
   },
   {
     id: 'statistics',
@@ -123,47 +275,45 @@ const allCourses = [
     duration: '12 weeks',
     level: 'Intermediate',
     price: '$179',
-    category: 'Technical Skills',
+    category: 'Data Science',
     rating: 4.5,
     students: 950
   },
-  
-  // Life Skills
   {
-    id: 'communication-skills',
-    title: 'Communication Skills',
-    description: 'Enhance your verbal and written communication abilities',
-    image: '/assets/courses/excel.svg',
-    duration: '6 weeks',
-    level: 'Beginner',
-    price: '$89',
-    category: 'Life Skills',
+    id: 'deep-learning',
+    title: 'Deep Learning',
+    description: 'Explore neural networks and deep learning frameworks',
+    image: '/assets/courses/python.svg',
+    duration: '18 weeks',
+    level: 'Advanced',
+    price: '$279',
+    category: 'Data Science',
     rating: 4.7,
-    students: 890
+    students: 1800
   },
   {
-    id: 'leadership-skills',
-    title: 'Leadership Skills',
-    description: 'Develop leadership qualities and team management skills',
+    id: 'data-visualization',
+    title: 'Data Visualization',
+    description: 'Create compelling data visualizations and storytelling',
     image: '/assets/courses/tableau.svg',
-    duration: '8 weeks',
+    duration: '10 weeks',
     level: 'Intermediate',
-    price: '$129',
-    category: 'Life Skills',
-    rating: 4.8,
-    students: 1200
+    price: '$169',
+    category: 'Data Science',
+    rating: 4.6,
+    students: 1400
   },
   {
-    id: 'time-management',
-    title: 'Time Management',
-    description: 'Master productivity techniques and time management strategies',
-    image: '/assets/courses/power-bi.svg',
-    duration: '4 weeks',
-    level: 'Beginner',
-    price: '$69',
-    category: 'Life Skills',
-    rating: 4.6,
-    students: 750
+    id: 'big-data',
+    title: 'Big Data Analytics',
+    description: 'Handle and analyze large datasets with modern tools',
+    image: '/assets/courses/sql.png',
+    duration: '14 weeks',
+    level: 'Advanced',
+    price: '$229',
+    category: 'Data Science',
+    rating: 4.5,
+    students: 1200
   },
   
   // Interview Preparation
@@ -215,71 +365,33 @@ const allCourses = [
     rating: 4.9,
     students: 1800
   },
-  
-  // Webinars
   {
-    id: 'excel-webinar',
-    title: 'Data Analysis using Microsoft Excel',
-    description: 'Live webinar on advanced Excel techniques for data analysis',
-    image: '/assets/courses/excel.svg',
-    duration: '2 hours',
-    level: 'All Levels',
-    price: 'Free',
-    category: 'Webinars',
-    rating: 4.6,
-    students: 2500
-  },
-  {
-    id: 'data-management',
-    title: 'Data Management & Importance',
-    description: 'Understanding the importance of proper data management practices',
-    image: '/assets/courses/sql.png',
-    duration: '1.5 hours',
-    level: 'All Levels',
-    price: 'Free',
-    category: 'Webinars',
-    rating: 4.5,
-    students: 1800
-  },
-  {
-    id: 'dashboard-webinar',
-    title: 'Dashboard & Its importance',
-    description: 'Learn best practices for creating effective dashboards',
-    image: '/assets/courses/tableau.svg',
-    duration: '2 hours',
-    level: 'All Levels',
-    price: 'Free',
-    category: 'Webinars',
+    id: 'coding-interviews',
+    title: 'Coding Interviews',
+    description: 'Master technical coding interviews and problem-solving',
+    image: '/assets/courses/javascript.svg',
+    duration: '10 weeks',
+    level: 'Intermediate',
+    price: '$179',
+    category: 'Interview Preparation',
     rating: 4.7,
-    students: 2200
+    students: 1600
   },
   {
-    id: 'frontend-webinar',
-    title: 'Front End Development',
-    description: 'Introduction to modern frontend development technologies',
-    image: '/assets/courses/react.svg',
-    duration: '2.5 hours',
-    level: 'All Levels',
-    price: 'Free',
-    category: 'Webinars',
-    rating: 4.8,
-    students: 3000
-  },
-  {
-    id: 'data-science-webinar',
-    title: 'Importance of Data Science',
-    description: 'Explore the growing importance of data science in business',
+    id: 'system-design',
+    title: 'System Design',
+    description: 'Learn system design principles for technical interviews',
     image: '/assets/courses/python.svg',
-    duration: '1.5 hours',
-    level: 'All Levels',
-    price: 'Free',
-    category: 'Webinars',
-    rating: 4.6,
-    students: 2100
+    duration: '12 weeks',
+    level: 'Advanced',
+    price: '$199',
+    category: 'Interview Preparation',
+    rating: 4.8,
+    students: 1400
   }
 ];
 
-const categories = ['All', 'Technical Skills', 'Life Skills', 'Interview Preparation', 'Webinars'];
+const categories = ['All', 'Frontend Development', 'Backend Development', 'Data Analyst', 'Data Science', 'Interview Preparation'];
 
 export default function CoursesPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -323,10 +435,10 @@ export default function CoursesPage() {
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
-            <div className="flex-1">
+            <div className="flex-1 max-w-md">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -335,7 +447,7 @@ export default function CoursesPage() {
                   placeholder="Search courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
+                  className="block w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
                 />
               </div>
             </div>
