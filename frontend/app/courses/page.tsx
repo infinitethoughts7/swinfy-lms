@@ -409,10 +409,9 @@ export default function CoursesPage() {
   }, [searchTerm, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-700">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
+      <div className="relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-gray-700">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-sora font-black text-white mb-6">
@@ -433,7 +432,7 @@ export default function CoursesPage() {
 
       {/* Search and Filter Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-700">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
@@ -448,7 +447,7 @@ export default function CoursesPage() {
                   placeholder="Search courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
+                  className="block w-full pl-9 pr-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent font-inter text-white placeholder-gray-400"
                 />
               </div>
             </div>
@@ -458,7 +457,7 @@ export default function CoursesPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-inter"
+                className="block w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent font-inter text-white"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>
@@ -470,7 +469,7 @@ export default function CoursesPage() {
           </div>
 
           {/* Results Count */}
-          <div className="mt-4 text-sm text-text-secondary font-inter">
+          <div className="mt-4 text-sm text-gray-300 font-inter">
             Showing {filteredCourses.length} of {allCourses.length} courses
             {searchTerm && ` for "${searchTerm}"`}
             {selectedCategory !== 'All' && ` in ${selectedCategory}`}
@@ -480,30 +479,30 @@ export default function CoursesPage() {
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCourses.map((course, index) => {
-            // Different gradient backgrounds for variety
+            // Different dark gradient backgrounds for variety
             const gradients = [
-              'bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100',
-              'bg-gradient-to-br from-emerald-100 via-teal-100 to-cyan-100',
-              'bg-gradient-to-br from-rose-100 via-pink-100 to-fuchsia-100',
-              'bg-gradient-to-br from-amber-100 via-orange-100 to-red-100',
-              'bg-gradient-to-br from-violet-100 via-purple-100 to-indigo-100',
-              'bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100',
-              'bg-gradient-to-br from-sky-100 via-blue-100 to-indigo-100',
-              'bg-gradient-to-br from-pink-100 via-rose-100 to-red-100',
-              'bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100',
-              'bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100',
-              'bg-gradient-to-br from-cyan-100 via-blue-100 to-indigo-100',
-              'bg-gradient-to-br from-emerald-100 via-green-100 to-lime-100',
-              'bg-gradient-to-br from-orange-100 via-red-100 to-pink-100',
-              'bg-gradient-to-br from-purple-100 via-violet-100 to-indigo-100',
-              'bg-gradient-to-br from-teal-100 via-cyan-100 to-blue-100',
-              'bg-gradient-to-br from-rose-100 via-pink-100 to-purple-100',
-              'bg-gradient-to-br from-amber-100 via-yellow-100 to-lime-100',
-              'bg-gradient-to-br from-blue-100 via-cyan-100 to-teal-100',
-              'bg-gradient-to-br from-pink-100 via-rose-100 to-red-100',
-              'bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100',
-              'bg-gradient-to-br from-purple-100 via-pink-100 to-rose-100',
-              'bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100'
+              'bg-gradient-to-br from-gray-800 via-blue-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-emerald-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-purple-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-orange-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-violet-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-green-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-sky-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-rose-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-yellow-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-indigo-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-cyan-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-lime-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-red-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-purple-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-teal-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-pink-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-amber-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-blue-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-rose-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-indigo-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-purple-900 to-gray-700',
+              'bg-gradient-to-br from-gray-800 via-emerald-900 to-gray-700'
             ];
             
             const gradientClass = gradients[index % gradients.length];
@@ -512,7 +511,7 @@ export default function CoursesPage() {
             <Link
               key={course.id}
               href={`/courses/course/${course.id}`}
-              className="group block bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
+              className="group block bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-gray-700"
             >
               {/* Course Icon with Gradient Background */}
               <div className={`relative h-48 overflow-hidden ${gradientClass} flex items-center justify-center`}>
@@ -547,33 +546,33 @@ export default function CoursesPage() {
               </div>
               
               <div className="p-6">
-                <h3 className="text-xl font-sora font-bold text-text-primary mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                <h3 className="text-xl font-sora font-bold text-white mb-3 group-hover:text-blue-300 transition-colors line-clamp-2">
                   {course.title}
                 </h3>
-                <p className="text-text-secondary font-inter text-sm mb-4 line-clamp-2">
+                <p className="text-gray-300 font-inter text-sm mb-4 line-clamp-2">
                   {course.description}
                 </p>
                 
                 <div className="flex items-center justify-between text-sm mb-4">
-                  <div className="flex items-center text-text-secondary">
+                  <div className="flex items-center text-gray-400">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     {course.rating}
                   </div>
-                  <div className="text-text-secondary">
+                  <div className="text-gray-400">
                     {course.students.toLocaleString()} students
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-text-secondary text-sm">
+                  <div className="flex items-center text-gray-400 text-sm">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {course.duration}
                   </div>
-                  <div className="text-blue-600 font-inter font-medium text-sm group-hover:text-blue-700 transition-colors">
+                  <div className="text-blue-300 font-inter font-medium text-sm group-hover:text-blue-200 transition-colors">
                     View Details →
                   </div>
                 </div>

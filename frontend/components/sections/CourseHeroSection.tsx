@@ -159,4 +159,3 @@ export default function CourseHeroSection({ course }: { course: Course }) {
     </>
   );
 }
-f
