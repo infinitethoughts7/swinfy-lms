@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useState } from 'react';
 import { Video } from 'lucide-react';
+import CourseHeroSection from '@/components/sections/CourseHeroSection';
 
 // This would typically come from a database or API
 const courseDetails = {
@@ -304,8 +304,8 @@ const courseDetails = {
   }
 };
 
-export default async function CoursePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function CoursePage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const course = courseDetails[id as keyof typeof courseDetails];
   
   if (!course) {
@@ -313,7 +313,13 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
   }
 
   // Component for expandable curriculum
-  const CurriculumModule = ({ week, index }: { week: any, index: number }) => {
+  const CurriculumModule = ({ week }: { week: { 
+    week: number;
+    title: string;
+    lessons: number;
+    topics: string[];
+    duration: string;
+  } }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -366,7 +372,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-600 bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Preview</span>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Preview</span>
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -417,83 +423,20 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Course Hero */}
-      <div className="relative overflow-hidden bg-gray-900">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 text-center lg:text-left">
-              <Link 
-                href="/courses" 
-                className="inline-flex items-center text-blue-200 hover:text-white transition-colors mb-6"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Courses
-              </Link>
-              
-              <div className="mb-6">
-                <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-inter rounded-full border border-white/30">
-                  {course.category}
-                </span>
-              </div>
-              
-              <h1 className="text-5xl md:text-6xl font-sora font-black text-white mb-6 leading-tight">
-                {course.title}
-              </h1>
-              
-              <p className="text-xl md:text-2xl text-blue-100 font-inter max-w-4xl mb-6 leading-relaxed">
-                Master technical skills, ace interviews, and land your dream job with our proven curriculum
-              </p>
-              
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 mb-8 border border-white/30 inline-block">
-                <p className="text-white font-inter font-semibold text-lg">
-                  2,847 students got hired in the last 6 months
-                </p>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-8 text-blue-200 mb-8">
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.rating} ({course.students.toLocaleString()} students)</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.duration}</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.instructor}</span>
-                </div>
-              </div>
-              
-              <button className="bg-white text-blue-600 hover:bg-blue-50 font-sora font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm">
-                Enroll Now - {course.price}
-              </button>
-            </div>
-            
-
-          </div>
-        </div>
-      </div>
+      {/* Course Hero - Using new CourseHeroSection component */}
+      <CourseHeroSection course={course} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="lg:col-span-2 space-y-6">
             {/* Course Highlights */}
             <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 What You&apos;ll Master
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {course.highlights.map((highlight, index) => (
+                {course.highlights.map((highlight: string, index: number) => (
                   <div key={index} className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -553,8 +496,6 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
               </div>
             </div>
 
-
-
             {/* Curriculum Roadmap */}
             <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
@@ -562,7 +503,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
               </h2>
               <div className="space-y-4">
                 {course.curriculum.map((week, index) => (
-                  <CurriculumModule key={index} week={week} index={index} />
+                  <CurriculumModule key={index} week={week} />
                 ))}
               </div>
             </div>
@@ -596,7 +537,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Mentor Card */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-20 border border-gray-200">
+            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24 border border-gray-200">
               {/* Mentor Section */}
               <div className="text-center mb-6">
                 <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-blue-100">
@@ -655,8 +596,6 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                 ))}
               </div>
             </div>
-
-
           </div>
         </div>
       </div>
