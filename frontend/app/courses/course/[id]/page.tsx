@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { useState } from 'react';
+import { Video } from 'lucide-react';
 
 // This would typically come from a database or API
 const courseDetails = {
@@ -308,12 +312,113 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
     notFound();
   }
 
+  // Component for expandable curriculum
+  const CurriculumModule = ({ week, index }: { week: any, index: number }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+      <div className="border border-gray-200 rounded-xl bg-white">
+        {/* Module Header - Clickable */}
+        <div 
+          className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center space-x-4">
+            <div>
+              <h3 className="text-gray-900 font-sora font-semibold text-lg">
+                {week.title}
+              </h3>
+              <p className="text-gray-600 font-inter text-sm">
+                {week.lessons} lessons • {week.duration}
+              </p>
+            </div>
+          </div>
+          <svg 
+            className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        
+        {/* Expandable Content */}
+        {isExpanded && (
+          <div className="px-5 pb-5 border-t border-gray-100">
+            <div className="bg-gray-50 rounded-lg p-4 mt-4">
+              {/* Top 3 Video Lectures Preview */}
+              <div className="mb-6">
+                <h4 className="text-gray-900 font-sora font-semibold mb-4 flex items-center">
+                  <svg className="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-4a2 2 0 012-2z" />
+                  </svg>
+                  Preview Lectures (Top 3)
+                </h4>
+                <div className="space-y-3">
+                  {week.topics.slice(0, 3).map((topic: string, topicIndex: number) => (
+                    <div key={topicIndex} className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
+                          <Video className="w-4 h-4 text-gray-600" />
+                          <p className="text-gray-900 font-inter font-medium">{topic}</p>
+                          <span className="text-gray-500 text-sm">• {Math.floor(Math.random() * 15) + 10}min</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-600 bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Preview</span>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* All Video Lectures */}
+              <div>
+                <h4 className="text-gray-900 font-sora font-semibold mb-4 flex items-center">
+                  <svg className="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V3a1 1 0 011 1v10a1 1 0 01-1 1H8a1 1 0 01-1-1V4h10z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9l2 2 4-4" />
+                  </svg>
+                  All Video Lectures ({week.topics.length})
+                </h4>
+                <div className="space-y-2">
+                  {week.topics.map((topic: string, topicIndex: number) => (
+                    <div key={topicIndex} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-100 hover:border-gray-300 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <Video className="w-4 h-4 text-gray-500" />
+                          <p className="text-gray-800 font-inter font-medium text-sm">{topic}</p>
+                          <span className="text-gray-500 text-xs">• {Math.floor(Math.random() * 15) + 10}min</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {topicIndex < 3 && (
+                          <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded font-medium">Free</span>
+                        )}
+                        <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Course Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-indigo-600/90"></div>
+      <div className="relative overflow-hidden bg-gray-900">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="flex-1 text-center lg:text-left">
@@ -368,7 +473,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
               
-              <button className="bg-white text-blue-600 hover:bg-blue-50 font-sora font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+              <button className="bg-white text-blue-600 hover:bg-blue-50 font-sora font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm">
                 Enroll Now - {course.price}
               </button>
             </div>
@@ -383,7 +488,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
             {/* Course Highlights */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 What You&apos;ll Master
               </h2>
@@ -402,7 +507,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Course Description */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 About This Course
               </h2>
@@ -412,7 +517,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Course Details */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 Course Details
               </h2>
@@ -451,51 +556,19 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
 
 
             {/* Curriculum Roadmap */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
                 Learning Roadmap
               </h2>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {course.curriculum.map((week, index) => (
-                  <div key={index} className="relative">
-                    <div className="flex items-start space-x-6">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-sora font-bold">{week.week}</span>
-                        </div>
-                        {index < course.curriculum.length - 1 && (
-                          <div className="absolute left-6 top-12 w-0.5 h-16 bg-gradient-to-b from-blue-300 to-indigo-300"></div>
-                        )}
-                      </div>
-                      <div className="flex-1 bg-gray-50 rounded-2xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-sora font-bold text-text-primary">
-                            {week.title}
-                          </h3>
-                          <span className="text-sm font-inter text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                            {week.duration}
-                          </span>
-                        </div>
-                        <p className="text-text-secondary font-inter mb-4">
-                          {week.lessons} lessons
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {week.topics.map((topic, topicIndex) => (
-                            <div key={topicIndex} className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span className="text-sm text-text-secondary font-inter">{topic}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CurriculumModule key={index} week={week} index={index} />
                 ))}
               </div>
             </div>
 
             {/* Student Reviews */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
                 What Our Students Say
               </h2>
@@ -523,7 +596,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Mentor Card */}
-            <div className="bg-white rounded-3xl shadow-xl p-6 sticky top-20 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-20 border border-gray-200">
               {/* Mentor Section */}
               <div className="text-center mb-6">
                 <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-blue-100">
@@ -566,7 +639,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
               </div>
               
               {/* Enroll Button */}
-              <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg mb-4">
+              <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4">
                 Enroll Now
               </button>
               
