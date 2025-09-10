@@ -2,16 +2,25 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { authApi } from '@/lib/api';
 import { setCurrentUser, setTokens } from '@/lib/auth';
+import Logo from '@/components/shared/Logo';
 
 interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSwitchToRegister?: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
+export default function LoginModal({ open, onOpenChange, onSwitchToRegister }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +56,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
       });
 
       // Close modal
-      onClose();
+      onOpenChange(false);
 
       // Redirect based on role
       router.push(`/dashboard/${data.user.role}`);
@@ -59,31 +68,24 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
     setIsLoading(false);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
-      
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-            <p className="text-gray-600">Sign in to your account to continue learning</p>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl">
+        <DialogHeader className="text-center space-y-3">
+          {/* Logo - Same as navbar */}
+          <div className="flex justify-center items-center">
+            <Logo size="md" showText={true} href="" />
           </div>
+          
+          <DialogTitle className="text-2xl font-bold text-gray-900">
+            Welcome Back!
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            Sign in to your account to continue learning
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-6">
 
 
           {/* Login Form */}
@@ -182,10 +184,24 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
               Don't have an account?{' '}
               <button
                 onClick={onSwitchToRegister}
-                className="text-blue-600 hover:text-blue-800 font-medium"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Sign up here
               </button>
+            </p>
+          </div>
+
+          {/* Terms - matching registration modal */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              By signing in, you agree to our{' '}
+              <Link href="/terms" className="text-blue-500 hover:text-blue-400">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="text-blue-500 hover:text-blue-400">
+                Privacy Policy
+              </Link>
             </p>
           </div>
 
@@ -201,7 +217,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+              >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -211,7 +230,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
                 <span className="ml-2">Google</span>
               </button>
 
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+              >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
@@ -220,7 +242,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }: Logi
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

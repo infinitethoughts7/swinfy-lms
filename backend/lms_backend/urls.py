@@ -28,6 +28,7 @@ from hero_views import hero_demo
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
+    path('api/courses/', include('courses.urls')),
     path('', hero_demo, name='hero_demo'),
 ]
 

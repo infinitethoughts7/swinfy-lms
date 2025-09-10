@@ -167,4 +167,92 @@ export const api = {
   }),
 };
 
+// Courses API methods
+export const coursesApi = {
+  // Get all courses with filtering
+  getCourses: async (params?: {
+    category?: string;
+    level?: string;
+    org_type?: string;
+    search?: string;
+    featured?: boolean;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    
+    const url = `/api/courses/${queryParams.toString() ? `?${queryParams}` : ''}`;
+    const response = await fetch(`${API_BASE_URL}${url}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch courses');
+    }
+    
+    return response.json();
+  },
+
+  // Get course details by slug
+  getCourse: async (slug: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/`);
+    
+    if (!response.ok) {
+      throw new Error('Course not found');
+    }
+    
+    return response.json();
+  },
+
+  // Get featured courses
+  getFeaturedCourses: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/courses/featured/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch featured courses');
+    }
+    
+    return response.json();
+  },
+
+  // Get course statistics
+  getCourseStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/courses/stats/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch course stats');
+    }
+    
+    return response.json();
+  },
+
+  // Enroll in course
+  enrollInCourse: async (courseSlug: string) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/enroll/`, {
+      method: 'POST',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Enrollment failed');
+    }
+    
+    return response.json();
+  },
+
+  // Get user enrollments
+  getMyEnrollments: async () => {
+    const response = await authenticatedFetch('/api/courses/enrollments/my/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch enrollments');
+    }
+    
+    return response.json();
+  },
+};
+
 export default api;

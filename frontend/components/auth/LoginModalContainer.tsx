@@ -6,10 +6,16 @@ import LoginModal from './LoginModal';
 export default function LoginModalContainer() {
   const { isLoginModalOpen, closeLoginModal, switchToRegister } = useModal();
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      closeLoginModal();
+    }
+  };
+
   return (
     <LoginModal
-      isOpen={isLoginModalOpen}
-      onClose={closeLoginModal}
+      open={isLoginModalOpen}
+      onOpenChange={handleOpenChange}
       onSwitchToRegister={switchToRegister}
     />
   );
