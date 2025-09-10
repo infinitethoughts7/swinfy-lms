@@ -76,7 +76,7 @@ const TestimonialsCarousel = () => {
       name: "Lisa Thompson",
       role: "AI Consultant",
       company: "Independent",
-      avatar: "/assets/images/avatar/avatar-05.jpg",
+      avatar: "/assets/images/avatar/05.jpg",
       rating: 5,
       courseTaken: "Full-Stack AI Development",
       timeToJob: "2 months",

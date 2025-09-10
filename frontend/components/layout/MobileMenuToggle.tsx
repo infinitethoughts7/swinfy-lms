@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import { useModal } from '@/components/providers/ModalProvider';
 
 const MobileMenuToggle = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { openRegistrationModal } = useModal();
 
   const menuItems = [
     { href: '/courses', label: 'Courses' },
     { href: '/team', label: 'Team' },
-    { href: '/pricing', label: 'Pricing' },
+    { href: '/review', label: 'Review' },
     { href: '/hire', label: 'Hire from us' },
   ];
 
@@ -53,19 +55,21 @@ const MobileMenuToggle = () => {
               {/* Mobile CTA buttons */}
               <div className="pt-4 space-y-3">
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="block w-full text-center py-2 px-4 font-inter font-medium text-text-primary hover:bg-text-primary/5 rounded-md"
                   onClick={() => setIsOpen(false)}
                 >
                   Login
                 </Link>
-                <Link
-                  href="/signup"
+                <button
+                  onClick={() => {
+                    openRegistrationModal();
+                    setIsOpen(false);
+                  }}
                   className="block w-full text-center py-2 px-4 bg-text-primary text-white hover:bg-text-primary/90 font-inter font-medium rounded-md"
-                  onClick={() => setIsOpen(false)}
                 >
                   Sign up
-                </Link>
+                </button>
               </div>
             </div>
           </div>
