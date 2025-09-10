@@ -3,14 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/shared/Logo';
+import ProfileCompletionScreen from './ProfileCompletionScreen';
 
 interface RegistrationSuccessProps {
+  userRole: 'student' | 'tutor' | 'admin';
+  userEmail: string;
   onComplete: () => void;
 }
 
-export default function RegistrationSuccess({ onComplete }: RegistrationSuccessProps) {
+export default function RegistrationSuccess({ userRole, userEmail, onComplete }: RegistrationSuccessProps) {
   const [showCheckmark, setShowCheckmark] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'success' | 'profile-completion'>('success');
 
   useEffect(() => {
     // Trigger checkmark animation
@@ -28,6 +32,18 @@ export default function RegistrationSuccess({ onComplete }: RegistrationSuccessP
       clearTimeout(contentTimer);
     };
   }, []);
+
+  // Render profile completion screen if user has moved to that step
+  if (currentStep === 'profile-completion') {
+    return (
+      <ProfileCompletionScreen
+        userRole={userRole}
+        userEmail={userEmail}
+        onComplete={onComplete}
+        onSkip={onComplete}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 text-center">
@@ -117,10 +133,10 @@ export default function RegistrationSuccess({ onComplete }: RegistrationSuccessP
         {/* Action Button */}
         <div className="pt-4">
           <Button
-            onClick={onComplete}
+            onClick={() => setCurrentStep('profile-completion')}
             className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
           >
-            Start Learning Now! 🚀
+            Continue Filling Profile Information 📝
           </Button>
         </div>
       </div>

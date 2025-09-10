@@ -59,7 +59,7 @@ const validationRules = {
 };
 
 interface RegistrationFormProps {
-  onSuccess?: (email: string) => void;
+  onSuccess?: (email: string, role: 'student' | 'tutor' | 'admin') => void;
 }
 
 export default function RegistrationForm({ onSuccess }: RegistrationFormProps = {}) {
@@ -214,9 +214,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       
       console.log(successMessage);
       
-      // Call onSuccess callback with email to proceed to OTP verification
+      // Call onSuccess callback with email and role to proceed to OTP verification
       if (onSuccess) {
-        onSuccess(formData.email);
+        onSuccess(formData.email, formData.role);
       }
       
     } catch (error) {

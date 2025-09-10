@@ -1,0 +1,23 @@
+from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
+from . import views
+
+app_name = 'users'
+
+urlpatterns = [
+    # Authentication endpoints
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # User profile endpoints
+    path('profile/', views.UserProfileView.as_view(), name='profile'),
+    path('profile/complete/', views.ProfileCompletionView.as_view(), name='profile_completion'),
+    path('profile/detail/', views.UserProfileDetailView.as_view(), name='profile_detail'),
+    path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
+    path('verify-email/', views.verify_email, name='verify_email'),
+    
+    # Utility endpoints
+    path('organizations/', views.get_organizations, name='organizations'),
+    path('dashboard/', views.dashboard_stats, name='dashboard'),
+]

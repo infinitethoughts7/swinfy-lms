@@ -22,9 +22,11 @@ interface RegistrationModalProps {
 export default function RegistrationModal({ open, onOpenChange }: RegistrationModalProps) {
   const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'success'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
+  const [userRole, setUserRole] = useState<'student' | 'tutor' | 'admin'>('student');
 
-  const handleRegistrationSuccess = (email: string) => {
+  const handleRegistrationSuccess = (email: string, role: 'student' | 'tutor' | 'admin') => {
     setRegistrationEmail(email);
+    setUserRole(role);
     setCurrentStep('otp-verification');
   };
 
@@ -112,6 +114,8 @@ export default function RegistrationModal({ open, onOpenChange }: RegistrationMo
             />
           ) : (
             <RegistrationSuccess
+              userRole={userRole}
+              userEmail={registrationEmail}
               onComplete={handleSuccessComplete}
             />
           )}
