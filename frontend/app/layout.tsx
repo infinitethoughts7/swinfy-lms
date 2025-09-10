@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ModalProvider } from '@/components/providers/ModalProvider';
 import RegistrationModalContainer from '@/components/auth/RegistrationModalContainer';
+import LoginModalContainer from '@/components/auth/LoginModalContainer';
 
 export const metadata: Metadata = {
   title: "OLLA LMS - Learning Management System",
@@ -19,6 +20,7 @@ export default function RootLayout({
         <ModalProvider>
           {children}
           <RegistrationModalContainer />
+          <LoginModalContainer />
         </ModalProvider>
       </body>
     </html>

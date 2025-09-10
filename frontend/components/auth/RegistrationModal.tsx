@@ -17,9 +17,10 @@ import Logo from '@/components/shared/Logo';
 interface RegistrationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSwitchToLogin?: () => void;
 }
 
-export default function RegistrationModal({ open, onOpenChange }: RegistrationModalProps) {
+export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin }: RegistrationModalProps) {
   const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'success'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
   const [userRole, setUserRole] = useState<'student' | 'tutor' | 'admin'>('student');
@@ -82,13 +83,12 @@ export default function RegistrationModal({ open, onOpenChange }: RegistrationMo
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
-                  <Link 
-                    href="/auth/login" 
+                  <button
+                    onClick={onSwitchToLogin}
                     className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                    onClick={() => onOpenChange(false)}
                   >
                     Sign in here
-                  </Link>
+                  </button>
                 </p>
               </div>
 
