@@ -48,8 +48,8 @@ export default function OrganizationDetailsForm({
           name="name"
           value={organizationDetails.name}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            errors.name ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+            errors.name ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter your organization name"
         />
@@ -68,8 +68,8 @@ export default function OrganizationDetailsForm({
           name="type"
           value={organizationDetails.type}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            errors.type ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+            errors.type ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
         >
           <option value="">Select organization type...</option>
@@ -94,8 +94,8 @@ export default function OrganizationDetailsForm({
           name="location"
           value={organizationDetails.location}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            errors.location ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+            errors.location ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
           placeholder="City, State, Country"
         />
@@ -115,8 +115,8 @@ export default function OrganizationDetailsForm({
           name="website"
           value={organizationDetails.website}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            errors.website ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+            errors.website ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
           placeholder="https://your-organization.com"
         />
@@ -136,8 +136,8 @@ export default function OrganizationDetailsForm({
           rows={3}
           value={organizationDetails.description}
           onChange={handleInputChange}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 resize-none ${
+            errors.description ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
           placeholder="Brief description of your organization..."
         />

@@ -209,8 +209,8 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
               onChange={(e) => handleInputChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={index === 0 ? handlePaste : undefined}
-              className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                error ? 'border-red-500' : digit ? 'border-green-500' : 'border-gray-300'
+              className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+                error ? 'border-red-500 focus:border-red-500' : digit ? 'border-green-500 focus:border-green-600' : 'border-gray-300'
               }`}
               placeholder="0"
             />
