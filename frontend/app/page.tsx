@@ -6,27 +6,20 @@ import RecognitionSection from '@/components/sections/RecognitionSection';
 import ContactSection from '@/components/sections/ContactSection';
 import Footer from '@/components/layout/Footer';
 import AlumniLogos from '@/components/sections/AlumniLogos';
-import { ModalProvider } from '@/components/providers/ModalProvider';
-import RegistrationModalContainer from '@/components/auth/RegistrationModalContainer';
 
 export default function Home() {
   return (
-    <ModalProvider>
-      <div className="min-h-screen bg-white">
-        <StaticNavbar />
-        <div className="pt-20">
-          <HeroSection />
-          <AlumniLogos />
-          <CompaniesHired />
-          <TestimonialsSection />
-          <RecognitionSection />
-          <ContactSection />
-          <Footer />
-        </div>
-        
-        {/* Registration Modal */}
-        <RegistrationModalContainer />
+    <div className="min-h-screen bg-white">
+      <StaticNavbar />
+      <div className="pt-20">
+        <HeroSection />
+        <AlumniLogos />
+        <CompaniesHired />
+        <TestimonialsSection />
+        <RecognitionSection />
+        <ContactSection />
+        <Footer />
       </div>
-    </ModalProvider>
+    </div>
   );
 }

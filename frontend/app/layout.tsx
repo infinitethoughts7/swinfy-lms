@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ModalProvider } from '@/components/providers/ModalProvider';
+import RegistrationModalContainer from '@/components/auth/RegistrationModalContainer';
 
 export const metadata: Metadata = {
   title: "OLLA LMS - Learning Management System",
@@ -14,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        {children}
+        <ModalProvider>
+          {children}
+          <RegistrationModalContainer />
+        </ModalProvider>
       </body>
     </html>
   );
