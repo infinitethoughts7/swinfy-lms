@@ -20,6 +20,7 @@ venv.bak/
 */media/
 
 # Environment variables
+.venv/
 .env
 .env.local
 .env.development.local
