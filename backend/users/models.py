@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
+import uuid
 
 
 class Organization(models.Model):
@@ -13,6 +14,7 @@ class Organization(models.Model):
         ('bootcamp', 'Bootcamp'),
     ]
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, unique=True)
     type = models.CharField(max_length=50, choices=ORG_TYPE_CHOICES)
     location = models.CharField(max_length=200)
@@ -40,6 +42,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
     ]
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Basic authentication fields only
     email = models.EmailField(unique=True, verbose_name='Email Address')
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
@@ -133,6 +136,7 @@ class User(AbstractUser):
 class StudentProfile(models.Model):
     """Profile for students with learning preferences and progress tracking."""
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
     
     # Personal Information
@@ -171,6 +175,7 @@ class StudentProfile(models.Model):
 class TutorProfile(models.Model):
     """Profile for tutors with qualifications and expertise."""
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile')
     
     # Personal Information
@@ -227,6 +232,7 @@ class TutorProfile(models.Model):
 class AdminProfile(models.Model):
     """Profile for organization administrators."""
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
     
     # Personal Information
