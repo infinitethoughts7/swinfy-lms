@@ -96,13 +96,32 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          System Overview 🚀
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Monitor platform performance and manage system operations
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            System Overview 🚀
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Monitor platform performance and manage system operations
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => window.location.href = '/dashboard/admin/courses/create'}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Course
+          </button>
+          <button
+            onClick={() => window.location.href = '/dashboard/admin/courses'}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            Manage Courses
+          </button>
+        </div>
       </div>
 
       {/* Quick Actions */}

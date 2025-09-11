@@ -52,21 +52,137 @@ const categories = [
   'Cybersecurity'
 ];
 
-const organizationTypes = [
-  'All',
-  'University',
-  'Company',
-  'Institute',
-  'Bootcamp'
-];
 
 export default function CoursesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedOrgType, setSelectedOrgType] = useState('All');
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Mock data for MAT and Swinfy organizations
+  const mockCourses: Course[] = useMemo(() => [
+    {
+      id: '1',
+      title: 'Advanced Python Programming',
+      slug: 'advanced-python-programming',
+      description: 'Master advanced Python concepts including decorators, generators, and async programming',
+      category: 'Backend Development',
+      category_display: 'Backend Development',
+      level: 'Advanced',
+      level_display: 'Advanced',
+      duration_weeks: 8,
+      price: '₹15,999',
+      icon: '/assets/courses/python.svg',
+      rating: 4.8,
+      enrollment_count: 1250,
+      organization: {
+        id: '1',
+        name: 'MAT',
+        type: 'Institute',
+        location: 'Bangalore'
+      },
+      instructor: {
+        id: '1',
+        full_name: 'Dr. Rajesh Kumar',
+        email: 'rajesh@mat.com',
+        bio: 'Senior Python Developer with 10+ years experience',
+        title: 'Lead Instructor'
+      },
+      is_featured: true,
+      created_at: '2024-01-15T10:00:00Z'
+    },
+    {
+      id: '2',
+      title: 'React & Next.js Masterclass',
+      slug: 'react-nextjs-masterclass',
+      description: 'Build modern web applications with React and Next.js framework',
+      category: 'Frontend Development',
+      category_display: 'Frontend Development',
+      level: 'Intermediate',
+      level_display: 'Intermediate',
+      duration_weeks: 6,
+      price: '₹12,999',
+      icon: '/assets/courses/react.svg',
+      rating: 4.9,
+      enrollment_count: 2100,
+      organization: {
+        id: '2',
+        name: 'Swinfy',
+        type: 'Company',
+        location: 'Mumbai'
+      },
+      instructor: {
+        id: '2',
+        full_name: 'Sarah Johnson',
+        email: 'sarah@swinfy.com',
+        bio: 'Full-stack developer and React expert',
+        title: 'Senior Developer'
+      },
+      is_featured: true,
+      created_at: '2024-01-20T10:00:00Z'
+    },
+    {
+      id: '3',
+      title: 'Data Science with Python',
+      slug: 'data-science-python',
+      description: 'Learn data analysis, machine learning, and visualization with Python',
+      category: 'Data Science',
+      category_display: 'Data Science',
+      level: 'Beginner',
+      level_display: 'Beginner',
+      duration_weeks: 10,
+      price: '₹18,999',
+      icon: '/assets/courses/python.svg',
+      rating: 4.7,
+      enrollment_count: 1800,
+      organization: {
+        id: '1',
+        name: 'MAT',
+        type: 'Institute',
+        location: 'Bangalore'
+      },
+      instructor: {
+        id: '3',
+        full_name: 'Prof. Ananya Singh',
+        email: 'ananya@mat.com',
+        bio: 'Data Science researcher and educator',
+        title: 'Professor'
+      },
+      is_featured: false,
+      created_at: '2024-02-01T10:00:00Z'
+    },
+    {
+      id: '4',
+      title: 'JavaScript Fundamentals',
+      slug: 'javascript-fundamentals',
+      description: 'Master JavaScript from basics to advanced concepts',
+      category: 'Frontend Development',
+      category_display: 'Frontend Development',
+      level: 'Beginner',
+      level_display: 'Beginner',
+      duration_weeks: 4,
+      price: '₹8,999',
+      icon: '/assets/courses/javascript.svg',
+      rating: 4.6,
+      enrollment_count: 3200,
+      organization: {
+        id: '2',
+        name: 'Swinfy',
+        type: 'Company',
+        location: 'Mumbai'
+      },
+      instructor: {
+        id: '4',
+        full_name: 'Mike Chen',
+        email: 'mike@swinfy.com',
+        bio: 'JavaScript expert and web development instructor',
+        title: 'Lead Developer'
+      },
+      is_featured: false,
+      created_at: '2024-02-10T10:00:00Z'
+    }
+  ], []);
 
   // Fetch courses from backend
   useEffect(() => {
@@ -92,10 +208,6 @@ export default function CoursesPage() {
           params.category = categoryMap[selectedCategory];
         }
         
-        if (selectedOrgType !== 'All') {
-          params.org_type = selectedOrgType.toLowerCase();
-        }
-        
         if (searchTerm) {
           params.search = searchTerm;
         }
@@ -105,16 +217,16 @@ export default function CoursesPage() {
         setError('');
       } catch (err) {
         console.error('Failed to fetch courses:', err);
-        setError('Failed to load courses. Please try again.');
-        // Use empty array as fallback
-        setCourses([]);
+        setError('Failed to load courses. Using sample data.');
+        // Use mock data as fallback
+        setCourses(mockCourses);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
-  }, [searchTerm, selectedCategory, selectedOrgType]);
+  }, [searchTerm, selectedCategory, mockCourses]);
 
   // Filter courses based on search term and category (for client-side filtering of fetched data)
   const filteredCourses = useMemo(() => {
@@ -128,18 +240,19 @@ export default function CoursesPage() {
   }, [courses, searchTerm]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-700">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-black via-gray-900 to-gray-700">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-sora font-black text-white mb-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 -mt-px" style={{ paddingTop: '49px' }}>
+        <div className="pb-16">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-sora font-black text-gray-900 mb-6">
               Bridge the Gap Between Learning and Landing Jobs
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100 font-inter max-w-4xl mx-auto mb-8">
+            <p className="text-xl md:text-2xl text-gray-700 font-inter max-w-4xl mx-auto mb-8">
               Master technical skills from top organizations, learn from expert instructors, and land your dream job
             </p>
-            <div className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm rounded-full text-white font-inter font-semibold">
+            <div className="inline-flex items-center px-6 py-3 bg-blue-600 rounded-full text-white font-inter font-semibold shadow-lg">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -147,17 +260,18 @@ export default function CoursesPage() {
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-700">
+        <div className="bg-white rounded-2xl p-6 mb-8 border border-gray-200">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
             <div className="flex-1 max-w-md">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -166,7 +280,7 @@ export default function CoursesPage() {
                   placeholder="Search courses, organizations, instructors..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent font-inter text-white placeholder-gray-400"
+                  className="block w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-0 focus:border-gray-300 font-inter text-gray-900 placeholder-gray-500"
                 />
               </div>
             </div>
@@ -176,7 +290,7 @@ export default function CoursesPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="block w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent font-inter text-white"
+                className="block w-full px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-0 focus:border-gray-300 font-inter text-gray-900"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>
@@ -186,27 +300,13 @@ export default function CoursesPage() {
               </select>
             </div>
 
-            {/* Organization Type Filter */}
-            <div className="lg:w-64">
-              <select
-                value={selectedOrgType}
-                onChange={(e) => setSelectedOrgType(e.target.value)}
-                className="block w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent font-inter text-white"
-              >
-                {organizationTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type === 'All' ? 'All Organizations' : `${type}s`}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Results Count */}
-          <div className="mt-4 text-sm text-gray-300 font-inter">
+          <div className="mt-4 text-sm text-gray-600 font-inter">
             {loading ? (
               <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
                 Loading courses...
               </div>
             ) : (
@@ -214,15 +314,14 @@ export default function CoursesPage() {
                 Showing {filteredCourses.length} of {courses.length} courses
                 {searchTerm && ` for "${searchTerm}"`}
                 {selectedCategory !== 'All' && ` in ${selectedCategory}`}
-                {selectedOrgType !== 'All' && ` from ${selectedOrgType}s`}
               </>
             )}
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mt-4 p-4 bg-red-600/20 border border-red-500/50 rounded-lg">
-              <p className="text-red-300 text-sm">{error}</p>
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
         </div>
@@ -230,16 +329,16 @@ export default function CoursesPage() {
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCourses.map((course, index) => {
-            // Different dark gradient backgrounds for variety
+            // Different light gradient backgrounds for variety
             const gradients = [
-              'bg-gradient-to-br from-gray-800 via-blue-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-emerald-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-purple-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-orange-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-violet-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-green-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-sky-900 to-gray-700',
-              'bg-gradient-to-br from-gray-800 via-rose-900 to-gray-700',
+              'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200',
+              'bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200',
+              'bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200',
+              'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200',
+              'bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200',
+              'bg-gradient-to-br from-green-50 via-green-100 to-green-200',
+              'bg-gradient-to-br from-sky-50 via-sky-100 to-sky-200',
+              'bg-gradient-to-br from-rose-50 via-rose-100 to-rose-200',
             ];
             
             const gradientClass = gradients[index % gradients.length];
@@ -248,10 +347,31 @@ export default function CoursesPage() {
             <Link
               key={course.id}
               href={`/courses/course/${course.slug || course.id}`}
-              className="group block bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-gray-700"
+              className="group block bg-white rounded-2xl transition-all duration-300 transform hover:scale-105 hover:rounded-3xl overflow-hidden border border-gray-200"
             >
               {/* Course Icon with Gradient Background */}
               <div className={`relative h-48 overflow-hidden ${gradientClass} flex items-center justify-center`}>
+                {/* Training Partner Logo - Top Left */}
+                <div className="absolute top-4 left-4">
+                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-gray-200">
+                    {course.organization?.name === 'MAT' ? (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-md flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">MAT</span>
+                      </div>
+                    ) : course.organization?.name === 'Swinfy' ? (
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-md flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">S</span>
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-md flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">
+                          {course.organization?.name?.charAt(0) || 'O'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="w-32 h-32 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <Image
                     src={course.icon || '/assets/courses/python.svg'}
@@ -276,64 +396,83 @@ export default function CoursesPage() {
                 
                 {/* Category Badge */}
                 <div className="absolute bottom-4 left-4 right-4">
-                  <span className="inline-block px-3 py-1 bg-white/90 backdrop-blur-sm text-text-primary text-xs font-inter rounded-lg shadow-sm">
+                  <span className="inline-block px-3 py-1 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-inter rounded-lg border border-gray-200">
                     {course.category_display || course.category}
                   </span>
                 </div>
               </div>
               
               <div className="p-6">
-                <h3 className="text-xl font-sora font-bold text-white mb-3 group-hover:text-blue-300 transition-colors line-clamp-2">
-                  {course.title}
-                </h3>
-                <p className="text-gray-300 font-inter text-sm mb-4 line-clamp-2">
-                  {course.description}
-                </p>
-                
-                {/* Organization and Instructor Info */}
+                {/* Training Partner Name - Prominent Display */}
                 {course.organization && (
-                  <div className="mb-3 p-2 bg-gray-700/50 rounded-lg">
-                    <div className="text-xs text-gray-400 mb-1">
-                      <span className="inline-flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 8a1 1 0 011-1h4a1 1 0 011 1v4H7v-4z" clipRule="evenodd" />
-                        </svg>
+                  <div className="mb-3">
+                    <div className="flex items-center mb-2">
+                      <div className="w-6 h-6 mr-2">
+                        {course.organization.name === 'MAT' ? (
+                          <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">MAT</span>
+                          </div>
+                        ) : course.organization.name === 'Swinfy' ? (
+                          <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-purple-800 rounded flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">S</span>
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">
+                              {course.organization.name?.charAt(0) || 'O'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-blue-600 font-inter font-semibold text-sm">
                         {course.organization.name}
                       </span>
                     </div>
-                    {course.instructor && (
-                      <div className="text-xs text-gray-300">
-                        <span className="inline-flex items-center">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                          </svg>
-                          {course.instructor.full_name}
-                        </span>
-                      </div>
-                    )}
+                  </div>
+                )}
+                
+                <h3 className="text-xl font-sora font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                  {course.title}
+                </h3>
+                <p className="text-gray-600 font-inter text-sm mb-4 line-clamp-2">
+                  {course.description}
+                </p>
+                
+                {/* Instructor Info */}
+                {course.instructor && (
+                  <div className="mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="text-xs text-gray-600">
+                      <span className="inline-flex items-center">
+                        <svg className="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-gray-500 mr-1">Instructor:</span>
+                        {course.instructor.full_name}
+                      </span>
+                    </div>
                   </div>
                 )}
                 
                 <div className="flex items-center justify-between text-sm mb-4">
-                  <div className="flex items-center text-gray-400">
+                  <div className="flex items-center text-gray-600">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     {course.rating || 0}
                   </div>
-                  <div className="text-gray-400">
+                  <div className="text-gray-600">
                     {(course.enrollment_count || 0).toLocaleString()} students
                   </div>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-400 text-sm">
+                  <div className="flex items-center text-gray-600 text-sm">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {course.duration_weeks ? `${course.duration_weeks} weeks` : 'TBD'}
                   </div>
-                  <div className="text-blue-300 font-inter font-medium text-sm group-hover:text-blue-200 transition-colors">
+                  <div className="text-blue-600 font-inter font-medium text-sm group-hover:text-blue-700 transition-colors">
                     View Details →
                   </div>
                 </div>
@@ -347,17 +486,16 @@ export default function CoursesPage() {
         {filteredCourses.length === 0 && !loading && (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-sora font-bold text-white mb-2">
+            <h3 className="text-xl font-sora font-bold text-gray-900 mb-2">
               No courses found
             </h3>
-            <p className="text-gray-300 font-inter mb-4">
+            <p className="text-gray-600 font-inter mb-4">
               Try adjusting your search terms or filters
             </p>
             <button
               onClick={() => {
                 setSearchTerm('');
                 setSelectedCategory('All');
-                setSelectedOrgType('All');
               }}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-inter"
             >
@@ -368,28 +506,28 @@ export default function CoursesPage() {
       </div>
 
       {/* Stats Section */}
-      <div className="bg-gray-50 py-16 mt-16">
+      <div className="bg-gray-200 py-16 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div className="bg-white p-6 rounded-xl shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-3xl font-sora font-bold text-blue-600 mb-2">{courses.length}</div>
-              <div className="text-text-secondary font-inter">Total Courses</div>
+              <div className="text-gray-600 font-inter">Total Courses</div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-3xl font-sora font-bold text-green-600 mb-2">{categories.length - 1}</div>
-              <div className="text-text-secondary font-inter">Categories</div>
+              <div className="text-gray-600 font-inter">Categories</div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-3xl font-sora font-bold text-purple-600 mb-2">
                 {courses.reduce((sum, course) => sum + (course.enrollment_count || 0), 0).toLocaleString()}
               </div>
-              <div className="text-text-secondary font-inter">Total Students</div>
+              <div className="text-gray-600 font-inter">Total Students</div>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-3xl font-sora font-bold text-orange-600 mb-2">
                 {courses.length > 0 ? (courses.reduce((sum, course) => sum + (course.rating || 0), 0) / courses.length).toFixed(1) : '0.0'}
               </div>
-              <div className="text-text-secondary font-inter">Average Rating</div>
+              <div className="text-gray-600 font-inter">Average Rating</div>
             </div>
           </div>
         </div>
