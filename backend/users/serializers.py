@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User, Organization, StudentProfile, TutorProfile, AdminProfile
+from .models import User, TrainingPartner, StudentProfile, TutorProfile, AdminProfile
 
 
-class OrganizationSerializer(serializers.ModelSerializer):
-    """Serializer for Organization model."""
+class TrainingPartnerSerializer(serializers.ModelSerializer):
+    """Serializer for TrainingPartner model."""
     
     class Meta:
-        model = Organization
+        model = TrainingPartner
         fields = ['id', 'name', 'type', 'location', 'website', 'description', 'is_active', 'created_at']
         read_only_fields = ['id', 'created_at']
 
@@ -70,8 +70,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             
             # Check if organization exists
             try:
-                Organization.objects.get(id=organization_id)
-            except Organization.DoesNotExist:
+                TrainingPartner.objects.get(id=organization_id)
+            except TrainingPartner.DoesNotExist:
                 raise serializers.ValidationError({
                     'organization_id': 'Selected organization does not exist.'
                 })
@@ -92,7 +92,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                     })
             
             # Check if organization name already exists
-            if Organization.objects.filter(name=organization_details['name']).exists():
+            if TrainingPartner.objects.filter(name=organization_details['name']).exists():
                 raise serializers.ValidationError({
                     'organization_details': 'An organization with this name already exists.'
                 })
@@ -110,12 +110,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Handle organization assignment based on role
         if validated_data['role'] == 'tutor' and organization_id:
             # Assign tutor to existing organization
-            validated_data['organization'] = Organization.objects.get(id=organization_id)
+            validated_data['organization'] = TrainingPartner.objects.get(id=organization_id)
             validated_data['is_approved'] = False  # Tutors need approval
         
         elif validated_data['role'] == 'admin' and organization_details:
             # Create new organization for admin
-            organization = Organization.objects.create(
+            organization = TrainingPartner.objects.create(
                 name=organization_details['name'],
                 type=organization_details['type'],
                 location=organization_details['location'],

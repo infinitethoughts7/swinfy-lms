@@ -63,9 +63,9 @@ export default function CoursesPage() {
   // Mock data for MAT and Swinfy organizations
   const mockCourses: Course[] = useMemo(() => [
     {
-      id: '1',
-      title: 'Advanced Python Programming',
-      slug: 'advanced-python-programming',
+      id: 'python',
+      title: 'Python Programming Excellence',
+      slug: 'python',
       description: 'Master advanced Python concepts including decorators, generators, and async programming',
       category: 'Backend Development',
       category_display: 'Backend Development',
@@ -93,17 +93,17 @@ export default function CoursesPage() {
       created_at: '2024-01-15T10:00:00Z'
     },
     {
-      id: '2',
-      title: 'React & Next.js Masterclass',
-      slug: 'react-nextjs-masterclass',
-      description: 'Build modern web applications with React and Next.js framework',
-      category: 'Frontend Development',
-      category_display: 'Frontend Development',
+      id: 'sql',
+      title: 'SQL Mastery',
+      slug: 'sql',
+      description: 'Master SQL for database management and data querying - the foundation of data-driven careers.',
+      category: 'Backend Development',
+      category_display: 'Backend Development',
       level: 'Intermediate',
       level_display: 'Intermediate',
       duration_weeks: 6,
-      price: '₹12,999',
-      icon: '/assets/courses/react.svg',
+      price: '₹12,499',
+      icon: '/assets/courses/sql.png',
       rating: 4.9,
       enrollment_count: 2100,
       organization: {
@@ -123,17 +123,17 @@ export default function CoursesPage() {
       created_at: '2024-01-20T10:00:00Z'
     },
     {
-      id: '3',
-      title: 'Data Science with Python',
-      slug: 'data-science-python',
-      description: 'Learn data analysis, machine learning, and visualization with Python',
-      category: 'Data Science',
-      category_display: 'Data Science',
-      level: 'Beginner',
-      level_display: 'Beginner',
-      duration_weeks: 10,
-      price: '₹18,999',
-      icon: '/assets/courses/python.svg',
+      id: 'advanced-excel',
+      title: 'Advanced Excel Mastery',
+      slug: 'advanced-excel',
+      description: 'Master advanced Excel functions, pivot tables, and data analysis techniques - become the Excel expert your company needs.',
+      category: 'Data Analyst',
+      category_display: 'Data Analyst',
+      level: 'Intermediate',
+      level_display: 'Intermediate',
+      duration_weeks: 6,
+      price: '₹8,499',
+      icon: '/assets/courses/excel.svg',
       rating: 4.7,
       enrollment_count: 1800,
       organization: {
@@ -151,36 +151,6 @@ export default function CoursesPage() {
       },
       is_featured: false,
       created_at: '2024-02-01T10:00:00Z'
-    },
-    {
-      id: '4',
-      title: 'JavaScript Fundamentals',
-      slug: 'javascript-fundamentals',
-      description: 'Master JavaScript from basics to advanced concepts',
-      category: 'Frontend Development',
-      category_display: 'Frontend Development',
-      level: 'Beginner',
-      level_display: 'Beginner',
-      duration_weeks: 4,
-      price: '₹8,999',
-      icon: '/assets/courses/javascript.svg',
-      rating: 4.6,
-      enrollment_count: 3200,
-      organization: {
-        id: '2',
-        name: 'Swinfy',
-        type: 'Company',
-        location: 'Mumbai'
-      },
-      instructor: {
-        id: '4',
-        full_name: 'Mike Chen',
-        email: 'mike@swinfy.com',
-        bio: 'JavaScript expert and web development instructor',
-        title: 'Lead Developer'
-      },
-      is_featured: false,
-      created_at: '2024-02-10T10:00:00Z'
     }
   ], []);
 

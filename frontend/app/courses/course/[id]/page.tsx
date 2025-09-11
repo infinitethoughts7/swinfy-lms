@@ -422,7 +422,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
       {/* Course Hero - Using new CourseHeroSection component */}
       <CourseHeroSection course={course} />
 
@@ -431,7 +431,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Course Highlights */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 What You&apos;ll Master
               </h2>
@@ -450,7 +450,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Course Description */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 About This Course
               </h2>
@@ -460,7 +460,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Course Details */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
                 Course Details
               </h2>
@@ -558,7 +558,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Curriculum */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
                 Curriculum
               </h2>
@@ -570,15 +570,15 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Assignments */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 Assignments & Practice Work
               </h2>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
-                <h3 className="text-xl font-sora font-bold text-text-primary mb-3">What You'll Get:</h3>
+                <h3 className="text-xl font-sora font-bold text-text-primary mb-3">What You&apos;ll Get:</h3>
                 <p className="text-text-secondary font-inter leading-relaxed">
                   We provide you with comprehensive assignments and hands-on practice projects designed to reinforce your learning. 
-                  Each week, you'll receive structured assignments that progressively build your skills and help you apply theoretical concepts to real-world scenarios.
+                  Each week, you&apos;ll receive structured assignments that progressively build your skills and help you apply theoretical concepts to real-world scenarios.
                 </p>
               </div>
               
@@ -620,7 +620,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Learning Materials */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 Learning Materials We Provide
               </h2>
@@ -684,7 +684,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Reference Websites */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 Reference Websites We Recommend for Practice
               </h2>
@@ -778,7 +778,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Live Sessions */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 Live Sessions We Provide for Doubts Clarification
               </h2>
@@ -844,7 +844,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
             </div>
 
             {/* Student Reviews */}
-            <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-200">
+            <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
                 What Our Students Say
               </h2>
@@ -872,7 +872,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Mentor Card */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-24 border border-gray-200">
+            <div className="bg-white rounded-2xl p-6 sticky top-24 border border-gray-200">
               {/* Mentor Section */}
               <div className="text-center mb-6">
                 <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-blue-100">

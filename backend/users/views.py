@@ -6,12 +6,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from .models import User, Organization
+from .models import User, TrainingPartner
 from .serializers import (
     UserRegistrationSerializer, 
     UserProfileSerializer, 
     ChangePasswordSerializer,
-    OrganizationSerializer,
+    TrainingPartnerSerializer,
     ProfileCompletionSerializer,
     StudentProfileSerializer,
     TutorProfileSerializer,
@@ -58,12 +58,12 @@ class RegisterView(APIView):
                 else:
                     response_data['message'] = 'Registration successful! Waiting for admin approval.'
                 
-                # Add organization info if applicable
-                if user.organization:
-                    response_data['user']['organization'] = {
-                        'id': user.organization.id,
-                        'name': user.organization.name,
-                        'type': user.organization.type,
+                # Add training partner info if applicable
+                if user.training_partner:
+                    response_data['user']['training_partner'] = {
+                        'id': user.training_partner.id,
+                        'name': user.training_partner.name,
+                        'type': user.training_partner.type,
                     }
                 
                 return Response(response_data, status=status.HTTP_201_CREATED)
@@ -139,13 +139,13 @@ class LoginView(TokenObtainPairView):
                 'full_name': user.full_name,
                 'role': user.role,
                 'is_verified': user.is_verified,
-                'organization': {
-                    'id': user.organization.id,
-                    'name': user.organization.name,
-                    'type': user.organization.type,
-                } if user.organization else None,
+                'training_partner': {
+                    'id': user.training_partner.id,
+                    'name': user.training_partner.name,
+                    'type': user.training_partner.type,
+                    } if user.training_partner else None,
                 'can_create_courses': user.can_create_courses,
-                'can_manage_organization': user.can_manage_organization,
+                'can_manage_training_partner': user.can_manage_training_partner,
             }
         }, status=status.HTTP_200_OK)
 
@@ -202,10 +202,10 @@ class ChangePasswordView(APIView):
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
-def get_organizations(request):
-    """Get list of active organizations for frontend dropdown."""
-    organizations = Organization.objects.filter(is_active=True).order_by('name')
-    serializer = OrganizationSerializer(organizations, many=True)
+def get_training_partners(request):
+    """Get list of active training partners for frontend dropdown."""
+    training_partners = TrainingPartner.objects.filter(is_active=True).order_by('name')
+    serializer = TrainingPartnerSerializer(training_partners, many=True)
     return Response(serializer.data)
 
 
@@ -229,18 +229,18 @@ def dashboard_stats(request):
     """Get dashboard statistics for different user roles."""
     user = request.user
     
-    if user.role == 'admin' and user.organization:
+    if user.role == 'admin' and user.training_partner:
         # Admin dashboard stats
-        org_users = user.organization.users.count()
-        pending_tutors = user.organization.users.filter(
+        training_partner_users = user.training_partner.users.count()
+        pending_tutors = user.training_partner.users.filter(
             role='tutor', 
             is_approved=False
         ).count()
         
         return Response({
             'role': 'admin',
-            'organization': user.organization.name,
-            'total_users': org_users,
+            'training_partner': user.training_partner.name,
+            'total_users': training_partner_users,
             'pending_tutors': pending_tutors,
         })
     
@@ -248,7 +248,7 @@ def dashboard_stats(request):
         # Tutor dashboard stats
         return Response({
             'role': 'tutor',
-            'organization': user.organization.name if user.organization else None,
+            'training_partner': user.training_partner.name if user.training_partner else None,
             'is_approved': user.is_approved,
         })
     

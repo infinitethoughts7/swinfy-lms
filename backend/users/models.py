@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError
 import uuid
 
 
-class Organization(models.Model):
-    """Organization model for managing institutions and companies."""
+class TrainingPartner(models.Model):
+    """TrainingPartner model for managing institutions and companies."""
     
     ORG_TYPE_CHOICES = [
         ('university', 'University'),
@@ -28,8 +28,8 @@ class Organization(models.Model):
         return f"{self.name} ({self.get_type_display()})"
     
     class Meta:
-        verbose_name = 'Organization'
-        verbose_name_plural = 'Organizations'
+        verbose_name = 'Training Partner'
+        verbose_name_plural = 'Training Partners'
         ordering = ['name']
 
 
@@ -48,9 +48,9 @@ class User(AbstractUser):
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
     
-    # Organization relationship
+    # TrainingPartner relationship
     organization = models.ForeignKey(
-        Organization, 
+        TrainingPartner, 
         on_delete=models.CASCADE, 
         blank=True, 
         null=True,
@@ -74,19 +74,19 @@ class User(AbstractUser):
         """Custom validation for user model."""
         super().clean()
         
-        # Tutors and admins must have an organization
+        # Tutors and admins must have a training partner
         if self.role in ['tutor', 'admin'] and not self.organization:
             raise ValidationError({
-                'organization': 'Tutors and Admins must belong to an organization.'
+                'organization': 'Tutors and Admins must belong to a training partner.'
             })
         
-        # Students should not have an organization
+        # Students should not have a training partner
         if self.role == 'student' and self.organization:
             raise ValidationError({
-                'organization': 'Students cannot belong to an organization.'
+                'organization': 'Students cannot belong to a training partner.'
             })
         
-        # Only one admin per organization
+        # Only one admin per training partner
         if self.role == 'admin' and self.organization:
             existing_admin = User.objects.filter(
                 role='admin', 
@@ -95,7 +95,7 @@ class User(AbstractUser):
             
             if existing_admin:
                 raise ValidationError({
-                    'role': f'Organization "{self.organization.name}" already has an admin: {existing_admin.email}'
+                    'role': f'Training Partner "{self.organization.name}" already has an admin: {existing_admin.email}'
                 })
     
     def save(self, *args, **kwargs):
@@ -121,7 +121,7 @@ class User(AbstractUser):
     
     @property
     def can_manage_organization(self):
-        """Check if user can manage organization."""
+        """Check if user can manage training partner."""
         return self.role == 'admin' and self.is_approved
     
     def __str__(self):

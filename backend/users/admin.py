@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Organization, StudentProfile, TutorProfile, AdminProfile
+from .models import User, TrainingPartner, StudentProfile, TutorProfile, AdminProfile
 
 
-@admin.register(Organization)
-class OrganizationAdmin(admin.ModelAdmin):
+@admin.register(TrainingPartner)
+class TrainingPartnerAdmin(admin.ModelAdmin):
     list_display = ['name', 'type', 'location', 'is_active', 'created_at']
     list_filter = ['type', 'is_active', 'created_at']
     search_fields = ['name', 'location', 'description']
@@ -41,7 +41,7 @@ class CustomUserAdmin(UserAdmin):
         ('Personal Info', {
             'fields': ('full_name', 'first_name', 'last_name')
         }),
-        ('Role & Organization', {
+        ('Role & Training Partner', {
             'fields': ('role', 'organization', 'is_verified', 'is_approved')
         }),
         ('Permissions', {

@@ -18,6 +18,6 @@ urlpatterns = [
     path('verify-email/', views.verify_email, name='verify_email'),
     
     # Utility endpoints
-    path('organizations/', views.get_organizations, name='organizations'),
+    path('training-partners/', views.get_training_partners, name='training_partners'),
     path('dashboard/', views.dashboard_stats, name='dashboard'),
 ]

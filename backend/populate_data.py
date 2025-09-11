@@ -14,12 +14,12 @@ from decimal import Decimal
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lms_backend.settings')
 django.setup()
 
-from users.models import Organization, User
+from users.models import TrainingPartner, User
 from courses.models import Course, CourseModule, Lesson
 
 
 def create_organizations():
-    """Create the specified organizations."""
+    """Create the specified training partners."""
     
     orgs_data = [
         {
@@ -42,12 +42,12 @@ def create_organizations():
     
     organizations = []
     for org_data in orgs_data:
-        org, created = Organization.objects.get_or_create(
+        org, created = TrainingPartner.objects.get_or_create(
             id=org_data['id'],
             defaults=org_data
         )
         organizations.append(org)
-        print(f"{'Created' if created else 'Found'} organization: {org.name}")
+        print(f"{'Created' if created else 'Found'} training partner: {org.name}")
     
     return organizations
 
@@ -378,7 +378,7 @@ def main():
     courses = create_courses(organizations, users)
     
     print(f"\nDatabase populated successfully!")
-    print(f"Organizations: {len(organizations)}")
+    print(f"Training Partners: {len(organizations)}")
     print(f"Users: {len(users)}")
     print(f"Courses: {len(courses)}")
     
