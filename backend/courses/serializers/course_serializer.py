@@ -116,6 +116,129 @@ class CourseApprovalSerializer(serializers.ModelSerializer):
         return data
 
 
+class CourseDetailSerializer(serializers.ModelSerializer):
+    """Serializer for course detail page with comprehensive information."""
+    training_partner = TrainingPartnerSerializer(read_only=True)
+    tutor = UserProfileSerializer(read_only=True)
+    category_display = serializers.CharField(source='category_display', read_only=True)
+    level_display = serializers.CharField(source='level_display', read_only=True)
+    tags_list = serializers.SerializerMethodField()
+    is_fully_approved = serializers.BooleanField(read_only=True)
+    can_be_published = serializers.BooleanField(read_only=True)
+    modules_count = serializers.SerializerMethodField()
+    lessons_count = serializers.SerializerMethodField()
+    total_duration_minutes = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Course
+        fields = [
+            'id', 'title', 'slug', 'description', 'short_description', 'price',
+            'duration_weeks', 'category', 'category_display', 'level', 'level_display',
+            'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
+            'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
+            'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
+            'is_approved_by_training_partner', 'is_approved_by_super_admin',
+            'is_fully_approved', 'can_be_published', 'training_partner', 'tutor',
+            'modules_count', 'lessons_count', 'total_duration_minutes',
+            'created_at', 'updated_at', 'published_at', 'last_enrollment'
+        ]
+        read_only_fields = [
+            'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
+            'approval_status', 'is_approved_by_training_partner', 'is_approved_by_super_admin',
+            'is_fully_approved', 'can_be_published', 'modules_count', 'lessons_count',
+            'total_duration_minutes', 'created_at', 'updated_at', 'published_at', 'last_enrollment'
+        ]
+    
+    def get_tags_list(self, obj):
+        """Get tags as a list."""
+        return obj.get_tags_list()
+    
+    def get_modules_count(self, obj):
+        """Get number of modules in the course."""
+        return obj.modules.count()
+    
+    def get_lessons_count(self, obj):
+        """Get total number of lessons in the course."""
+        total_lessons = 0
+        for module in obj.modules.all():
+            total_lessons += module.lessons.count()
+        return total_lessons
+    
+    def get_total_duration_minutes(self, obj):
+        """Get total duration of all lessons in minutes."""
+        total_minutes = 0
+        for module in obj.modules.all():
+            for lesson in module.lessons.all():
+                total_minutes += lesson.duration_minutes
+        return total_minutes
+
+
+class CourseAdminSerializer(serializers.ModelSerializer):
+    """Serializer for Super Admin course management with full control."""
+    training_partner = TrainingPartnerSerializer(read_only=True)
+    tutor = UserProfileSerializer(read_only=True)
+    category_display = serializers.CharField(source='category_display', read_only=True)
+    level_display = serializers.CharField(source='level_display', read_only=True)
+    tags_list = serializers.SerializerMethodField()
+    is_fully_approved = serializers.BooleanField(read_only=True)
+    can_be_published = serializers.BooleanField(read_only=True)
+    modules_count = serializers.SerializerMethodField()
+    lessons_count = serializers.SerializerMethodField()
+    total_duration_minutes = serializers.SerializerMethodField()
+    enrollment_stats = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Course
+        fields = [
+            'id', 'title', 'slug', 'description', 'short_description', 'price',
+            'duration_weeks', 'category', 'category_display', 'level', 'level_display',
+            'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
+            'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
+            'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
+            'is_approved_by_training_partner', 'is_approved_by_super_admin',
+            'is_fully_approved', 'can_be_published', 'training_partner', 'tutor',
+            'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_stats',
+            'approval_notes', 'training_partner_admin_approved_by', 'super_admin_approved_by',
+            'training_partner_approved_at', 'super_admin_approved_at',
+            'created_at', 'updated_at', 'published_at', 'last_enrollment'
+        ]
+        read_only_fields = [
+            'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
+            'is_fully_approved', 'can_be_published', 'modules_count', 'lessons_count',
+            'total_duration_minutes', 'enrollment_stats', 'training_partner_admin_approved_by',
+            'super_admin_approved_by', 'training_partner_approved_at', 'super_admin_approved_at',
+            'created_at', 'updated_at', 'published_at', 'last_enrollment'
+        ]
+    
+    def get_tags_list(self, obj):
+        """Get tags as a list."""
+        return obj.get_tags_list()
+    
+    def get_modules_count(self, obj):
+        """Get number of modules in the course."""
+        return obj.modules.count()
+    
+    def get_lessons_count(self, obj):
+        """Get total number of lessons in the course."""
+        total_lessons = 0
+        for module in obj.modules.all():
+            total_lessons += module.lessons.count()
+        return total_lessons
+    
+    def get_total_duration_minutes(self, obj):
+        """Get total duration of all lessons in minutes."""
+        total_minutes = 0
+        for module in obj.modules.all():
+            for lesson in module.lessons.all():
+                total_minutes += lesson.duration_minutes
+        return total_minutes
+    
+    def get_enrollment_stats(self, obj):
+        """Get detailed enrollment statistics."""
+        from ..utils import get_course_statistics
+        return get_course_statistics(obj)
+
+
 class CourseStatsSerializer(serializers.Serializer):
     """Serializer for course statistics."""
     total_courses = serializers.IntegerField()

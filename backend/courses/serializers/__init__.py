@@ -1,6 +1,6 @@
 from .course_serializer import (
-    CourseSerializer, CourseListSerializer, CourseCreateSerializer, 
-    CourseUpdateSerializer, CourseApprovalSerializer, CourseStatsSerializer
+    CourseSerializer, CourseListSerializer, CourseDetailSerializer, CourseCreateSerializer, 
+    CourseUpdateSerializer, CourseApprovalSerializer, CourseAdminSerializer, CourseStatsSerializer
 )
 from .training_partner_serializer import TrainingPartnerSerializer, TrainingPartnerListSerializer
 from .enrollment_serializers import (
@@ -19,10 +19,12 @@ from .content_serializers import (
 __all__ = [
     # Course serializers
     'CourseSerializer',
-    'CourseListSerializer', 
+    'CourseListSerializer',
+    'CourseDetailSerializer', 
     'CourseCreateSerializer',
     'CourseUpdateSerializer',
     'CourseApprovalSerializer',
+    'CourseAdminSerializer',
     'CourseStatsSerializer',
     
     # Training partner serializers
