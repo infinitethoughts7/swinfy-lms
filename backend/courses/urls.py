@@ -20,6 +20,35 @@ urlpatterns = [
     path('<slug:slug>/delete/', views.CourseDeleteView.as_view(), name='course-delete'),
     path('<slug:slug>/approve/', views.CourseApprovalView.as_view(), name='course-approve'),
     
+    # Course Learning Endpoints
+    path('<slug:slug>/enroll/', views.CourseEnrollView.as_view(), name='course-enroll'),
+    path('<slug:slug>/modules/', views.CourseModulesView.as_view(), name='course-modules'),
+    path('<slug:slug>/progress/', views.CourseProgressView.as_view(), name='course-progress'),
+    path('<slug:slug>/modules/<int:module_id>/lessons/', views.ModuleLessonsView.as_view(), name='module-lessons'),
+    
+    # Lesson Endpoints
+    path('lessons/<int:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
+    path('lessons/<int:lesson_id>/materials/', views.LessonMaterialsView.as_view(), name='lesson-materials'),
+    path('lessons/<int:lesson_id>/progress/', views.LessonProgressView.as_view(), name='lesson-progress'),
+    path('lessons/<int:lesson_id>/materials/upload/', views.LessonMaterialUploadView.as_view(), name='lesson-material-upload'),
+    
+    # Content Management Endpoints (Tutor/Admin)
+    path('<slug:slug>/modules/create/', views.CourseModuleCreateView.as_view(), name='course-module-create'),
+    path('modules/<int:module_id>/lessons/create/', views.LessonCreateView.as_view(), name='lesson-create'),
+    path('<slug:slug>/resources/', views.CourseResourceView.as_view(), name='course-resources'),
+    
+    # Analytics Endpoints
+    path('analytics/student-progress/', views.StudentProgressAnalyticsView.as_view(), name='student-progress-analytics'),
+    path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
+    
+    # Study Sessions
+    path('study-sessions/', views.StudySessionView.as_view(), name='study-sessions'),
+    path('study-sessions/<int:session_id>/', views.StudySessionDetailView.as_view(), name='study-session-detail'),
+    
+    # Notifications
+    path('notifications/', views.NotificationView.as_view(), name='notifications'),
+    path('notifications/<int:notification_id>/', views.NotificationDetailView.as_view(), name='notification-detail'),
+    
     # Training partner endpoints
     path('training-partners/', views.TrainingPartnerListView.as_view(), name='training-partner-list'),
     path('training-partners/<int:pk>/', views.TrainingPartnerDetailView.as_view(), name='training-partner-detail'),

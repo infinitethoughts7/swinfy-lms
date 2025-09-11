@@ -6,11 +6,17 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Avg, Count
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
-from ..models import Course
+from ..models import Course, CourseModule, Lesson, Enrollment, CourseProgress, LessonProgress, ModuleProgress, LessonMaterial, CourseResource, CourseNotification, StudySession
 from ..serializers import (
     CourseSerializer, CourseListSerializer, CourseCreateSerializer,
-    CourseUpdateSerializer, CourseApprovalSerializer, CourseStatsSerializer
+    CourseUpdateSerializer, CourseApprovalSerializer, CourseStatsSerializer,
+    CourseModuleSerializer, CourseModuleCreateSerializer, LessonSerializer, LessonCreateSerializer,
+    EnrollmentCreateSerializer, CourseProgressSerializer, LessonProgressSerializer, 
+    ModuleProgressSerializer, LessonMaterialSerializer, LessonMaterialCreateSerializer,
+    CourseResourceSerializer, CourseResourceCreateSerializer, CourseNotificationSerializer,
+    StudySessionSerializer
 )
 from ..filters import CourseFilter
 
@@ -227,3 +233,322 @@ def featured_courses(request):
     courses = Course.objects.filter(is_published=True, is_featured=True)
     serializer = CourseListSerializer(courses, many=True)
     return Response({'courses': serializer.data})
+
+
+# ==================== LEARNING ENDPOINTS ====================
+
+class CourseEnrollView(generics.CreateAPIView):
+    """Enroll a student in a course."""
+    serializer_class = EnrollmentCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        return Course.objects.filter(slug=course_slug, is_published=True)
+    
+    def perform_create(self, serializer):
+        course = get_object_or_404(Course, slug=self.kwargs['slug'], is_published=True)
+        serializer.save(student=self.request.user, course=course)
+        
+        # Create course progress record
+        CourseProgress.objects.get_or_create(
+            enrollment=serializer.instance,
+            defaults={'overall_progress': 0.0}
+        )
+
+
+class CourseModulesView(generics.ListAPIView):
+    """Get all modules for a specific course."""
+    serializer_class = CourseModuleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        return CourseModule.objects.filter(course=course, is_published=True).order_by('order')
+
+
+class ModuleLessonsView(generics.ListAPIView):
+    """Get all lessons for a specific module."""
+    serializer_class = LessonSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        module_id = self.kwargs['module_id']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        module = get_object_or_404(CourseModule, id=module_id, course=course, is_published=True)
+        return Lesson.objects.filter(module=module, is_published=True).order_by('order')
+
+
+class CourseProgressView(generics.RetrieveAPIView):
+    """Get student's progress for a specific course."""
+    serializer_class = CourseProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        enrollment = get_object_or_404(Enrollment, course=course, student=self.request.user)
+        return get_object_or_404(CourseProgress, enrollment=enrollment)
+
+
+class LessonCompleteView(generics.UpdateAPIView):
+    """Mark a lesson as complete for a student."""
+    serializer_class = LessonProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, student=self.request.user)
+        return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
+    
+    def perform_update(self, serializer):
+        serializer.save(is_completed=True, completed_at=timezone.now())
+        
+        # Update module progress
+        lesson = self.get_object().lesson
+        module = lesson.module
+        enrollment = self.get_object().enrollment
+        
+        # Calculate module progress
+        total_lessons = module.lessons.filter(is_published=True).count()
+        completed_lessons = LessonProgress.objects.filter(
+            enrollment=enrollment,
+            lesson__module=module,
+            is_completed=True
+        ).count()
+        
+        module_progress, created = ModuleProgress.objects.get_or_create(
+            enrollment=enrollment,
+            module=module,
+            defaults={'progress_percentage': 0.0}
+        )
+        module_progress.progress_percentage = (completed_lessons / total_lessons) * 100
+        module_progress.is_completed = completed_lessons == total_lessons
+        module_progress.save()
+        
+        # Update course progress
+        self._update_course_progress(enrollment)
+    
+    def _update_course_progress(self, enrollment):
+        """Update overall course progress."""
+        total_modules = enrollment.course.modules.filter(is_published=True).count()
+        completed_modules = ModuleProgress.objects.filter(
+            enrollment=enrollment,
+            is_completed=True
+        ).count()
+        
+        course_progress, created = CourseProgress.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'overall_progress': 0.0}
+        )
+        course_progress.overall_progress = (completed_modules / total_modules) * 100
+        course_progress.save()
+
+
+class LessonMaterialsView(generics.ListAPIView):
+    """Get all materials for a specific lesson."""
+    serializer_class = LessonMaterialSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        return LessonMaterial.objects.filter(lesson=lesson).order_by('order')
+
+
+class LessonProgressView(generics.RetrieveUpdateAPIView):
+    """Get or update student's progress for a specific lesson."""
+    serializer_class = LessonProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, student=self.request.user)
+        return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
+
+
+# ==================== CONTENT MANAGEMENT ENDPOINTS ====================
+
+class CourseModuleCreateView(generics.CreateAPIView):
+    """Create a new module for a course (Tutor/Admin only)."""
+    serializer_class = CourseModuleCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug)
+        # Check if user is tutor or admin
+        if not (course.tutor == self.request.user or self.request.user.is_staff):
+            raise permissions.PermissionDenied("Only course tutors or admins can create modules.")
+        serializer.save(course=course)
+
+
+class LessonCreateView(generics.CreateAPIView):
+    """Create a new lesson for a module (Tutor/Admin only)."""
+    serializer_class = LessonCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        module_id = self.kwargs['module_id']
+        module = get_object_or_404(CourseModule, id=module_id)
+        # Check if user is tutor or admin
+        if not (module.course.tutor == self.request.user or self.request.user.is_staff):
+            raise permissions.PermissionDenied("Only course tutors or admins can create lessons.")
+        serializer.save(module=module)
+
+
+class LessonMaterialUploadView(generics.CreateAPIView):
+    """Upload materials for a lesson (Tutor/Admin only)."""
+    serializer_class = LessonMaterialCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        # Check if user is tutor or admin
+        if not (lesson.module.course.tutor == self.request.user or self.request.user.is_staff):
+            raise permissions.PermissionDenied("Only course tutors or admins can upload materials.")
+        serializer.save(lesson=lesson)
+
+
+class CourseResourceView(generics.ListCreateAPIView):
+    """Manage course resources (Tutor/Admin only)."""
+    serializer_class = CourseResourceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug)
+        return CourseResource.objects.filter(course=course)
+    
+    def perform_create(self, serializer):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug)
+        # Check if user is tutor or admin
+        if not (course.tutor == self.request.user or self.request.user.is_staff):
+            raise permissions.PermissionDenied("Only course tutors or admins can manage resources.")
+        serializer.save(course=course)
+
+
+# ==================== ANALYTICS ENDPOINTS ====================
+
+class StudentProgressAnalyticsView(generics.ListAPIView):
+    """Get student progress analytics."""
+    serializer_class = CourseProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Students can only see their own progress
+        if not self.request.user.is_staff:
+            return CourseProgress.objects.filter(enrollment__student=self.request.user)
+        # Admins can see all progress
+        return CourseProgress.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        
+        # Calculate analytics
+        total_courses = queryset.count()
+        completed_courses = queryset.filter(overall_progress=100).count()
+        in_progress_courses = queryset.filter(overall_progress__gt=0, overall_progress__lt=100).count()
+        not_started_courses = queryset.filter(overall_progress=0).count()
+        
+        avg_progress = queryset.aggregate(avg=Avg('overall_progress'))['avg'] or 0
+        
+        analytics = {
+            'total_courses': total_courses,
+            'completed_courses': completed_courses,
+            'in_progress_courses': in_progress_courses,
+            'not_started_courses': not_started_courses,
+            'average_progress': round(avg_progress, 2),
+            'completion_rate': round((completed_courses / total_courses * 100) if total_courses > 0 else 0, 2)
+        }
+        
+        return Response(analytics)
+
+
+class CoursePerformanceAnalyticsView(generics.ListAPIView):
+    """Get course performance analytics (Admin/Tutor only)."""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_tutor):
+            raise permissions.PermissionDenied("Only admins and tutors can view course analytics.")
+        
+        # Course performance metrics
+        total_courses = Course.objects.count()
+        published_courses = Course.objects.filter(is_published=True).count()
+        draft_courses = Course.objects.filter(is_draft=True).count()
+        featured_courses = Course.objects.filter(is_featured=True).count()
+        
+        # Enrollment metrics
+        total_enrollments = Enrollment.objects.count()
+        avg_rating = Course.objects.aggregate(avg=Avg('rating'))['avg'] or 0
+        
+        # Progress metrics
+        total_progress_records = CourseProgress.objects.count()
+        completed_courses = CourseProgress.objects.filter(overall_progress=100).count()
+        
+        analytics = {
+            'total_courses': total_courses,
+            'published_courses': published_courses,
+            'draft_courses': draft_courses,
+            'featured_courses': featured_courses,
+            'total_enrollments': total_enrollments,
+            'average_rating': round(avg_rating, 2),
+            'total_progress_records': total_progress_records,
+            'completed_courses': completed_courses,
+            'completion_rate': round((completed_courses / total_progress_records * 100) if total_progress_records > 0 else 0, 2)
+        }
+        
+        return Response(analytics)
+
+
+# ==================== STUDY SESSION ENDPOINTS ====================
+
+class StudySessionView(generics.ListCreateAPIView):
+    """List and create study sessions."""
+    serializer_class = StudySessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return StudySession.objects.filter(enrollment__student=self.request.user).order_by('-started_at')
+    
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class StudySessionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Get, update, or delete a study session."""
+    serializer_class = StudySessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return StudySession.objects.filter(enrollment__student=self.request.user)
+
+
+# ==================== NOTIFICATION ENDPOINTS ====================
+
+class NotificationView(generics.ListAPIView):
+    """Get user notifications."""
+    serializer_class = CourseNotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return CourseNotification.objects.filter(user=self.request.user).order_by('-created_at')
+
+
+class NotificationDetailView(generics.RetrieveUpdateAPIView):
+    """Get or update a notification."""
+    serializer_class = CourseNotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return CourseNotification.objects.filter(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save(is_read=True)
