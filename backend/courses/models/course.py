@@ -262,6 +262,11 @@ class Course(models.Model):
         self.clean()
         super().save(*args, **kwargs)
     
+    def get_absolute_url(self):
+        """Get the absolute URL for this course."""
+        from django.urls import reverse
+        return reverse('course-detail', kwargs={'slug': self.slug})
+    
     @property
     def is_fully_approved(self):
         """Check if course is approved by both training partner admin and super admin."""
