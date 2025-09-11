@@ -1,4 +1,4 @@
-from .course import (
+from .course_view import (
     CourseListView,
     CourseDetailView,
     CourseCreateView,
@@ -8,10 +8,12 @@ from .course import (
     CourseStatsView,
     FeaturedCoursesView,
     MyCoursesView,
-    CourseSearchView
+    CourseSearchView,
+    course_list,
+    course_stats,
+    featured_courses
 )
-from .training_partner import TrainingPartnerListView, TrainingPartnerDetailView, training_partner_list
-from .course import course_list, course_stats, featured_courses
+from .training_partner_view import TrainingPartnerListView, TrainingPartnerDetailView, training_partner_list
 
 __all__ = [
     'CourseListView',
