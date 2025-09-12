@@ -152,14 +152,8 @@ export default function CourseHeroSection({ course }: { course: Course }) {
               </h1>
               
               <p className="text-xl md:text-2xl text-blue-100 font-inter max-w-4xl mb-6 leading-relaxed">
-                Master technical skills, ace interviews, and land your dream job with our proven curriculum
+                {course.short_description}
               </p>
-              
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 mb-8 border border-white/30 inline-block">
-                <p className="text-white font-inter font-semibold text-lg">
-                  2,847 students got hired in the last 6 months
-                </p>
-              </div>
               
               <div className="flex flex-wrap items-center gap-8 text-blue-200 mb-8">
                 <div className="flex items-center">
@@ -183,7 +177,7 @@ export default function CourseHeroSection({ course }: { course: Course }) {
               </div>
               
               <button className="bg-white text-blue-600 hover:bg-blue-50 font-sora font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm">
-                Enroll Now - {course.price}
+                Enroll Now - ₹{parseFloat(course.price).toLocaleString()}
               </button>
             </div>
           </div>
