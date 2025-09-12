@@ -8,7 +8,8 @@ from ..models import (
     LessonProgress, ModuleProgress, CourseProgress, StudySession
 )
 from .course_serializer import CourseListSerializer
-from users.serializers import UserProfileSerializer
+from users.serializers import UserProfileSerializer 
+
 
 User = get_user_model()
 
@@ -160,7 +161,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
     
     def get_lesson(self, obj):
         """Get lesson information."""
-        from .content import LessonSerializer
+        from .content_serializers import LessonSerializer
         return LessonSerializer(obj.lesson).data
     
     def get_student(self, obj):
@@ -173,7 +174,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
     
     def get_module(self, obj):
         """Get module information."""
-        from .content import CourseModuleSerializer
+        from .content_serializers import CourseModuleSerializer
         return CourseModuleSerializer(obj.module).data
 
 
@@ -199,7 +200,7 @@ class ModuleProgressSerializer(serializers.ModelSerializer):
     
     def get_module(self, obj):
         """Get module information."""
-        from .content import CourseModuleSerializer
+        from .content_serializers import CourseModuleSerializer
         return CourseModuleSerializer(obj.module).data
     
     def get_student(self, obj):
@@ -276,7 +277,7 @@ class StudySessionSerializer(serializers.ModelSerializer):
     def get_lesson(self, obj):
         """Get lesson information."""
         if obj.lesson:
-            from .content import LessonSerializer
+            from .content_serializers import LessonSerializer
             return LessonSerializer(obj.lesson).data
         return None
 

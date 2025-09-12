@@ -10,28 +10,35 @@ interface Course {
   id: string;
   title: string;
   slug: string;
-  description: string;
+  short_description: string;
+  description?: string;
   category: string;
   category_display: string;
   level: string;
   level_display: string;
   duration_weeks: number;
   price: string;
-  icon: string;
-  rating: number;
+  thumbnail: string;
+  rating: string;
+  total_reviews: number;
   enrollment_count: number;
-  organization: {
+  training_partner: {
     id: string;
     name: string;
     type: string;
     location: string;
+    website?: string;
+    description?: string;
   };
-  instructor: {
+  tutor: {
     id: string;
     full_name: string;
     email: string;
-    bio?: string;
-    title?: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    organization_name: string;
+    organization_type: string;
   };
   is_featured: boolean;
   created_at: string;
@@ -42,14 +49,31 @@ const categories = [
   'All', 
   'Frontend Development', 
   'Backend Development', 
-  'Data Analyst', 
   'Data Science', 
-  'Interview Preparation',
+  'DevOps',
   'AI for Kids',
   'Programming for Kids',
-  'Robotics',
-  'DevOps',
-  'Cybersecurity'
+  'Machine Learning',
+  'Web Development',
+  'Mobile Development',
+  'UI/UX Design',
+  'Cloud Computing',
+  'Cybersecurity',
+  'Database Management',
+  'Software Testing',
+  'Project Management',
+  'Digital Marketing',
+  'Graphic Design',
+  'Video Editing',
+  'Photography',
+  'Music Production',
+  'Language Learning',
+  'Business Skills',
+  'Personal Development',
+  'Health & Fitness',
+  'Cooking',
+  'Art & Crafts',
+  'Other'
 ];
 
 
@@ -60,99 +84,6 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Mock data for MAT and Swinfy organizations
-  const mockCourses: Course[] = useMemo(() => [
-    {
-      id: 'python',
-      title: 'Python Programming Excellence',
-      slug: 'python',
-      description: 'Master advanced Python concepts including decorators, generators, and async programming',
-      category: 'Backend Development',
-      category_display: 'Backend Development',
-      level: 'Advanced',
-      level_display: 'Advanced',
-      duration_weeks: 8,
-      price: '₹15,999',
-      icon: '/assets/courses/python.svg',
-      rating: 4.8,
-      enrollment_count: 1250,
-      organization: {
-        id: '1',
-        name: 'MAT',
-        type: 'Institute',
-        location: 'Bangalore'
-      },
-      instructor: {
-        id: '1',
-        full_name: 'Dr. Rajesh Kumar',
-        email: 'rajesh@mat.com',
-        bio: 'Senior Python Developer with 10+ years experience',
-        title: 'Lead Instructor'
-      },
-      is_featured: true,
-      created_at: '2024-01-15T10:00:00Z'
-    },
-    {
-      id: 'sql',
-      title: 'SQL Mastery',
-      slug: 'sql',
-      description: 'Master SQL for database management and data querying - the foundation of data-driven careers.',
-      category: 'Backend Development',
-      category_display: 'Backend Development',
-      level: 'Intermediate',
-      level_display: 'Intermediate',
-      duration_weeks: 6,
-      price: '₹12,499',
-      icon: '/assets/courses/sql.png',
-      rating: 4.9,
-      enrollment_count: 2100,
-      organization: {
-        id: '2',
-        name: 'Swinfy',
-        type: 'Company',
-        location: 'Mumbai'
-      },
-      instructor: {
-        id: '2',
-        full_name: 'Sarah Johnson',
-        email: 'sarah@swinfy.com',
-        bio: 'Full-stack developer and React expert',
-        title: 'Senior Developer'
-      },
-      is_featured: true,
-      created_at: '2024-01-20T10:00:00Z'
-    },
-    {
-      id: 'advanced-excel',
-      title: 'Advanced Excel Mastery',
-      slug: 'advanced-excel',
-      description: 'Master advanced Excel functions, pivot tables, and data analysis techniques - become the Excel expert your company needs.',
-      category: 'Data Analyst',
-      category_display: 'Data Analyst',
-      level: 'Intermediate',
-      level_display: 'Intermediate',
-      duration_weeks: 6,
-      price: '₹8,499',
-      icon: '/assets/courses/excel.svg',
-      rating: 4.7,
-      enrollment_count: 1800,
-      organization: {
-        id: '1',
-        name: 'MAT',
-        type: 'Institute',
-        location: 'Bangalore'
-      },
-      instructor: {
-        id: '3',
-        full_name: 'Prof. Ananya Singh',
-        email: 'ananya@mat.com',
-        bio: 'Data Science researcher and educator',
-        title: 'Professor'
-      },
-      is_featured: false,
-      created_at: '2024-02-01T10:00:00Z'
-    }
-  ], []);
 
   // Fetch courses from backend
   useEffect(() => {
@@ -166,14 +97,31 @@ export default function CoursesPage() {
           const categoryMap: { [key: string]: string } = {
             'Frontend Development': 'frontend_development',
             'Backend Development': 'backend_development',
-            'Data Analyst': 'data_analyst',
             'Data Science': 'data_science',
-            'Interview Preparation': 'interview_preparation',
+            'DevOps': 'devops',
             'AI for Kids': 'ai_kids',
             'Programming for Kids': 'programming_kids',
-            'Robotics': 'robotics',
-            'DevOps': 'devops',
-            'Cybersecurity': 'cybersecurity'
+            'Machine Learning': 'machine_learning',
+            'Web Development': 'web_development',
+            'Mobile Development': 'mobile_development',
+            'UI/UX Design': 'ui_ux_design',
+            'Cloud Computing': 'cloud_computing',
+            'Cybersecurity': 'cybersecurity',
+            'Database Management': 'database_management',
+            'Software Testing': 'software_testing',
+            'Project Management': 'project_management',
+            'Digital Marketing': 'digital_marketing',
+            'Graphic Design': 'graphic_design',
+            'Video Editing': 'video_editing',
+            'Photography': 'photography',
+            'Music Production': 'music_production',
+            'Language Learning': 'language_learning',
+            'Business Skills': 'business_skills',
+            'Personal Development': 'personal_development',
+            'Health & Fitness': 'health_fitness',
+            'Cooking': 'cooking',
+            'Art & Crafts': 'art_crafts',
+            'Other': 'other'
           };
           params.category = categoryMap[selectedCategory];
         }
@@ -187,16 +135,15 @@ export default function CoursesPage() {
         setError('');
       } catch (err) {
         console.error('Failed to fetch courses:', err);
-        setError('Failed to load courses. Using sample data.');
-        // Use mock data as fallback
-        setCourses(mockCourses);
+        setError('Failed to load courses. Please try again.');
+        setCourses([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
-  }, [searchTerm, selectedCategory, mockCourses]);
+  }, [searchTerm, selectedCategory]);
 
   // Filter courses based on search term and category (for client-side filtering of fetched data)
   const filteredCourses = useMemo(() => {
@@ -300,18 +247,6 @@ export default function CoursesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCourses.map((course, index) => {
             // Different light gradient backgrounds for variety
-            const gradients = [
-              'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200',
-              'bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200',
-              'bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200',
-              'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200',
-              'bg-gradient-to-br from-violet-50 via-violet-100 to-violet-200',
-              'bg-gradient-to-br from-green-50 via-green-100 to-green-200',
-              'bg-gradient-to-br from-sky-50 via-sky-100 to-sky-200',
-              'bg-gradient-to-br from-rose-50 via-rose-100 to-rose-200',
-            ];
-            
-            const gradientClass = gradients[index % gradients.length];
             
             return (
             <Link
@@ -319,46 +254,30 @@ export default function CoursesPage() {
               href={`/courses/course/${course.slug || course.id}`}
               className="group block bg-white rounded-2xl transition-all duration-300 transform hover:scale-105 hover:rounded-3xl overflow-hidden border border-gray-200"
             >
-              {/* Course Icon with Gradient Background */}
-              <div className={`relative h-48 overflow-hidden ${gradientClass} flex items-center justify-center`}>
-                {/* Training Partner Logo - Top Left */}
-                <div className="absolute top-4 left-4">
-                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-gray-200">
-                    {course.organization?.name === 'MAT' ? (
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-md flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">MAT</span>
-                      </div>
-                    ) : course.organization?.name === 'Swinfy' ? (
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-md flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">S</span>
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-md flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">
-                          {course.organization?.name?.charAt(0) || 'O'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {/* Course Thumbnail Background */}
+              <div className="relative h-48 overflow-hidden">
+                {/* Course Thumbnail - Full Background */}
+                <Image
+                  src={course.thumbnail || '/assets/courses/python.svg'}
+                  alt={course.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/assets/courses/python.svg';
+                  }}
+                />
                 
-                <div className="w-32 h-32 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Image
-                    src={course.icon || '/assets/courses/python.svg'}
-                    alt={course.title}
-                    width={64}
-                    height={64}
-                    className="object-contain"
-                  />
-                </div>
+                {/* Dark Overlay for Better Text Readability */}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
                 
                 {/* Level Badge */}
-                <div className="absolute top-4 right-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium ${
-                    course.level_display === 'Beginner' ? 'bg-green-100 text-green-800' :
-                    course.level_display === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                    course.level_display === 'Advanced' ? 'bg-red-100 text-red-800' :
-                    'bg-blue-100 text-blue-800'
+                <div className="absolute top-4 right-4 z-10">
+                  <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium backdrop-blur-sm ${
+                    course.level_display === 'Beginner' ? 'bg-green-500/90 text-white' :
+                    course.level_display === 'Intermediate' ? 'bg-yellow-500/90 text-white' :
+                    course.level_display === 'Advanced' ? 'bg-red-500/90 text-white' :
+                    'bg-blue-500/90 text-white'
                   }`}>
                     {course.level_display || course.level}
                   </span>
@@ -374,28 +293,28 @@ export default function CoursesPage() {
               
               <div className="p-6">
                 {/* Training Partner Name - Prominent Display */}
-                {course.organization && (
+                {course.training_partner && (
                   <div className="mb-3">
                     <div className="flex items-center mb-2">
                       <div className="w-6 h-6 mr-2">
-                        {course.organization.name === 'MAT' ? (
+                        {course.training_partner.name === 'MAT' ? (
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center">
                             <span className="text-white font-bold text-xs">MAT</span>
                           </div>
-                        ) : course.organization.name === 'Swinfy' ? (
+                        ) : course.training_partner.name === 'Swinfy' ? (
                           <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-purple-800 rounded flex items-center justify-center">
                             <span className="text-white font-bold text-xs">S</span>
                           </div>
                         ) : (
                           <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
                             <span className="text-white font-bold text-xs">
-                              {course.organization.name?.charAt(0) || 'O'}
+                              {course.training_partner.name?.charAt(0) || 'O'}
                             </span>
                           </div>
                         )}
                       </div>
                       <span className="text-blue-600 font-inter font-semibold text-sm">
-                        {course.organization.name}
+                        {course.training_partner.name}
                       </span>
                     </div>
                   </div>
@@ -405,11 +324,11 @@ export default function CoursesPage() {
                   {course.title}
                 </h3>
                 <p className="text-gray-600 font-inter text-sm mb-4 line-clamp-2">
-                  {course.description}
+                  {course.short_description}
                 </p>
                 
                 {/* Instructor Info */}
-                {course.instructor && (
+                {course.tutor && (
                   <div className="mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="text-xs text-gray-600">
                       <span className="inline-flex items-center">
@@ -417,7 +336,7 @@ export default function CoursesPage() {
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                         <span className="text-gray-500 mr-1">Instructor:</span>
-                        {course.instructor.full_name}
+                        {course.tutor.full_name}
                       </span>
                     </div>
                   </div>

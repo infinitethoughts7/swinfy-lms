@@ -209,14 +209,14 @@ class Course(models.Model):
         
         # Tutor must belong to the same training partner
         if self.tutor and self.training_partner:
-            if self.tutor.training_partner != self.training_partner:
+            if self.tutor.organization != self.training_partner:
                 raise ValidationError({
                     'tutor': 'Tutor must belong to the same training partner as the course.'
                 })
         
         # Set training partner from tutor if not provided
         if self.tutor and not self.training_partner:
-            self.training_partner = self.tutor.training_partner
+            self.training_partner = self.tutor.organization
         
         # Validate approval logic
         if self.is_approved_by_super_admin and not self.is_approved_by_training_partner:

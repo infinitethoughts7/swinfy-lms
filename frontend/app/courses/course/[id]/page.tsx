@@ -2,312 +2,165 @@
 
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Video } from 'lucide-react';
 import CourseHeroSection from '@/components/sections/CourseHeroSection';
+import { coursesApi } from '@/lib/api';
 
-// This would typically come from a database or API
-const courseDetails = {
-  'sql': {
-    title: 'SQL Mastery',
-    description: 'Master SQL for database management and data querying - the foundation of data-driven careers.',
-    longDescription: 'SQL is the backbone of data analysis and database management. This comprehensive course will transform you from a beginner to a SQL expert, covering everything from basic queries to advanced database optimization. Learn from industry experts and work with real-world datasets to build practical skills that employers demand.',
-    image: '/assets/courses/sql.png',
-    duration: '6 weeks',
-    level: 'Intermediate',
-    price: '₹12,499',
-    category: 'Backend Development',
-    instructor: 'Rani Guntikadi',
-    instructorTitle: 'Senior Database Architect',
-    instructorExperience: '8+ years in database design and optimization',
-    instructorPhoto: '/assets/students/s2.jpg',
-    instructorDescription: 'Rani has been teaching SQL and database management for over 8 years, impacting 20,000+ students worldwide. Her expertise in database optimization and real-world applications has helped countless professionals advance their careers in data analytics and backend development.',
-    rating: 4.9,
-    students: 2100,
-    lessons: 24,
-    language: 'English',
-    features: [
-      '24 Video Lessons',
-      'Real-world Database Projects',
-      'Certificate of Completion',
-      'Lifetime Access',
-      'Mentor Support',
-      'Job Placement Assistance'
-    ],
-    highlights: [
-      'Master complex queries and joins',
-      'Learn database optimization techniques',
-      'Work with real business datasets',
-      'Get personalized mentor feedback',
-      'Build a portfolio of SQL projects'
-    ],
-    curriculum: [
-      { 
-        week: 1, 
-        title: 'SQL Fundamentals & Database Design', 
-        lessons: 4,
-        topics: ['Database concepts', 'SELECT statements', 'WHERE clauses', 'Data types'],
-        duration: 'Week 1'
-      },
-      { 
-        week: 2, 
-        title: 'Advanced Querying & Joins', 
-        lessons: 4,
-        topics: ['INNER, LEFT, RIGHT joins', 'Subqueries', 'UNION operations', 'Set theory'],
-        duration: 'Week 2'
-      },
-      { 
-        week: 3, 
-        title: 'Data Manipulation & Functions', 
-        lessons: 4,
-        topics: ['INSERT, UPDATE, DELETE', 'Aggregate functions', 'String functions', 'Date functions'],
-        duration: 'Week 3'
-      },
-      { 
-        week: 4, 
-        title: 'Advanced SQL Concepts', 
-        lessons: 4,
-        topics: ['Window functions', 'CTEs', 'Indexes', 'Views'],
-        duration: 'Week 4'
-      },
-      { 
-        week: 5, 
-        title: 'Performance Optimization', 
-        lessons: 4,
-        topics: ['Query optimization', 'Execution plans', 'Indexing strategies', 'Performance tuning'],
-        duration: 'Week 5'
-      },
-      { 
-        week: 6, 
-        title: 'Real-world Projects & Portfolio', 
-        lessons: 4,
-        topics: ['E-commerce database project', 'Analytics dashboard', 'Portfolio presentation', 'Career guidance'],
-        duration: 'Week 6'
+// Interface for course data from backend
+interface Course {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  price: string;
+  duration_weeks: number;
+  category: string;
+  category_display: string;
+  level: string;
+  level_display: string;
+  rating: string;
+  total_reviews: number;
+  enrollment_count: number;
+  thumbnail: string;
+  banner_image: string;
+  demo_video?: string;
+  learning_outcomes: string;
+  prerequisites: string;
+  tags: string;
+  tags_list: string[];
+  training_partner: {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+    website?: string;
+    description?: string;
+  };
+  tutor: {
+    id: string;
+    full_name: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    organization_name: string;
+    organization_type: string;
+  };
+  is_featured: boolean;
+  created_at: string;
+}
+
+
+
+export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
+  const [id, setId] = useState<string>('');
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Handle async params
+  useEffect(() => {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!id) return; // Don't fetch until we have the id
+    
+    const fetchCourse = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const courseData = await coursesApi.getCourse(id);
+        setCourse(courseData);
+      } catch (err) {
+        console.error('Error fetching course:', err);
+        setError('Failed to load course details.');
+        // Fallback to mock data for now
+        const mockCourse = courseDetails[id as keyof typeof courseDetails];
+        if (mockCourse) {
+          // Convert mock data to Course interface format
+          setCourse({
+            id: id,
+            title: mockCourse.title,
+            slug: id,
+            description: mockCourse.longDescription,
+            short_description: mockCourse.description,
+            price: mockCourse.price,
+            duration_weeks: parseInt(mockCourse.duration.split(' ')[0]),
+            category: mockCourse.category.toLowerCase().replace(' ', '_'),
+            category_display: mockCourse.category,
+            level: mockCourse.level.toLowerCase(),
+            level_display: mockCourse.level,
+            rating: mockCourse.rating.toString(),
+            total_reviews: 0,
+            enrollment_count: mockCourse.students,
+            thumbnail: mockCourse.image,
+            banner_image: mockCourse.image,
+            learning_outcomes: '',
+            prerequisites: '',
+            tags: '',
+            tags_list: [],
+            training_partner: {
+              id: '1',
+              name: 'MAT',
+              type: 'institute',
+              location: 'Bangalore'
+            },
+            tutor: {
+              id: '1',
+              full_name: mockCourse.instructor,
+              email: 'instructor@example.com',
+              first_name: mockCourse.instructor.split(' ')[0],
+              last_name: mockCourse.instructor.split(' ').slice(1).join(' '),
+              role: 'tutor',
+              organization_name: 'MAT',
+              organization_type: 'institute'
+            },
+            is_featured: false,
+            created_at: new Date().toISOString()
+          });
+        }
+      } finally {
+        setLoading(false);
       }
-    ],
-    reviews: [
-      {
-        name: 'Sarah Johnson',
-        rating: 5,
-        text: 'Rani\'s teaching style is exceptional. I landed a data analyst job within 2 months of completing this course!',
-        role: 'Data Analyst at Microsoft'
-      },
-      {
-        name: 'Michael Chen',
-        rating: 5,
-        text: 'The real-world projects were game-changers. I could immediately apply what I learned in my current role.',
-        role: 'Business Intelligence Developer'
-      },
-      {
-        name: 'Emily Rodriguez',
-        rating: 5,
-        text: 'Best SQL course I\'ve taken. The mentor support and community made all the difference.',
-        role: 'Database Administrator'
-      }
-    ]
-  },
-  'python': {
-    title: 'Python Programming Excellence',
-    description: 'Master Python programming for backend development and automation - your gateway to tech success.',
-    longDescription: 'Python is the most versatile programming language in the world. This comprehensive course will take you from absolute beginner to Python expert, covering everything from basic syntax to advanced frameworks. Learn from industry veterans and build real-world applications that showcase your skills to potential employers.',
-    image: '/assets/courses/python.svg',
-    duration: '6 weeks',
-    level: 'Beginner',
-    price: '₹19,999',
-    category: 'Backend Development',
-    instructor: 'Rakesh Ganji',
-    instructorTitle: 'Senior Python Developer',
-    instructorExperience: '10+ years building scalable applications',
-    instructorPhoto: '/assets/students/s11.jpg',
-    instructorDescription: 'Rakesh has been teaching Python programming for over 10 years, impacting 25,000+ students globally. His expertise in full-stack development and real-world project implementation has helped thousands of learners transition into successful tech careers.',
-    rating: 4.9,
-    students: 3200,
-    lessons: 30,
-    language: 'English',
-    features: [
-      '30 Video Lessons',
-      'Hands-on Coding Projects',
-      'Certificate of Completion',
-      'Lifetime Access',
-      'Mentor Support',
-      'Job Placement Assistance'
-    ],
-    highlights: [
-      'Build 5+ real-world applications',
-      'Master object-oriented programming',
-      'Learn web development with Django',
-      'Get personalized code reviews',
-      'Join our exclusive Python community'
-    ],
-    curriculum: [
-      { 
-        week: 1, 
-        title: 'Python Fundamentals & Setup', 
-        lessons: 5,
-        topics: ['Python installation', 'Variables & data types', 'Control structures', 'Functions basics', 'Error handling'],
-        duration: 'Week 1'
-      },
-      { 
-        week: 2, 
-        title: 'Data Structures & Algorithms', 
-        lessons: 5,
-        topics: ['Lists, tuples, dictionaries', 'List comprehensions', 'Basic algorithms', 'File I/O', 'JSON handling'],
-        duration: 'Week 2'
-      },
-      { 
-        week: 3, 
-        title: 'Object-Oriented Programming', 
-        lessons: 5,
-        topics: ['Classes & objects', 'Inheritance', 'Polymorphism', 'Encapsulation', 'Design patterns'],
-        duration: 'Week 3'
-      },
-      { 
-        week: 4, 
-        title: 'Web Development with Django', 
-        lessons: 5,
-        topics: ['Django framework', 'Models & databases', 'Views & templates', 'URL routing', 'Admin interface'],
-        duration: 'Week 4'
-      },
-      { 
-        week: 5, 
-        title: 'APIs & Database Integration', 
-        lessons: 5,
-        topics: ['REST APIs', 'Database ORM', 'Authentication', 'Testing', 'Deployment basics'],
-        duration: 'Week 5'
-      },
-      { 
-        week: 6, 
-        title: 'Final Project & Career Prep', 
-        lessons: 5,
-        topics: ['Full-stack project', 'Code optimization', 'Portfolio building', 'Interview prep', 'Career guidance'],
-        duration: 'Week 6'
-      }
-    ],
-    reviews: [
-      {
-        name: 'David Kim',
-        rating: 5,
-        text: 'Rakesh is an amazing instructor. His real-world experience really shows in his teaching approach.',
-        role: 'Full-Stack Developer at Google'
-      },
-      {
-        name: 'Lisa Wang',
-        rating: 5,
-        text: 'I went from zero programming knowledge to building my own web app. This course changed my life!',
-        role: 'Python Developer at Amazon'
-      },
-      {
-        name: 'James Wilson',
-        rating: 5,
-        text: 'The projects were challenging but rewarding. I got hired as a Python developer within 3 months.',
-        role: 'Backend Developer at Netflix'
-      }
-    ]
-  },
-  'advanced-excel': {
-    title: 'Advanced Excel Mastery',
-    description: 'Master advanced Excel functions, pivot tables, and data analysis techniques - become the Excel expert your company needs.',
-    longDescription: 'Excel is the most powerful tool in business analytics. This comprehensive course will transform you into an Excel expert, covering advanced functions, data visualization, automation, and business intelligence. Learn from industry professionals and master techniques that will make you indispensable in any data-driven role.',
-    image: '/assets/courses/excel.svg',
-    duration: '6 weeks',
-    level: 'Intermediate',
-    price: '₹8,499',
-    category: 'Data Analyst',
-    instructor: 'Sumasri Vallapu',
-    instructorTitle: 'Excel & Business Intelligence Expert',
-    instructorExperience: '12+ years in financial modeling and analytics',
-    instructorPhoto: '/assets/students/s3.jpg',
-    instructorDescription: 'Sumasri has been teaching Excel and business intelligence for over 12 years, impacting 18,000+ students worldwide. Her expertise in financial modeling and data visualization has helped countless professionals excel in their analytical careers.',
-    rating: 4.8,
-    students: 1250,
-    lessons: 24,
-    language: 'English',
-    features: [
-      '24 Video Lessons',
-      'Real Business Case Studies',
-      'Certificate of Completion',
-      'Lifetime Access',
-      'Mentor Support',
-      'Job Placement Assistance'
-    ],
-    highlights: [
-      'Master advanced formulas and functions',
-      'Create stunning dashboards and reports',
-      'Automate repetitive tasks with VBA',
-      'Get personalized business insights',
-      'Build a portfolio of Excel solutions'
-    ],
-    curriculum: [
-      { 
-        week: 1, 
-        title: 'Advanced Functions & Formulas', 
-        lessons: 4,
-        topics: ['VLOOKUP, INDEX/MATCH', 'Array formulas', 'Logical functions', 'Text manipulation'],
-        duration: 'Week 1'
-      },
-      { 
-        week: 2, 
-        title: 'Pivot Tables & Data Analysis', 
-        lessons: 4,
-        topics: ['Pivot table mastery', 'Data modeling', 'Slicers & timelines', 'Advanced filtering'],
-        duration: 'Week 2'
-      },
-      { 
-        week: 3, 
-        title: 'Data Visualization & Dashboards', 
-        lessons: 4,
-        topics: ['Advanced charts', 'Conditional formatting', 'Dashboard design', 'Interactive reports'],
-        duration: 'Week 3'
-      },
-      { 
-        week: 4, 
-        title: 'Power Query & Data Transformation', 
-        lessons: 4,
-        topics: ['Power Query basics', 'Data cleaning', 'Merging datasets', 'Automated data refresh'],
-        duration: 'Week 4'
-      },
-      { 
-        week: 5, 
-        title: 'VBA & Automation', 
-        lessons: 4,
-        topics: ['VBA fundamentals', 'Macro recording', 'Custom functions', 'Workflow automation'],
-        duration: 'Week 5'
-      },
-      { 
-        week: 6, 
-        title: 'Business Intelligence & Portfolio', 
-        lessons: 4,
-        topics: ['Financial modeling', 'KPI dashboards', 'Portfolio presentation', 'Career advancement'],
-        duration: 'Week 6'
-      }
-    ],
-    reviews: [
-      {
-        name: 'Jennifer Martinez',
-        rating: 5,
-        text: 'Sumasri\'s expertise in Excel is unmatched. I got promoted to Senior Analyst after completing this course!',
-        role: 'Senior Financial Analyst at Goldman Sachs'
-      },
-      {
-        name: 'Robert Taylor',
-        rating: 5,
-        text: 'The business case studies were incredibly valuable. I could immediately apply the techniques at work.',
-        role: 'Business Intelligence Manager at Deloitte'
-      },
-      {
-        name: 'Amanda Lee',
-        rating: 5,
-        text: 'Best Excel course available. The VBA section alone was worth the entire course price.',
-        role: 'Data Analyst at McKinsey'
-      }
-    ]
+    };
+
+    fetchCourse();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading course details...</p>
+        </div>
+      </div>
+    );
   }
-};
 
-export default function CoursePage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const course = courseDetails[id as keyof typeof courseDetails];
-  
+  if (error && !course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!course) {
     notFound();
   }
@@ -436,16 +289,20 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 What You&apos;ll Master
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {course.highlights.map((highlight: string, index: number) => (
+                {course.learning_outcomes ? course.learning_outcomes.split('\n').filter(line => line.trim()).map((outcome: string, index: number) => (
                   <div key={index} className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <p className="text-text-secondary font-inter">{highlight}</p>
+                    <p className="text-text-secondary font-inter">{outcome.replace('•', '').trim()}</p>
                   </div>
-                ))}
+                )) : (
+                  <div className="col-span-2 text-gray-500 text-center py-8">
+                    Learning outcomes will be available soon.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -455,7 +312,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                 About This Course
               </h2>
               <p className="text-text-secondary font-inter leading-relaxed text-lg">
-                {course.longDescription}
+                {course.description}
               </p>
             </div>
 

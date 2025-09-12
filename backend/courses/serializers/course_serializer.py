@@ -10,8 +10,8 @@ class CourseListSerializer(serializers.ModelSerializer):
     """Serializer for course list views with minimal data."""
     training_partner = TrainingPartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
-    category_display = serializers.CharField(source='category_display', read_only=True)
-    level_display = serializers.CharField(source='level_display', read_only=True)
+    category_display = serializers.CharField(read_only=True)
+    level_display = serializers.CharField(read_only=True)
     
     class Meta:
         model = Course
@@ -67,8 +67,8 @@ class CourseSerializer(serializers.ModelSerializer):
     """Full serializer for course detail views."""
     training_partner = TrainingPartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
-    category_display = serializers.CharField(source='category_display', read_only=True)
-    level_display = serializers.CharField(source='level_display', read_only=True)
+    category_display = serializers.CharField(read_only=True)
+    level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)
@@ -120,8 +120,8 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     """Serializer for course detail page with comprehensive information."""
     training_partner = TrainingPartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
-    category_display = serializers.CharField(source='category_display', read_only=True)
-    level_display = serializers.CharField(source='level_display', read_only=True)
+    category_display = serializers.CharField(read_only=True)
+    level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)
@@ -177,8 +177,8 @@ class CourseAdminSerializer(serializers.ModelSerializer):
     """Serializer for Super Admin course management with full control."""
     training_partner = TrainingPartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
-    category_display = serializers.CharField(source='category_display', read_only=True)
-    level_display = serializers.CharField(source='level_display', read_only=True)
+    category_display = serializers.CharField(read_only=True)
+    level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)

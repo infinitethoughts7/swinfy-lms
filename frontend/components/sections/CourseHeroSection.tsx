@@ -10,14 +10,47 @@ import {
 } from 'lucide-react';
 
 interface Course {
-  category: string;
+  id: string;
   title: string;
-  rating: number;
-  students: number;
-  duration: string;
-  instructor: string;
+  slug: string;
+  description: string;
+  short_description: string;
   price: string;
-  highlights: string[];
+  duration_weeks: number;
+  category: string;
+  category_display: string;
+  level: string;
+  level_display: string;
+  rating: string;
+  total_reviews: number;
+  enrollment_count: number;
+  thumbnail: string;
+  banner_image: string;
+  demo_video?: string;
+  learning_outcomes: string;
+  prerequisites: string;
+  tags: string;
+  tags_list: string[];
+  training_partner: {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+    website?: string;
+    description?: string;
+  };
+  tutor: {
+    id: string;
+    full_name: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    organization_name: string;
+    organization_type: string;
+  };
+  is_featured: boolean;
+  created_at: string;
 }
 
 interface FloatingIconProps {
@@ -54,7 +87,7 @@ const FloatingIcon = ({ Icon, className, delay = 0 }: FloatingIconProps) => (
 );
 
 export default function CourseHeroSection({ course }: { course: Course }) {
-  const courseIcons = getCourseIcons(course.category);
+  const courseIcons = getCourseIcons(course.category_display);
   
   return (
     <>
@@ -110,7 +143,7 @@ export default function CourseHeroSection({ course }: { course: Course }) {
               
               <div className="mb-6">
                 <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-inter rounded-full border border-white/30">
-                  {course.category}
+                  {course.category_display}
                 </span>
               </div>
               
@@ -133,19 +166,19 @@ export default function CourseHeroSection({ course }: { course: Course }) {
                   <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  <span className="font-inter font-semibold">{course.rating} ({course.students.toLocaleString()} students)</span>
+                  <span className="font-inter font-semibold">{course.rating} ({course.enrollment_count.toLocaleString()} students)</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="font-inter font-semibold">{course.duration}</span>
+                  <span className="font-inter font-semibold">{course.duration_weeks} weeks</span>
                 </div>
                 <div className="flex items-center">
                   <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="font-inter font-semibold">{course.instructor}</span>
+                  <span className="font-inter font-semibold">{course.tutor.full_name}</span>
                 </div>
               </div>
               
