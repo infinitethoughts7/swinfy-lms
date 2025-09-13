@@ -1,9 +1,23 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from ..models import Course
-from users.serializers import TrainingPartnerSerializer, UserProfileSerializer
+from users.serializers import TrainingPartnerSerializer, UserProfileSerializer, TutorProfileSerializer
 
 User = get_user_model()
+
+
+class TutorWithProfileSerializer(serializers.ModelSerializer):
+    """Serializer for tutor with profile information."""
+    tutor_profile = TutorProfileSerializer(read_only=True)
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    organization_type = serializers.CharField(source='organization.type', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'full_name', 'first_name', 'last_name', 'role',
+            'organization_name', 'organization_type', 'tutor_profile'
+        ]
 
 
 class CourseListSerializer(serializers.ModelSerializer):
@@ -66,7 +80,7 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     """Full serializer for course detail views."""
     training_partner = TrainingPartnerSerializer(read_only=True)
-    tutor = UserProfileSerializer(read_only=True)
+    tutor = TutorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
@@ -119,7 +133,7 @@ class CourseApprovalSerializer(serializers.ModelSerializer):
 class CourseDetailSerializer(serializers.ModelSerializer):
     """Serializer for course detail page with comprehensive information."""
     training_partner = TrainingPartnerSerializer(read_only=True)
-    tutor = UserProfileSerializer(read_only=True)
+    tutor = TutorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
