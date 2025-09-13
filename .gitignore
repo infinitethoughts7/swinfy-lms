@@ -21,6 +21,10 @@ venv.bak/
 */staticfiles/
 */media/
 
+
+/BACKEND_STRUCTURE.md
+
+
 # Environment variables
 .venv/
 .env

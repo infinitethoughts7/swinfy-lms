@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = Csv()(config('ALLOWED_HOSTS', default='localhost,127.0.0.1'))
+ALLOWED_HOSTS = Csv()(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,ff345cd4245a.ngrok-free.app,.ngrok.io,.ngrok-free.app'))
 
 
 # Application definition
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # Local apps
     'users',
     'courses',
+    'payments',
 ]
 
 MIDDLEWARE = [
@@ -157,14 +158,14 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = Csv()(config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003,http://127.0.0.1:3003'))
+CORS_ALLOWED_ORIGINS = Csv()(config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003,http://127.0.0.1:3003,https://ff345cd4245a.ngrok-free.app'))
 CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
 
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
 
 # Security Settings
-CSRF_TRUSTED_ORIGINS = Csv()(config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000'))
+CSRF_TRUSTED_ORIGINS = Csv()(config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,https://ff345cd4245a.ngrok-free.app'))
 
 # Email Configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
@@ -235,3 +236,15 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=60),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
+
+# Razorpay Configuration
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
+RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
+BACKEND_URL = config('BACKEND_URL', default='http://localhost:8000')
+
+# Security settings for development with ngrok
+if 'ngrok' in BACKEND_URL:
+    SECURE_SSL_REDIRECT = False
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_TLS = True

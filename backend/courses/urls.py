@@ -53,6 +53,7 @@ urlpatterns = [
     path('training-partners/', views.TrainingPartnerListView.as_view(), name='training-partner-list'),
     path('training-partners/<int:pk>/', views.TrainingPartnerDetailView.as_view(), name='training-partner-detail'),
     
+    
     # Legacy endpoints for backward compatibility
     path('legacy/list/', views.course_list, name='course-list-legacy'),
     path('legacy/stats/', views.course_stats, name='course-stats-legacy'),
