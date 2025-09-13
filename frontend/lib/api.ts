@@ -347,4 +347,120 @@ export const paymentsApi = {
   },
 };
 
+// Student Dashboard API methods
+export const studentDashboardApi = {
+  // Get student's enrolled courses with progress
+  getMyCourses: async () => {
+    const response = await authenticatedFetch('/api/courses/my-courses/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch enrolled courses');
+    }
+    
+    return response.json();
+  },
+
+  // Get student progress analytics
+  getProgressAnalytics: async () => {
+    const response = await authenticatedFetch('/api/courses/analytics/student-progress/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch progress analytics');
+    }
+    
+    return response.json();
+  },
+
+  // Get course progress for a specific course
+  getCourseProgress: async (courseSlug: string) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/progress/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch course progress');
+    }
+    
+    return response.json();
+  },
+
+  // Get study sessions
+  getStudySessions: async () => {
+    const response = await authenticatedFetch('/api/courses/study-sessions/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch study sessions');
+    }
+    
+    return response.json();
+  },
+
+  // Get notifications
+  getNotifications: async () => {
+    const response = await authenticatedFetch('/api/courses/notifications/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch notifications');
+    }
+    
+    return response.json();
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (notificationId: number) => {
+    const response = await authenticatedFetch(`/api/courses/notifications/${notificationId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_read: true }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to mark notification as read');
+    }
+    
+    return response.json();
+  },
+
+  // Complete a lesson
+  completeLesson: async (lessonId: number) => {
+    const response = await authenticatedFetch(`/api/courses/lessons/${lessonId}/complete/`, {
+      method: 'POST',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to complete lesson');
+    }
+    
+    return response.json();
+  },
+
+  // Start a study session
+  startStudySession: async (courseId: string) => {
+    const response = await authenticatedFetch('/api/courses/study-sessions/', {
+      method: 'POST',
+      body: JSON.stringify({ course: courseId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to start study session');
+    }
+    
+    return response.json();
+  },
+
+  // End a study session
+  endStudySession: async (sessionId: number, progressMade: number) => {
+    const response = await authenticatedFetch(`/api/courses/study-sessions/${sessionId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ 
+        ended_at: new Date().toISOString(),
+        progress_made: progressMade 
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to end study session');
+    }
+    
+    return response.json();
+  },
+};
+
 export default api;
