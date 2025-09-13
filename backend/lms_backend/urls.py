@@ -18,18 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-import sys
-import os
-
-# Add the parent directory to the Python path to import hero_views
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from hero_views import hero_demo
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
     path('api/courses/', include('courses.urls')),
-    path('', hero_demo, name='hero_demo'),
 ]
 
 # Serve static files during development

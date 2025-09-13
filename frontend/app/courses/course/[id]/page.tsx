@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import CourseHeroSection from '@/components/sections/CourseHeroSection';
+import LessonsSection from '@/components/course/LessonsSection';
 import { coursesApi } from '@/lib/api';
 
 // Interface for course data from backend
@@ -186,24 +187,45 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Course Highlights */}
+            {/* Learning Outcomes */}
             {course.learning_outcomes && course.learning_outcomes.trim() && (
             <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h2 className="text-3xl font-sora font-bold text-text-primary mb-6">
                 What You&apos;ll Master
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {course.learning_outcomes.split('\n').filter(line => line.trim()).map((outcome: string, index: number) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                      <p className="text-text-secondary font-inter">{outcome.replace('•', '').trim()}</p>
-                  </div>
-                ))}
-              </div>
+               <div className="space-y-4">
+                   {(() => {
+                     // Handle both comma-separated and bullet point formats
+                     let outcomes: string[] = [];
+                     
+                     if (course.learning_outcomes.includes('•')) {
+                       // Split by bullet points and newlines
+                       outcomes = course.learning_outcomes.split(/[•\n]/).filter(line => line.trim());
+                     } else if (course.learning_outcomes.includes(',')) {
+                       // Split by commas
+                       outcomes = course.learning_outcomes.split(',').filter(line => line.trim());
+                     } else {
+                       // Single outcome or other format
+                       outcomes = [course.learning_outcomes];
+                     }
+                     
+                     return outcomes.map((outcome: string, index: number) => {
+                       const trimmedOutcome = outcome.trim();
+                       if (!trimmedOutcome) return null;
+                       
+                       return (
+                         <div key={index} className="flex items-start space-x-4">
+                           <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                             <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                             </svg>
+                           </div>
+                           <p className="text-text-secondary font-inter text-lg leading-relaxed">{trimmedOutcome}</p>
+                         </div>
+                       );
+                     });
+                   })()}
+               </div>
             </div>
             )}
 
@@ -331,139 +353,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
             )}
 
-            {/* Course Content */}
+            {/* Course Curriculum */}
             {modules.length > 0 && (
-            <div className="bg-white rounded-2xl p-8 border border-gray-200">
-                <h2 className="text-3xl font-sora font-bold text-text-primary mb-8">
-                  What You&apos;ll Learn
-              </h2>
-                <div className="space-y-6">
-                  {modules.map((module) => (
-                    <div key={module.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                      {/* Module Header */}
-                      <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-sora font-bold text-text-primary">
-                            {module.title}
-                          </h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            <span className="flex items-center">
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                              {module.lessons_count} lessons
-                            </span>
-                            <span className="flex items-center">
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                              {Math.floor(module.total_duration_minutes / 60)}h {module.total_duration_minutes % 60}m
-                            </span>
-                    </div>
-                  </div>
-                        {module.description && (
-                          <p className="text-gray-600 font-inter text-sm">
-                            {module.description}
-                          </p>
-                        )}
-            </div>
-
-                      {/* Module Lessons */}
-                      {lessons[module.id] && lessons[module.id].length > 0 && (
-                        <div className="p-6">
-                          <div className="space-y-3">
-                            {lessons[module.id].map((lesson) => (
-                              <div key={lesson.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
-                                <div className="flex items-center space-x-4">
-                                  {/* Lesson Type Icon */}
-                                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    {lesson.lesson_type === 'video' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                                    )}
-                                    {lesson.lesson_type === 'text' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                                    )}
-                                    {lesson.lesson_type === 'quiz' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                                    )}
-                                    {lesson.lesson_type === 'assignment' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                                    )}
-                                    {lesson.lesson_type === 'live_session' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                                    )}
-                                    {lesson.lesson_type === 'download' && (
-                                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                                    )}
-            </div>
-
-                                  {/* Lesson Info */}
-                                  <div className="flex-1">
-                                    <h4 className="font-sora font-semibold text-text-primary mb-1">
-                                      {lesson.title}
-                                    </h4>
-                                    {lesson.description && (
-                                      <p className="text-gray-600 font-inter text-sm">
-                                        {lesson.description}
-                                      </p>
-                                    )}
-                                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                                      <span className="flex items-center">
-                                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                                        {lesson.duration_minutes} min
-                                      </span>
-                                      <span className="capitalize">{lesson.lesson_type}</span>
-                                      {lesson.materials_count > 0 && (
-                                        <span className="flex items-center">
-                                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                          </svg>
-                                          {lesson.materials_count} materials
-                                        </span>
-                                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                                {/* Lesson Status */}
-                                <div className="flex items-center space-x-2">
-                                  {lesson.is_preview && (
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                      Preview
-                                    </span>
-                                  )}
-                                  {!lesson.is_preview && (
-                                    <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                                      Enroll to Access
-                                    </span>
-                                  )}
-                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                                </div>
-                              </div>
-                            ))}
-                    </div>
-                  </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <LessonsSection modules={modules} lessons={lessons} />
             )}
 
             {/* Tags */}
