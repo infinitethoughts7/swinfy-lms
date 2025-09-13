@@ -28,7 +28,8 @@ from .course_view import (
     NotificationDetailView,
     course_list,
     course_stats,
-    featured_courses
+    featured_courses,
+    enrollment_status
 )
 from .training_partner_view import TrainingPartnerListView, TrainingPartnerDetailView, training_partner_list
 
@@ -65,5 +66,6 @@ __all__ = [
     'course_list',
     'course_stats',
     'featured_courses',
-    'training_partner_list'
+    'training_partner_list',
+    'enrollment_status'
 ]

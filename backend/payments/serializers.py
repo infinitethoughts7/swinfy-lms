@@ -8,9 +8,9 @@ class PaymentCreateSerializer(serializers.Serializer):
     """Serializer for creating payment orders"""
     course_slug = serializers.CharField(max_length=220)
     
-    def validate_course_slug(self):
+    def validate_course_slug(self, value):
         # Additional validation can be added here
-        return self.validated_data['course_slug']
+        return value
 
 
 class PaymentSerializer(serializers.ModelSerializer):

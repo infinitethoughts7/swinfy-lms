@@ -552,3 +552,36 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
     
     def perform_update(self, serializer):
         serializer.save(is_read=True)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def enrollment_status(request, slug):
+    """Get enrollment status for a course"""
+    try:
+        course = get_object_or_404(Course, slug=slug)
+        enrollment = Enrollment.objects.filter(
+            student=request.user,
+            course=course
+        ).first()
+        
+        if enrollment:
+            return Response({
+                'enrolled': True,
+                'status': enrollment.status,
+                'enrolled_at': enrollment.created_at,
+                'course_title': course.title,
+                'course_slug': course.slug
+            })
+        else:
+            return Response({
+                'enrolled': False,
+                'status': 'not_enrolled',
+                'course_title': course.title,
+                'course_slug': course.slug
+            })
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to check enrollment status'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

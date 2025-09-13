@@ -59,11 +59,11 @@ class RegisterView(APIView):
                     response_data['message'] = 'Registration successful! Waiting for admin approval.'
                 
                 # Add training partner info if applicable
-                if user.training_partner:
-                    response_data['user']['training_partner'] = {
-                        'id': user.training_partner.id,
-                        'name': user.training_partner.name,
-                        'type': user.training_partner.type,
+                if user.organization:
+                    response_data['user']['organization'] = {
+                        'id': user.organization.id,
+                        'name': user.organization.name,
+                        'type': user.organization.type,
                     }
                 
                 return Response(response_data, status=status.HTTP_201_CREATED)
@@ -139,13 +139,13 @@ class LoginView(TokenObtainPairView):
                 'full_name': user.full_name,
                 'role': user.role,
                 'is_verified': user.is_verified,
-                'training_partner': {
-                    'id': user.training_partner.id,
-                    'name': user.training_partner.name,
-                    'type': user.training_partner.type,
-                    } if user.training_partner else None,
+                'organization': {
+                    'id': user.organization.id,
+                    'name': user.organization.name,
+                    'type': user.organization.type,
+                    } if user.organization else None,
                 'can_create_courses': user.can_create_courses,
-                'can_manage_training_partner': user.can_manage_training_partner,
+                'can_manage_organization': user.can_manage_organization,
             }
         }, status=status.HTTP_200_OK)
 
@@ -229,18 +229,18 @@ def dashboard_stats(request):
     """Get dashboard statistics for different user roles."""
     user = request.user
     
-    if user.role == 'admin' and user.training_partner:
+    if user.role == 'admin' and user.organization:
         # Admin dashboard stats
-        training_partner_users = user.training_partner.users.count()
-        pending_tutors = user.training_partner.users.filter(
+        organization_users = user.organization.users.count()
+        pending_tutors = user.organization.users.filter(
             role='tutor', 
             is_approved=False
         ).count()
         
         return Response({
             'role': 'admin',
-            'training_partner': user.training_partner.name,
-            'total_users': training_partner_users,
+            'organization': user.organization.name,
+            'total_users': organization_users,
             'pending_tutors': pending_tutors,
         })
     
@@ -248,7 +248,7 @@ def dashboard_stats(request):
         # Tutor dashboard stats
         return Response({
             'role': 'tutor',
-            'training_partner': user.training_partner.name if user.training_partner else None,
+            'organization': user.organization.name if user.organization else None,
             'is_approved': user.is_approved,
         })
     

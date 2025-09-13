@@ -72,18 +72,31 @@ def create_payment_order(request):
     course_slug = serializer.validated_data['course_slug']
     course = get_object_or_404(Course, slug=course_slug, is_published=True)
     
-    # Check if user already enrolled and active
+    # Check if user already enrolled
     existing_enrollment = Enrollment.objects.filter(
-        user=request.user, 
-        course=course,
-        status='active'
+        student=request.user, 
+        course=course
     ).first()
     
     if existing_enrollment:
-        return Response(
-            {'error': 'You are already enrolled in this course'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        # If already enrolled and active, return error
+        if existing_enrollment.status == 'active':
+            return Response(
+                {'error': 'You are already enrolled in this course'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # If pending, return existing payment info
+        elif existing_enrollment.status == 'pending':
+            existing_payment = Payment.objects.filter(enrollment=existing_enrollment).first()
+            if existing_payment:
+                return Response({
+                    'order_id': existing_payment.razorpay_order_id,
+                    'amount': int(existing_payment.amount * 100),  # Convert to paise
+                    'currency': 'INR',
+                    'key': settings.RAZORPAY_KEY_ID,
+                    'enrollment_id': str(existing_enrollment.id),
+                    'message': 'Payment order already exists'
+                })
     
     try:
         # Create Razorpay order
@@ -101,13 +114,13 @@ def create_payment_order(request):
         
         # Create or update enrollment
         enrollment, created = Enrollment.objects.get_or_create(
-            user=request.user,
+            student=request.user,
             course=course,
-            defaults={'status': 'pending_payment'}
+            defaults={'status': 'pending'}
         )
         
         if not created:
-            enrollment.status = 'pending_payment'
+            enrollment.status = 'pending'
             enrollment.save()
         
         # Create payment record

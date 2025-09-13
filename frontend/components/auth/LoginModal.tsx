@@ -18,9 +18,10 @@ interface LoginModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSwitchToRegister?: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginModal({ open, onOpenChange, onSwitchToRegister }: LoginModalProps) {
+export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,8 +59,13 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister }: L
       // Close modal
       onOpenChange(false);
 
-      // Redirect based on role
-      router.push(`/dashboard/${data.user.role}`);
+      // Call success callback if provided
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        // Default behavior: redirect based on role
+        router.push(`/dashboard/${data.user.role}`);
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       setError(error.message || 'Login failed. Please try again.');

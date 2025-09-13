@@ -22,6 +22,7 @@ urlpatterns = [
     
     # Course Learning Endpoints
     path('<slug:slug>/enroll/', views.CourseEnrollView.as_view(), name='course-enroll'),
+    path('<slug:slug>/enrollment-status/', views.enrollment_status, name='enrollment-status'),
     path('<slug:slug>/modules/', views.CourseModulesView.as_view(), name='course-modules'),
     path('<slug:slug>/progress/', views.CourseProgressView.as_view(), name='course-progress'),
     path('<slug:slug>/modules/<int:module_id>/lessons/', views.ModuleLessonsView.as_view(), name='module-lessons'),

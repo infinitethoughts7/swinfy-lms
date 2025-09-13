@@ -4,7 +4,9 @@ import { notFound } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import CourseHeroSection from '@/components/sections/CourseHeroSection';
 import LessonsSection from '@/components/course/LessonsSection';
-import { coursesApi } from '@/lib/api';
+import PaymentModal from '@/components/payment/PaymentModal';
+import LoginModal from '@/components/auth/LoginModal';
+import { coursesApi, paymentsApi } from '@/lib/api';
 
 // Interface for course data from backend
 interface Course {
@@ -107,6 +109,29 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [lessons, setLessons] = useState<{ [moduleId: string]: Lesson[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'not_enrolled' | 'pending' | 'payment_verification' | 'active' | 'completed'>('not_enrolled');
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('accessToken');
+      setIsLoggedIn(!!token);
+    };
+    
+    checkLoginStatus();
+    
+    // Listen for storage changes (login/logout)
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Handle async params
   useEffect(() => {
@@ -128,23 +153,43 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         // Fetch course details
         const courseData = await coursesApi.getCourse(id);
         setCourse(courseData);
-        
-        // Fetch course modules
-        const modulesData = await coursesApi.getCourseModules(id);
-        setModules(modulesData);
-        
-        // Fetch lessons for each module
-        const lessonsData: { [moduleId: string]: Lesson[] } = {};
-        for (const courseModule of modulesData) {
+
+        // Check enrollment status first if user is logged in
+        if (isLoggedIn) {
           try {
-            const moduleLessons = await coursesApi.getModuleLessons(id, courseModule.id);
-            lessonsData[courseModule.id] = moduleLessons;
+            const enrollmentData = await paymentsApi.checkEnrollment(courseData.slug);
+            setEnrollmentStatus(enrollmentData.status);
+            setIsEnrolled(['active', 'completed', 'pending'].includes(enrollmentData.status));
+            
+            // Only fetch modules and lessons if user is enrolled
+            if (['active', 'completed'].includes(enrollmentData.status)) {
+              // Fetch course modules
+              const modulesData = await coursesApi.getCourseModules(id);
+              setModules(modulesData);
+              
+              // Fetch lessons for each module
+              const lessonsData: { [moduleId: string]: Lesson[] } = {};
+              for (const courseModule of modulesData) {
+                try {
+                  const moduleLessons = await coursesApi.getModuleLessons(id, courseModule.id);
+                  lessonsData[courseModule.id] = moduleLessons;
+                } catch (err) {
+                  console.error(`Error fetching lessons for module ${courseModule.id}:`, err);
+                  lessonsData[courseModule.id] = [];
+                }
+              }
+              setLessons(lessonsData);
+            }
           } catch (err) {
-            console.error(`Error fetching lessons for module ${courseModule.id}:`, err);
-            lessonsData[courseModule.id] = [];
+            console.log('User not enrolled:', err);
+            setEnrollmentStatus('not_enrolled');
+            setIsEnrolled(false);
           }
+        } else {
+          // User not logged in, set default values
+          setEnrollmentStatus('not_enrolled');
+          setIsEnrolled(false);
         }
-        setLessons(lessonsData);
         
       } catch (err) {
         console.error('Error fetching course data:', err);
@@ -155,7 +200,47 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     };
 
     fetchCourseData();
-  }, [id]);
+  }, [id, isLoggedIn]);
+
+  // Handle payment success
+  const handlePaymentSuccess = (paymentData: any) => {
+    console.log('Payment successful:', paymentData);
+    setEnrollmentStatus('payment_verification');
+    setIsEnrolled(false); // Still waiting for admin approval
+    // You could show a success message here
+    alert('Payment successful! Your enrollment is pending admin approval.');
+  };
+
+  // Handle enroll button click
+  const handleEnrollClick = () => {
+    if (!course) return;
+    
+    // Check if user is logged in
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setShowPaymentModal(true);
+  };
+
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    setIsLoggedIn(true);
+    // Refresh enrollment status after login
+    if (course) {
+      paymentsApi.checkEnrollment(course.slug)
+        .then(enrollmentData => {
+          setEnrollmentStatus(enrollmentData.status);
+          setIsEnrolled(['active', 'completed'].includes(enrollmentData.status));
+        })
+        .catch(() => {
+          setEnrollmentStatus('not_enrolled');
+          setIsEnrolled(false);
+        });
+    }
+  };
 
   if (loading) {
     return (
@@ -366,7 +451,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
             {/* Course Curriculum */}
             {modules.length > 0 && (
-              <LessonsSection modules={modules} lessons={lessons} />
+              <LessonsSection 
+                modules={modules} 
+                lessons={lessons} 
+                isEnrolled={isEnrolled}
+                enrollmentStatus={enrollmentStatus}
+              />
             )}
 
             {/* Tags */}
@@ -506,15 +596,73 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
               
               {/* Enroll Button */}
-              <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4">
-                Enroll Now
-              </button>
+              {enrollmentStatus === 'not_enrolled' && (
+                <button 
+                  onClick={handleEnrollClick}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4"
+                >
+                  {isLoggedIn ? 'Enroll Now' : 'Login to Enroll'}
+                </button>
+              )}
+              
+              {enrollmentStatus === 'pending' && (
+                <button 
+                  onClick={handleEnrollClick}
+                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4"
+                >
+                  Complete Payment
+                </button>
+              )}
+              
+              {enrollmentStatus === 'payment_verification' && (
+                <div className="w-full bg-yellow-100 border border-yellow-300 text-yellow-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center mb-4">
+                  ⏳ Payment Pending Admin Approval
+                </div>
+              )}
+              
+              {enrollmentStatus === 'active' && (
+                <div className="w-full bg-green-100 border border-green-300 text-green-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center mb-4">
+                  ✅ Enrolled - Access Granted
+                </div>
+              )}
+              
+              {enrollmentStatus === 'completed' && (
+                <div className="w-full bg-purple-100 border border-purple-300 text-purple-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center mb-4">
+                  🎓 Course Completed
+                </div>
+              )}
               
             </div>
 
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {course && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          course={{
+            id: course.id,
+            title: course.title,
+            price: course.price,
+            slug: course.slug
+          }}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
+
+      {/* Login Modal */}
+      <LoginModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        onLoginSuccess={handleLoginSuccess}
+        onSwitchToRegister={() => {
+          // You can add registration modal here if needed
+          console.log('Switch to register');
+        }}
+      />
     </div>
   );
 }

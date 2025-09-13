@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import VideoPlayer from './VideoPlayer';
 
 interface Lesson {
   id: string;
@@ -38,11 +39,14 @@ interface CourseModule {
 interface LessonsSectionProps {
   modules: CourseModule[];
   lessons: { [moduleId: string]: Lesson[] };
+  isEnrolled?: boolean;
+  enrollmentStatus?: 'not_enrolled' | 'pending_payment' | 'payment_verification' | 'active' | 'completed';
 }
 
-const LessonsSection = ({ modules, lessons }: LessonsSectionProps) => {
+const LessonsSection = ({ modules, lessons, isEnrolled = false, enrollmentStatus = 'not_enrolled' }: LessonsSectionProps) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
   const toggleModule = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);
@@ -117,13 +121,23 @@ const LessonsSection = ({ modules, lessons }: LessonsSectionProps) => {
   };
 
   const handleLessonClick = (lesson: Lesson) => {
-    if (lesson.is_preview) {
-      setPreviewLesson(lesson);
+    if (isEnrolled || lesson.is_preview) {
+      if (lesson.is_preview) {
+        setPreviewLesson(lesson);
+      } else {
+        setSelectedLesson(lesson);
+      }
+    } else {
+      alert('Please enroll in the course to access this lesson.');
     }
   };
 
   const closePreview = () => {
     setPreviewLesson(null);
+  };
+
+  const closeVideoPlayer = () => {
+    setSelectedLesson(null);
   };
 
   return (
@@ -353,6 +367,67 @@ const LessonsSection = ({ modules, lessons }: LessonsSectionProps) => {
                   {previewLesson.description}
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Player Modal for Enrolled Students */}
+      {selectedLesson && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-sora font-bold text-gray-900">
+                {selectedLesson.title}
+              </h2>
+              <button
+                onClick={closeVideoPlayer}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Video Player */}
+            <div className="p-6">
+              <VideoPlayer
+                videoUrl={selectedLesson.video_url || selectedLesson.video_file}
+                title={selectedLesson.title}
+                isPreview={false}
+              />
+              
+              {/* Lesson Description */}
+              {selectedLesson.description && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-sora font-semibold text-gray-900 mb-2">
+                    About this lesson
+                  </h3>
+                  <p className="text-gray-600 font-inter leading-relaxed">
+                    {selectedLesson.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Lesson Details */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-sora font-semibold text-gray-900 mb-1">Duration</h4>
+                  <p className="text-gray-600">{formatDuration(selectedLesson.duration_minutes)}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-sora font-semibold text-gray-900 mb-1">Type</h4>
+                  <p className="text-gray-600 capitalize">{selectedLesson.lesson_type.replace('_', ' ')}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-sora font-semibold text-gray-900 mb-1">Status</h4>
+                  <p className="text-gray-600">
+                    {selectedLesson.is_completed ? '✅ Completed' : '⏳ In Progress'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

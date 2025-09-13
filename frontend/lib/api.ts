@@ -277,4 +277,74 @@ export const coursesApi = {
   },
 };
 
+// Payment API methods
+export const paymentsApi = {
+  // Create payment order
+  createOrder: async (courseSlug: string) => {
+    const response = await authenticatedFetch('/api/payments/create-order/', {
+      method: 'POST',
+      body: JSON.stringify({ course_slug: courseSlug }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create payment order');
+    }
+    
+    return response.json();
+  },
+
+  // Verify payment
+  verifyPayment: async (paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    const response = await authenticatedFetch('/api/payments/verify/', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Payment verification failed');
+    }
+    
+    return response.json();
+  },
+
+  // Get payment status
+  getPaymentStatus: async (orderId: string) => {
+    const response = await authenticatedFetch(`/api/payments/status/${orderId}/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch payment status');
+    }
+    
+    return response.json();
+  },
+
+  // Get payment history
+  getPaymentHistory: async () => {
+    const response = await authenticatedFetch('/api/payments/history/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch payment history');
+    }
+    
+    return response.json();
+  },
+
+  // Check enrollment status
+  checkEnrollment: async (courseSlug: string) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/enrollment-status/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to check enrollment status');
+    }
+    
+    return response.json();
+  },
+};
+
 export default api;
