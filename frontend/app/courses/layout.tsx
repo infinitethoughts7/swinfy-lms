@@ -15,7 +15,7 @@ export default function CoursesLayout({
   return (
     <div className="min-h-screen bg-white">
       <StaticNavbar />
-      <main className="pt-16">
+      <main className="pt-12">
         {children}
       </main>
       <Footer />

@@ -28,7 +28,7 @@ const StaticNavbar = () => {
           <div className="hidden md:flex items-center">
             <Link
               href="/courses"
-              className="text-text-primary hover:text-black transition-all duration-300 font-inter font-medium text-base lg:text-lg hover:scale-105 px-4 py-2 rounded-lg hover:bg-gray-50"
+              className="text-text-primary hover:text-black transition-all duration-300 font-inter font-medium text-sm lg:text-base hover:scale-105 px-4 py-2 rounded-lg hover:bg-gray-50"
             >
               Courses
             </Link>
@@ -101,13 +101,13 @@ const StaticNavbar = () => {
           <div className="hidden md:flex items-center space-x-2">
             <button
               onClick={openLoginModal}
-              className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
+              className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
             >
               Login
             </button>
             <button
               onClick={openRegistrationModal}
-              className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
             >
               Sign up
             </button>

@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <StaticNavbar />
-      <div className="pt-20">
+      <div className="pt-12">
         <HeroSection />
         <AlumniLogos />
         <CompaniesHired />
