@@ -114,11 +114,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [enrollmentStatus, setEnrollmentStatus] = useState<'not_enrolled' | 'pending' | 'payment_verification' | 'active' | 'completed'>('not_enrolled');
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
     const checkLoginStatus = () => {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('access_token');
       setIsLoggedIn(!!token);
     };
     
@@ -207,8 +208,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     console.log('Payment successful:', paymentData);
     setEnrollmentStatus('payment_verification');
     setIsEnrolled(false); // Still waiting for admin approval
-    // You could show a success message here
-    alert('Payment successful! Your enrollment is pending admin approval.');
+    setShowSuccessMessage(true);
+    // Auto hide success message after 5 seconds
+    setTimeout(() => setShowSuccessMessage(false), 5000);
   };
 
   // Handle enroll button click
@@ -278,6 +280,35 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
       {/* Course Hero - Using new CourseHeroSection component */}
       <CourseHeroSection course={course} />
+
+      {/* Payment Success Notification */}
+      {showSuccessMessage && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-r-lg shadow-sm">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700 font-medium">
+                🎉 Payment Successful! Your enrollment is pending admin approval. You'll receive a notification once approved.
+              </p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setShowSuccessMessage(false)}
+                className="text-green-400 hover:text-green-600"
+              >
+                <span className="sr-only">Dismiss</span>
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -653,6 +684,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             slug: course.slug
           }}
           onPaymentSuccess={handlePaymentSuccess}
+          onAuthRequired={() => setShowLoginModal(true)}
         />
       )}
 

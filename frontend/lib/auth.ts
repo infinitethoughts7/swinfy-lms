@@ -36,28 +36,28 @@ export const setCurrentUser = (user: User): void => {
 // Get access token
 export const getAccessToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
+  return localStorage.getItem('access_token');
 };
 
 // Get refresh token
 export const getRefreshToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('refreshToken');
+  return localStorage.getItem('refresh_token');
 };
 
 // Set tokens
 export const setTokens = (accessToken: string, refreshToken: string): void => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
 };
 
 // Remove current user and tokens from localStorage
 export const logout = (): void => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('currentUser');
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
 };
 
 // Check if user is authenticated

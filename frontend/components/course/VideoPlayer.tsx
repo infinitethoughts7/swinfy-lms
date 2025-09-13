@@ -204,3 +204,4 @@ export default function VideoPlayer({ videoUrl, title, isPreview = false }: Vide
     </div>
   );
 }
+

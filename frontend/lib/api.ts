@@ -36,7 +36,7 @@ export interface ApiError {
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('accessToken');
+  return localStorage.getItem('access_token');
 };
 
 // Create authenticated fetch request
@@ -127,7 +127,7 @@ export const authApi = {
 
   // Logout (invalidate tokens on backend if needed)
   logout: async (): Promise<void> => {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = localStorage.getItem('refresh_token');
     
     if (refreshToken) {
       try {
@@ -145,8 +145,8 @@ export const authApi = {
     }
 
     // Clear local storage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('currentUser');
   },
 };

@@ -15,6 +15,7 @@ interface PaymentModalProps {
     slug: string;
   };
   onPaymentSuccess: (paymentData: unknown) => void;
+  onAuthRequired?: () => void;
 }
 
 interface RazorpayOrder {
@@ -35,16 +36,18 @@ interface RazorpayOrder {
   };
 }
 
-export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess, onAuthRequired }: PaymentModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [, setOrderData] = useState<RazorpayOrder | null>(null);
+  const [paymentInProgress, setPaymentInProgress] = useState(false);
 
-  // Check if Razorpay is loaded
+  // Check if Razorpay is loaded and reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       const initializeRazorpay = async () => {
         setError('Loading payment system...');
+        setPaymentInProgress(false);
         
         try {
           const loaded = await loadRazorpay();
@@ -60,6 +63,11 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
       };
       
       initializeRazorpay();
+    } else {
+      // Reset state when modal closes
+      setError('');
+      setPaymentInProgress(false);
+      setLoading(false);
     }
   }, [isOpen]);
 
@@ -71,7 +79,20 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
       const data = await paymentsApi.createOrder(course.slug);
       setOrderData(data);
       return data;
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Payment order error:', err);
+      
+      // Check if it's an authentication error
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Please log in to enroll in this course.');
+        // Close payment modal and trigger auth required callback
+        onClose();
+        if (onAuthRequired) {
+          onAuthRequired();
+        }
+        return;
+      }
+      
       setError('Failed to create payment order. Please try again.');
       throw err;
     } finally {
@@ -97,6 +118,44 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
         order_id: orderData.order_id,
         prefill: orderData.prefill,
         theme: orderData.theme,
+        // Enable multiple payment methods including UPI
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          emi: true,
+          paylater: true
+        },
+        // UPI specific options
+        config: {
+          display: {
+            blocks: {
+              utib: { // Axis Bank
+                name: 'Pay using Axis Bank',
+                instruments: [
+                  { method: 'card' },
+                  { method: 'netbanking' }
+                ]
+              },
+              other: { // Other payment methods
+                name: 'Other Payment Methods',
+                instruments: [
+                  { method: 'card' },
+                  { method: 'netbanking' },
+                  { method: 'upi' }
+                ]
+              }
+            },
+            hide: [
+              { method: 'emi' }
+            ],
+            sequence: ['block.utib', 'block.other'],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
         handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
           try {
             // Verify payment
@@ -120,7 +179,7 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
         }
       };
 
-      console.log('Opening Razorpay with options:', options);
+      // console.log('Opening Razorpay with options:', options); // Commented out to reduce console noise
       const rzp = createRazorpayInstance(options);
       
       // Add error handling for Razorpay open
@@ -137,11 +196,22 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
   };
 
   const handlePayment = async () => {
+    // Prevent multiple simultaneous payment attempts
+    if (paymentInProgress || loading) {
+      console.log('Payment already in progress, ignoring click');
+      return;
+    }
+
     try {
+      setPaymentInProgress(true);
       const order = await createPaymentOrder();
-      openRazorpay(order);
+      if (order) {
+        await openRazorpay(order);
+      }
     } catch (err) {
       console.error('Payment error:', err);
+    } finally {
+      setPaymentInProgress(false);
     }
   };
 
@@ -221,13 +291,13 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
           {/* Payment Button */}
           <button
             onClick={handlePayment}
-            disabled={loading}
+            disabled={loading || paymentInProgress}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-sora font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
           >
-            {loading ? (
+            {loading || paymentInProgress ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Processing...</span>
+                <span>{loading ? 'Processing...' : 'Opening Payment...'}</span>
               </div>
             ) : (
               `Pay ₹${parseFloat(course.price).toLocaleString()} & Enroll`
