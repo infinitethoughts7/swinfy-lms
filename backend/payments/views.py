@@ -99,6 +99,47 @@ def create_payment_order(request):
                 })
     
     try:
+        # Create or update enrollment
+        enrollment, created = Enrollment.objects.get_or_create(
+            student=request.user,
+            course=course,
+            defaults={'status': 'pending'}
+        )
+        
+        if not created:
+            enrollment.status = 'pending'
+            enrollment.save()
+        
+        # Check if payment already exists for this enrollment
+        existing_payment = Payment.objects.filter(enrollment=enrollment).first()
+        
+        if existing_payment:
+            # If payment exists and is still pending/initiated, return existing order
+            if existing_payment.status in ['pending', 'initiated']:
+                return Response({
+                    'order_id': existing_payment.razorpay_order_id,
+                    'amount': int(existing_payment.amount * 100),  # Convert to paise
+                    'currency': 'INR',
+                    'key': settings.RAZORPAY_KEY_ID,
+                    'course_title': course.title,
+                    'user_name': request.user.full_name,
+                    'user_email': request.user.email,
+                    'description': f'Enrollment for {course.title}',
+                    'prefill': {
+                        'name': request.user.full_name,
+                        'email': request.user.email,
+                    },
+                    'theme': {
+                        'color': '#3399cc'
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                # If payment is completed, return error
+                return Response(
+                    {'error': 'Payment already completed for this course'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
         # Create Razorpay order
         razorpay_order = razorpay_client.order.create({
             'amount': int(course.price * 100),  # Convert to paise (₹1 = 100 paise)
@@ -111,17 +152,6 @@ def create_payment_order(request):
                 'training_partner': course.training_partner.name
             }
         })
-        
-        # Create or update enrollment
-        enrollment, created = Enrollment.objects.get_or_create(
-            student=request.user,
-            course=course,
-            defaults={'status': 'pending'}
-        )
-        
-        if not created:
-            enrollment.status = 'pending'
-            enrollment.save()
         
         # Create payment record
         payment = Payment.objects.create(

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, CreditCard, Shield, Clock } from 'lucide-react';
 import { paymentsApi } from '@/lib/api';
+import { loadRazorpay, createRazorpayInstance, validateRazorpayAccount } from '@/lib/razorpay-utils';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface PaymentModalProps {
     price: string;
     slug: string;
   };
-  onPaymentSuccess: (paymentData: any) => void;
+  onPaymentSuccess: (paymentData: unknown) => void;
 }
 
 interface RazorpayOrder {
@@ -37,12 +38,28 @@ interface RazorpayOrder {
 export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: PaymentModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [orderData, setOrderData] = useState<RazorpayOrder | null>(null);
+  const [, setOrderData] = useState<RazorpayOrder | null>(null);
 
   // Check if Razorpay is loaded
   useEffect(() => {
-    if (isOpen && !(window as any).Razorpay) {
-      setError('Payment system is loading. Please try again in a moment.');
+    if (isOpen) {
+      const initializeRazorpay = async () => {
+        setError('Loading payment system...');
+        
+        try {
+          const loaded = await loadRazorpay();
+          if (loaded) {
+            setError('');
+          } else {
+            setError('Failed to load payment system. Please refresh the page.');
+          }
+        } catch (error) {
+          console.error('Razorpay initialization error:', error);
+          setError('Payment system unavailable. Please try again.');
+        }
+      };
+      
+      initializeRazorpay();
     }
   }, [isOpen]);
 
@@ -62,48 +79,56 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
     }
   };
 
-  const openRazorpay = (orderData: RazorpayOrder) => {
-    // Check if Razorpay is available
-    if (!(window as any).Razorpay) {
-      setError('Payment system is not available. Please refresh the page and try again.');
-      return;
-    }
-
-    const options = {
-      key: orderData.key,
-      amount: orderData.amount,
-      currency: orderData.currency,
-      name: 'Swinfy LMS',
-      description: orderData.description,
-      order_id: orderData.order_id,
-      prefill: orderData.prefill,
-      theme: orderData.theme,
-      handler: async function (response: any) {
-        try {
-          // Verify payment
-          const verifyData = await paymentsApi.verifyPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          });
-
-          onPaymentSuccess(verifyData);
-          onClose();
-        } catch (err) {
-          console.error('Payment verification error:', err);
-          setError('Payment verification failed. Please contact support.');
-        }
-      },
-      modal: {
-        ondismiss: () => {
-          setError('');
-        }
-      }
-    };
-
+  const openRazorpay = async (orderData: RazorpayOrder) => {
     try {
+      // Validate Razorpay account
+      const isValidAccount = await validateRazorpayAccount(orderData.key);
+      if (!isValidAccount) {
+        setError('Invalid payment configuration. Please contact support.');
+        return;
+      }
+
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Swinfy LMS',
+        description: orderData.description,
+        order_id: orderData.order_id,
+        prefill: orderData.prefill,
+        theme: orderData.theme,
+        handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+          try {
+            // Verify payment
+            const verifyData = await paymentsApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            onPaymentSuccess(verifyData);
+            onClose();
+          } catch (err) {
+            console.error('Payment verification error:', err);
+            setError('Payment verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setError('');
+          }
+        }
+      };
+
       console.log('Opening Razorpay with options:', options);
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = createRazorpayInstance(options);
+      
+      // Add error handling for Razorpay open
+      rzp.on('payment.failed', function (response: { error: { description?: string } }) {
+        console.error('Payment failed:', response.error);
+        setError(`Payment failed: ${response.error.description || 'Unknown error'}`);
+      });
+      
       rzp.open();
     } catch (err) {
       console.error('Razorpay initialization error:', err);
