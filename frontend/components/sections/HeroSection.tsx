@@ -37,7 +37,7 @@ const HeroSection = () => {
               <div className="relative">
                 {/* Content */}
                 <div className="relative z-10">
-                  <h1 className="font-sora font-black text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl text-text-primary leading-tight mb-4 lg:mb-6">
+                  <h1 className="font-sora font-black text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl text-text-primary leading-tight mb-4 lg:mb-6 mt-15">
                     Future Learning.
                     <br />
                     <span className="inline-block text-blue-600 hover:scale-110 transition-all duration-500 ease-out font-bold animate-bounce hover:animate-none hover:-translate-x-2 cursor-pointer mt-2">
