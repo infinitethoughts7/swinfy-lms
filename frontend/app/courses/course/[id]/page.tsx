@@ -593,6 +593,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 <div className="text-3xl font-sora font-black text-blue-600 mb-1">
                   ₹{parseFloat(course.price).toLocaleString()}
                 </div>
+                <p className="text-sm text-gray-600 font-inter">
+                  Own this course forever
+                </p>
               </div>
               
               {/* Enroll Button */}
@@ -601,16 +604,16 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   onClick={handleEnrollClick}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4"
                 >
-                  {isLoggedIn ? 'Enroll Now' : 'Login to Enroll'}
+                  {isLoggedIn ? 'Buy this course now' : 'Login to Enroll'}
                 </button>
               )}
               
               {enrollmentStatus === 'pending' && (
                 <button 
                   onClick={handleEnrollClick}
-                  className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-sora font-bold text-base py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm mb-4"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-sora font-semibold text-sm py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm mb-4"
                 >
-                  Complete Payment
+                  Buy this course now
                 </button>
               )}
               
