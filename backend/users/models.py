@@ -340,9 +340,7 @@ class TutorProfile(models.Model):
     
     # Social Links
     linkedin_url = models.URLField(blank=True, null=True)
-    github_url = models.URLField(blank=True, null=True)
-    portfolio_url = models.URLField(blank=True, null=True)
-    personal_website = models.URLField(blank=True, null=True)
+
     
     # Status
     is_available = models.BooleanField(default=True)
