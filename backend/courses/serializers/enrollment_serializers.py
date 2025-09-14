@@ -268,11 +268,11 @@ class StudySessionSerializer(serializers.ModelSerializer):
     
     def get_student(self, obj):
         """Get student information."""
-        return UserProfileSerializer(obj.student).data
+        return UserProfileSerializer(obj.enrollment.student).data
     
     def get_course(self, obj):
         """Get course information."""
-        return CourseListSerializer(obj.course).data
+        return CourseListSerializer(obj.enrollment.course).data
     
     def get_lesson(self, obj):
         """Get lesson information."""

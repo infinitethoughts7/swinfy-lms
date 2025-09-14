@@ -6,12 +6,20 @@ from . import views
 router = DefaultRouter()
 
 urlpatterns = [
+    # Study Sessions (must be first to avoid conflicts)
+    path('user-sessions/', views.study_sessions_list, name='study-sessions'),
+    
     # Course endpoints
     path('', views.CourseListView.as_view(), name='course-list'),
     path('search/', views.CourseSearchView.as_view(), name='course-search'),
     path('featured/', views.FeaturedCoursesView.as_view(), name='featured-courses'),
     path('my-courses/', views.MyCoursesView.as_view(), name='my-courses'),
     path('stats/', views.CourseStatsView.as_view(), name='course-stats'),
+    
+    # Notifications (must be before catch-all slug pattern)
+    path('notifications/', views.notification_list, name='notifications'),
+    path('notifications-class/', views.NotificationView.as_view(), name='notifications-class'),
+    path('notifications/<int:notification_id>/', views.NotificationDetailView.as_view(), name='notification-detail'),
     
     # Course CRUD operations
     path('create/', views.CourseCreateView.as_view(), name='course-create'),
@@ -43,12 +51,7 @@ urlpatterns = [
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
     
     # Study Sessions
-    path('study-sessions/', views.StudySessionView.as_view(), name='study-sessions'),
     path('study-sessions/<int:session_id>/', views.StudySessionDetailView.as_view(), name='study-session-detail'),
-    
-    # Notifications
-    path('notifications/', views.NotificationView.as_view(), name='notifications'),
-    path('notifications/<int:notification_id>/', views.NotificationDetailView.as_view(), name='notification-detail'),
     
     # Training partner endpoints
     path('training-partners/', views.TrainingPartnerListView.as_view(), name='training-partner-list'),

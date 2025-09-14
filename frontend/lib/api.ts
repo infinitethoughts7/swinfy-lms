@@ -30,7 +30,7 @@ export interface LoginResponse {
 
 export interface ApiError {
   error: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 // Get auth token from localStorage
@@ -77,7 +77,7 @@ export const authApi = {
   },
 
   // Register user
-  register: async (userData: any): Promise<any> => {
+  register: async (userData: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const response = await fetch(`${API_BASE_URL}/api/auth/register/`, {
       method: 'POST',
       headers: {
@@ -115,7 +115,7 @@ export const authApi = {
   },
 
   // Get current user profile
-  getProfile: async (): Promise<any> => {
+  getProfile: async (): Promise<Record<string, unknown>> => {
     const response = await authenticatedFetch('/api/auth/profile/');
     
     if (!response.ok) {
@@ -154,11 +154,11 @@ export const authApi = {
 // Generic API methods
 export const api = {
   get: (url: string) => authenticatedFetch(url),
-  post: (url: string, data: any) => authenticatedFetch(url, {
+  post: (url: string, data: Record<string, unknown>) => authenticatedFetch(url, {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  put: (url: string, data: any) => authenticatedFetch(url, {
+  put: (url: string, data: Record<string, unknown>) => authenticatedFetch(url, {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
@@ -384,7 +384,7 @@ export const studentDashboardApi = {
 
   // Get study sessions
   getStudySessions: async () => {
-    const response = await authenticatedFetch('/api/courses/study-sessions/');
+    const response = await authenticatedFetch('/api/courses/user-sessions/');
     
     if (!response.ok) {
       throw new Error('Failed to fetch study sessions');
@@ -457,6 +457,175 @@ export const studentDashboardApi = {
     
     if (!response.ok) {
       throw new Error('Failed to end study session');
+    }
+    
+    return response.json();
+  },
+};
+
+// Admin Dashboard API methods
+export const adminDashboardApi = {
+  // Get dashboard stats
+  getDashboardStats: async () => {
+    const response = await authenticatedFetch('/api/auth/dashboard/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard stats');
+    }
+    
+    return response.json();
+  },
+
+  // Get pending payments for admin approval
+  getPendingPayments: async () => {
+    const response = await authenticatedFetch('/api/payments/admin/pending/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch pending payments');
+    }
+    
+    return response.json();
+  },
+
+  // Verify/approve payment
+  verifyPayment: async (paymentId: number, action: 'approve' | 'reject', notes?: string) => {
+    const response = await authenticatedFetch(`/api/payments/admin/verify/${paymentId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ action, notes: notes || '' }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to verify payment');
+    }
+    
+    return response.json();
+  },
+
+  // Get payment analytics
+  getPaymentAnalytics: async () => {
+    const response = await authenticatedFetch('/api/payments/admin/analytics/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch payment analytics');
+    }
+    
+    return response.json();
+  },
+
+  // Get payment history for admin
+  getPaymentHistory: async (status?: string) => {
+    const url = `/api/payments/admin/history/${status ? `?status=${status}` : ''}`;
+    const response = await authenticatedFetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch payment history');
+    }
+    
+    return response.json();
+  },
+
+  // Get course performance analytics
+  getCoursePerformanceAnalytics: async () => {
+    const response = await authenticatedFetch('/api/courses/analytics/course-performance/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch course performance analytics');
+    }
+    
+    return response.json();
+  },
+
+  // Get training partner courses (admin can manage their own courses)
+  getTrainingPartnerCourses: async () => {
+    const response = await authenticatedFetch('/api/courses/my-courses/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch training partner courses');
+    }
+    
+    return response.json();
+  },
+
+  // Create new course
+  createCourse: async (courseData: Record<string, unknown>) => {
+    const response = await authenticatedFetch('/api/courses/create/', {
+      method: 'POST',
+      body: JSON.stringify(courseData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create course');
+    }
+    
+    return response.json();
+  },
+
+  // Update course
+  updateCourse: async (courseSlug: string, courseData: Record<string, unknown>) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/update/`, {
+      method: 'PUT',
+      body: JSON.stringify(courseData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update course');
+    }
+    
+    return response.json();
+  },
+
+  // Delete course
+  deleteCourse: async (courseSlug: string) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/delete/`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete course');
+    }
+    
+    return response.json();
+  },
+};
+
+// User management API methods
+export const userApi = {
+  // Get user profile
+  getProfile: async () => {
+    const response = await authenticatedFetch('/api/auth/profile/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+    
+    return response.json();
+  },
+
+  // Update user profile
+  updateProfile: async (profileData: Record<string, unknown>) => {
+    const response = await authenticatedFetch('/api/auth/profile/', {
+      method: 'PATCH',
+      body: JSON.stringify(profileData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update profile');
+    }
+    
+    return response.json();
+  },
+
+  // Get dashboard stats based on user role
+  getDashboardStats: async () => {
+    const response = await authenticatedFetch('/api/auth/dashboard/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard stats');
     }
     
     return response.json();

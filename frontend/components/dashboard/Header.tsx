@@ -24,41 +24,54 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const router = useRouter();
   
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'New course assignment',
-      message: 'You have been assigned to Advanced React course',
-      time: '2 min ago',
-      unread: true,
-    },
-    {
-      id: 2,
-      title: 'Session reminder',
-      message: 'Live session starts in 15 minutes',
-      time: '5 min ago',
-      unread: true,
-    },
-    {
-      id: 3,
-      title: 'Course completed',
-      message: 'Congratulations! You completed JavaScript Fundamentals',
-      time: '1 hour ago',
-      unread: false,
-    },
-  ];
+  // Fetch notifications when component mounts or when notifications dropdown is opened
+  useEffect(() => {
+    if (user.role === 'student') {
+      fetchNotifications();
+    }
+  }, [user.role]);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const fetchNotifications = async () => {
+    if (loadingNotifications) return;
+    
+    try {
+      setLoadingNotifications(true);
+      const { studentDashboardApi } = await import('@/lib/api');
+      const response = await studentDashboardApi.getNotifications();
+      setNotifications(response.results?.slice(0, 5) || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // Fallback to empty array
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle search functionality
-    console.log('Searching for:', searchQuery);
+    if (!searchQuery.trim()) return;
+    
+    // Navigate to appropriate search page based on user role
+    if (user.role === 'student') {
+      router.push(`/dashboard/student/courses?search=${encodeURIComponent(searchQuery)}`);
+    } else if (user.role === 'tutor') {
+      router.push(`/dashboard/tutor/courses?search=${encodeURIComponent(searchQuery)}`);
+    } else if (user.role === 'admin') {
+      router.push(`/dashboard/admin/courses?search=${encodeURIComponent(searchQuery)}`);
+    }
+    
+    // Clear search after navigation
+    setSearchQuery('');
   };
 
   const handleSignOut = async () => {
@@ -178,30 +191,54 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                   <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                 </div>
                 <div className="max-h-96 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        notification.unread ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      <div className="flex items-start">
-                        <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
-                          notification.unread ? 'bg-blue-500' : 'bg-gray-300'
-                        }`}></div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                          <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
+                  {loadingNotifications ? (
+                    <div className="p-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center">
+                      <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <p className="text-sm text-gray-500 mt-2">No new notifications</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                          !notification.is_read ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start">
+                          <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
+                            !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
+                          }`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              {new Date(notification.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 <div className="p-4 border-t border-gray-200">
-                  <button className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                  <a 
+                    href={`/dashboard/${user.role}/notifications`}
+                    className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium block"
+                  >
                     View all notifications
-                  </button>
+                  </a>
                 </div>
               </div>
             )}

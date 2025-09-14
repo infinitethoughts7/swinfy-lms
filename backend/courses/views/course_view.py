@@ -179,16 +179,49 @@ class FeaturedCoursesView(generics.ListAPIView):
 
 
 class MyCoursesView(generics.ListAPIView):
-    """Get courses created by the current user."""
+    """Get courses for the current user - enrolled courses for students, created courses for tutors/admins."""
     serializer_class = CourseListSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CoursePagination
     
     def get_queryset(self):
-        """Return courses created by the current user."""
-        if self.request.user.role in ['tutor', 'admin']:
+        """Return appropriate courses based on user role."""
+        if self.request.user.role == 'student':
+            # For students, return enrolled courses
+            from ..models import Enrollment
+            enrolled_course_ids = Enrollment.objects.filter(
+                student=self.request.user
+            ).values_list('course_id', flat=True)
+            return Course.objects.filter(
+                id__in=enrolled_course_ids
+            ).select_related('training_partner', 'tutor')
+        elif self.request.user.role in ['tutor', 'admin']:
+            # For tutors/admins, return courses they created
             return Course.objects.filter(tutor=self.request.user).select_related('training_partner', 'tutor')
         return Course.objects.none()
+    
+    def list(self, request, *args, **kwargs):
+        """Override list method to return enrollment data for students."""
+        if request.user.role == 'student':
+            from ..models import Enrollment
+            from ..serializers import EnrollmentSerializer
+            
+            # Get enrollments for the student
+            enrollments = Enrollment.objects.filter(
+                student=request.user
+            ).select_related('course', 'course__training_partner', 'course__tutor').order_by('-enrollment_date')
+            
+            # Serialize enrollments
+            serializer = EnrollmentSerializer(enrollments, many=True)
+            return Response({
+                'count': enrollments.count(),
+                'next': None,
+                'previous': None,
+                'results': serializer.data
+            })
+        else:
+            # For tutors/admins, use the default behavior
+            return super().list(request, *args, **kwargs)
 
 
 class CourseSearchView(generics.ListAPIView):
@@ -510,6 +543,36 @@ class CoursePerformanceAnalyticsView(generics.ListAPIView):
 
 # ==================== STUDY SESSION ENDPOINTS ====================
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def study_sessions_list(request):
+    """Get user study sessions."""
+    try:
+        sessions = StudySession.objects.filter(enrollment__student=request.user).select_related('enrollment__student', 'enrollment__course', 'lesson').order_by('-started_at')
+        
+        data = []
+        for session in sessions:
+            data.append({
+                'id': str(session.id),
+                'session_duration_minutes': session.session_duration_minutes,
+                'progress_made': float(session.progress_made),
+                'started_at': session.started_at.isoformat(),
+                'ended_at': session.ended_at.isoformat() if session.ended_at else None,
+                'created_at': session.created_at.isoformat(),
+                'course': {
+                    'title': session.enrollment.course.title,
+                    'slug': session.enrollment.course.slug
+                },
+                'lesson': {
+                    'title': session.lesson.title,
+                    'id': session.lesson.id
+                } if session.lesson else None
+            })
+        
+        return Response({'results': data, 'count': len(data)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 class StudySessionView(generics.ListCreateAPIView):
     """List and create study sessions."""
     serializer_class = StudySessionSerializer
@@ -533,13 +596,40 @@ class StudySessionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # ==================== NOTIFICATION ENDPOINTS ====================
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def notification_list(request):
+    """Get user notifications."""
+    try:
+        notifications = CourseNotification.objects.filter(user=request.user).select_related('course').order_by('-created_at')
+        
+        data = []
+        for notification in notifications:
+            data.append({
+                'id': str(notification.id),
+                'title': notification.title,
+                'message': notification.message,
+                'notification_type': notification.notification_type,
+                'is_read': notification.is_read,
+                'created_at': notification.created_at.isoformat(),
+                'course': {
+                    'title': notification.course.title,
+                    'slug': notification.course.slug
+                } if notification.course else None
+            })
+        
+        return Response({'results': data, 'count': len(data)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 class NotificationView(generics.ListAPIView):
     """Get user notifications."""
     serializer_class = CourseNotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None  # Disable pagination to avoid issues
     
     def get_queryset(self):
-        return CourseNotification.objects.filter(user=self.request.user).order_by('-created_at')
+        return CourseNotification.objects.filter(user=self.request.user).select_related('course').order_by('-created_at')
 
 
 class NotificationDetailView(generics.RetrieveUpdateAPIView):
