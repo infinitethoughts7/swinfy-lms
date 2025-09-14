@@ -40,10 +40,9 @@ interface LessonsSectionProps {
   modules: CourseModule[];
   lessons: { [moduleId: string]: Lesson[] };
   isEnrolled?: boolean;
-  enrollmentStatus?: 'not_enrolled' | 'pending_payment' | 'payment_verification' | 'active' | 'completed';
 }
 
-const LessonsSection = ({ modules, lessons, isEnrolled = false, enrollmentStatus = 'not_enrolled' }: LessonsSectionProps) => {
+const LessonsSection = ({ modules, lessons, isEnrolled = false }: LessonsSectionProps) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
