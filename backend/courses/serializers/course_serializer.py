@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from ..models import Course
-from users.serializers import TrainingPartnerSerializer, UserProfileSerializer, TutorProfileSerializer
+from users.serializers import KnowledgePartnerSerializer, UserProfileSerializer, InstructorProfileSerializer
 
 User = get_user_model()
 
 
-class TutorWithProfileSerializer(serializers.ModelSerializer):
-    """Serializer for tutor with profile information."""
-    tutor_profile = TutorProfileSerializer(read_only=True)
+class InstructorWithProfileSerializer(serializers.ModelSerializer):
+    """Serializer for instructor with profile information."""
+    instructor_profile = InstructorProfileSerializer(read_only=True)
     organization_name = serializers.CharField(source='organization.name', read_only=True)
     organization_type = serializers.CharField(source='organization.type', read_only=True)
     
@@ -16,13 +16,13 @@ class TutorWithProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'full_name', 'first_name', 'last_name', 'role',
-            'organization_name', 'organization_type', 'tutor_profile'
+            'organization_name', 'organization_type', 'instructor_profile'
         ]
 
 
 class CourseListSerializer(serializers.ModelSerializer):
     """Serializer for course list views with minimal data."""
-    training_partner = TrainingPartnerSerializer(read_only=True)
+    training_partner = KnowledgePartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
@@ -81,8 +81,8 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     """Full serializer for course detail views."""
-    training_partner = TrainingPartnerSerializer(read_only=True)
-    tutor = TutorWithProfileSerializer(read_only=True)
+    training_partner = KnowledgePartnerSerializer(read_only=True)
+    tutor = InstructorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
@@ -139,8 +139,8 @@ class CourseApprovalSerializer(serializers.ModelSerializer):
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     """Serializer for course detail page with comprehensive information."""
-    training_partner = TrainingPartnerSerializer(read_only=True)
-    tutor = TutorWithProfileSerializer(read_only=True)
+    training_partner = KnowledgePartnerSerializer(read_only=True)
+    tutor = InstructorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
     tags_list = serializers.SerializerMethodField()
@@ -202,7 +202,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
 class CourseAdminSerializer(serializers.ModelSerializer):
     """Serializer for Admin course management with full control."""
-    training_partner = TrainingPartnerSerializer(read_only=True)
+    training_partner = KnowledgePartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { mockOrganizations } from '@/lib/mock-organizations';
+// import { AuthAPI, RegisterRequest } from '@/lib/api/auth';
 
 import OrganizationDetailsForm from './OrganizationDetailsForm';
 
@@ -9,33 +11,34 @@ type UserRole = 'student' | 'tutor' | 'admin';
 
 interface OrganizationDetails {
   name: string;
-  type: 'university' | 'company' | 'institute' | 'bootcamp';
+  type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
   location: string;
   website: string;
   description: string;
+  address: string;
+  contact_email: string;
+  contact_phone: string;
+  logo?: File | null;
+  linkedin_url?: string;
 }
 
 interface FormData {
-  fullName: string;
+  full_name: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  confirm_password: string;
   role: UserRole;
-  organizationId: string;
-  organizationDetails: OrganizationDetails;
 }
 
 interface FormErrors {
-  fullName?: string;
+  full_name?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
-  organizationId?: string;
-  organizationDetails?: Partial<Record<keyof OrganizationDetails, string>>;
+  confirm_password?: string;
 }
 
 const validationRules = {
-  fullName: {
+  full_name: {
     required: true,
     minLength: 2,
     message: "Name must be at least 2 characters"
@@ -51,7 +54,7 @@ const validationRules = {
     pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]/,
     message: "8+ characters with at least 1 letter and 1 number"
   },
-  confirmPassword: {
+  confirm_password: {
     required: true,
     message: "Passwords must match"
   }
@@ -63,18 +66,23 @@ interface RegistrationFormProps {
 
 export default function RegistrationForm({ onSuccess }: RegistrationFormProps = {}) {
   const [formData, setFormData] = useState<FormData>({
-    fullName: '',
+    full_name: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    confirm_password: '',
     role: 'student',
-    organizationId: '',
-    organizationDetails: {
+    organization_id: '',
+    organization_details: {
       name: '',
       type: 'university',
       location: '',
       website: '',
-      description: ''
+      description: '',
+      address: '',
+      contact_email: '',
+      contact_phone: '',
+      logo: null,
+      linkedin_url: ''
     }
   });
 
@@ -83,9 +91,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
 
   const validateField = (name: keyof FormData, value: string): string | undefined => {
     switch (name) {
-      case 'fullName':
-        if (!value) return validationRules.fullName.message;
-        if (value.length < validationRules.fullName.minLength) return validationRules.fullName.message;
+      case 'full_name':
+        if (!value) return validationRules.full_name.message;
+        if (value.length < validationRules.full_name.minLength) return validationRules.full_name.message;
         break;
       
       case 'email':
@@ -99,12 +107,12 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
         if (!validationRules.password.pattern.test(value)) return validationRules.password.message;
         break;
       
-      case 'confirmPassword':
-        if (!value) return validationRules.confirmPassword.message;
-        if (value !== formData.password) return validationRules.confirmPassword.message;
+      case 'confirm_password':
+        if (!value) return validationRules.confirm_password.message;
+        if (value !== formData.password) return validationRules.confirm_password.message;
         break;
       
-      case 'organizationId':
+      case 'organization_id':
         if (formData.role === 'tutor' && !value) {
           return 'Please select an organization';
         }
@@ -122,6 +130,15 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     if (!details.description) orgErrors.description = 'Description is required';
     if (details.website && !/^https?:\/\/.+/.test(details.website)) {
       orgErrors.website = 'Please enter a valid URL';
+    }
+    if (!details.address) orgErrors.address = 'Address is required';
+    if (!details.contact_email) orgErrors.contact_email = 'Contact email is required';
+    if (details.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.contact_email)) {
+      orgErrors.contact_email = 'Please enter a valid contact email';
+    }
+    if (!details.contact_phone) orgErrors.contact_phone = 'Contact phone is required';
+    if (details.linkedin_url && !/^https?:\/\/.+/.test(details.linkedin_url)) {
+      orgErrors.linkedin_url = 'Please enter a valid LinkedIn URL';
     }
     
     return orgErrors;
@@ -141,25 +158,37 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     setFormData(prev => ({ 
       ...prev, 
       role, 
-      organizationId: role === 'student' ? '' : prev.organizationId 
+      organization_id: role === 'student' ? '' : prev.organization_id,
+      organization_details: {
+        name: '',
+        type: 'university',
+        location: '',
+        website: '',
+        description: '',
+        address: '',
+        contact_email: '',
+        contact_phone: '',
+        logo: null,
+        linkedin_url: ''
+      }
     }));
     
     // Clear relevant errors when switching roles
     if (role === 'student') {
       setErrors(prev => ({ 
         ...prev, 
-        organizationId: undefined,
-        organizationDetails: undefined
+        organization_id: undefined,
+        organization_details: undefined
       }));
     }
   };
 
   const handleOrganizationDetailsChange = (details: OrganizationDetails) => {
-    setFormData(prev => ({ ...prev, organizationDetails: details }));
+    setFormData(prev => ({ ...prev, organization_details: details }));
     
     // Clear organization details errors when user starts typing
-    if (errors.organizationDetails) {
-      setErrors(prev => ({ ...prev, organizationDetails: undefined }));
+    if (errors.organization_details) {
+      setErrors(prev => ({ ...prev, organization_details: undefined }));
     }
   };
 
@@ -167,7 +196,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     const newErrors: FormErrors = {};
     
     // Validate basic fields
-    const basicFields = ['fullName', 'email', 'password', 'confirmPassword', 'organizationId'] as const;
+    const basicFields = ['full_name', 'email', 'password', 'confirm_password', 'organization_id'] as const;
     basicFields.forEach(key => {
       const error = validateField(key, formData[key]);
       if (error) {
@@ -177,9 +206,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
 
     // Validate organization details for admin role
     if (formData.role === 'admin') {
-      const orgErrors = validateOrganizationDetails(formData.organizationDetails);
+      const orgErrors = validateOrganizationDetails(formData.organization_details);
       if (Object.keys(orgErrors).length > 0) {
-        newErrors.organizationDetails = orgErrors;
+        newErrors.organization_details = orgErrors;
       }
     }
 
@@ -233,22 +262,22 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Full Name */}
       <div>
-        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
           Full Name
         </label>
         <input
           type="text"
-          id="fullName"
-          name="fullName"
-          value={formData.fullName}
+          id="full_name"
+          name="full_name"
+          value={formData.full_name}
           onChange={handleInputChange}
           className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-            errors.fullName ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+            errors.full_name ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
           placeholder="Enter your full name"
         />
-        {errors.fullName && (
-          <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+        {errors.full_name && (
+          <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>
         )}
       </div>
 
@@ -307,16 +336,16 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       }`}>
         {requiresOrganizationSelection && (
           <>
-            <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="organization_id" className="block text-sm font-medium text-gray-700 mb-2">
               Select Organization to Join
             </label>
             <select
-              id="organizationId"
-              name="organizationId"
-              value={formData.organizationId}
+              id="organization_id"
+              name="organization_id"
+              value={formData.organization_id}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-                errors.organizationId ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+                errors.organization_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
               }`}
             >
               <option value="">Choose organization to request access...</option>
@@ -326,8 +355,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
                 </option>
               ))}
             </select>
-            {errors.organizationId && (
-              <p className="mt-1 text-sm text-red-600">{errors.organizationId}</p>
+            {errors.organization_id && (
+              <p className="mt-1 text-sm text-red-600">{errors.organization_id}</p>
             )}
             <p className="mt-1 text-xs text-blue-600 bg-blue-50 p-2 rounded">
               💡 Your request will be sent to the organization admin for approval
@@ -342,9 +371,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       }`}>
         {requiresOrganizationCreation && (
           <OrganizationDetailsForm
-            organizationDetails={formData.organizationDetails}
+            organizationDetails={formData.organization_details}
             onChange={handleOrganizationDetailsChange}
-            errors={errors.organizationDetails}
+            errors={errors.organization_details}
           />
         )}
       </div>
@@ -375,29 +404,29 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
 
       {/* Confirm Password */}
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-2">
           Confirm Password
         </label>
         <div className="relative">
           <input
             type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
+            id="confirm_password"
+            name="confirm_password"
+            value={formData.confirm_password}
             onChange={handleInputChange}
             className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-              errors.confirmPassword 
+              errors.confirm_password 
                 ? 'border-red-500 focus:border-red-500' 
-                : formData.confirmPassword && formData.password === formData.confirmPassword
+                : formData.confirm_password && formData.password === formData.confirm_password
                   ? 'border-green-500 focus:border-green-600' 
                   : 'border-gray-300'
             }`}
             placeholder="Confirm your password"
           />
           {/* Password Match Indicator */}
-          {formData.confirmPassword && (
+          {formData.confirm_password && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              {formData.password === formData.confirmPassword ? (
+              {formData.password === formData.confirm_password ? (
                 <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
@@ -409,10 +438,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
             </div>
           )}
         </div>
-        {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+        {errors.confirm_password && (
+          <p className="mt-1 text-sm text-red-600">{errors.confirm_password}</p>
         )}
-        {formData.confirmPassword && formData.password === formData.confirmPassword && !errors.confirmPassword && (
+        {formData.confirm_password && formData.password === formData.confirm_password && !errors.confirm_password && (
           <p className="mt-1 text-sm text-green-600 flex items-center">
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

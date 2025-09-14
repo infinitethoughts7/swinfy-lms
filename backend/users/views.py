@@ -6,15 +6,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from .models import User, TrainingPartner
+from .models import User, KnowledgePartner
 from .serializers import (
     UserRegistrationSerializer, 
     UserProfileSerializer, 
     ChangePasswordSerializer,
-    TrainingPartnerSerializer,
+    KnowledgePartnerSerializer,
     ProfileCompletionSerializer,
-    StudentProfileSerializer,
-    TutorProfileSerializer,
+    LearnerProfileSerializer,
+    InstructorProfileSerializer,
     AdminProfileSerializer
 )
 
@@ -202,10 +202,10 @@ class ChangePasswordView(APIView):
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
-def get_training_partners(request):
-    """Get list of active training partners for frontend dropdown."""
-    training_partners = TrainingPartner.objects.filter(is_active=True).order_by('name')
-    serializer = TrainingPartnerSerializer(training_partners, many=True)
+def get_knowledge_partners(request):
+    """Get list of active knowledge partners for frontend dropdown."""
+    knowledge_partners = KnowledgePartner.objects.filter(is_active=True).order_by('name')
+    serializer = KnowledgePartnerSerializer(knowledge_partners, many=True)
     return Response(serializer.data)
 
 
@@ -234,11 +234,11 @@ def dashboard_stats(request):
     
     user = request.user
     
-    if user.role == 'admin' and user.organization:
+    if user.role == 'knowledge_partner_admin' and user.organization:
         # Admin dashboard stats
         organization_users = user.organization.users.count()
-        pending_tutors = user.organization.users.filter(
-            role='tutor', 
+        pending_instructors = user.organization.users.filter(
+            role='knowledge_partner_instructor', 
             is_approved=False
         ).count()
         
@@ -280,10 +280,10 @@ def dashboard_stats(request):
         ).count()
         
         return Response({
-            'role': 'admin',
+            'role': 'knowledge_partner_admin',
             'organization': user.organization.name,
             'total_users': organization_users,
-            'pending_tutors': pending_tutors,
+            'pending_instructors': pending_instructors,
             'total_courses': total_courses,
             'published_courses': published_courses,
             'total_enrollments': total_enrollments,
@@ -294,8 +294,8 @@ def dashboard_stats(request):
             'recent_payments': recent_payments,
         })
     
-    elif user.role == 'tutor':
-        # Tutor dashboard stats
+    elif user.role == 'knowledge_partner_instructor':
+        # Instructor dashboard stats
         my_courses = Course.objects.filter(tutor=user)
         total_courses = my_courses.count()
         published_courses = my_courses.filter(is_published=True).count()
@@ -324,7 +324,7 @@ def dashboard_stats(request):
         ).count()
         
         return Response({
-            'role': 'tutor',
+            'role': 'knowledge_partner_instructor',
             'organization': user.organization.name if user.organization else None,
             'is_approved': user.is_approved,
             'total_courses': total_courses,
@@ -337,7 +337,7 @@ def dashboard_stats(request):
         })
     
     else:
-        # Student dashboard stats
+        # Learner dashboard stats
         my_enrollments = Enrollment.objects.filter(student=user)
         total_enrollments = my_enrollments.count()
         active_enrollments = my_enrollments.filter(status='active').count()
@@ -351,7 +351,7 @@ def dashboard_stats(request):
         ).aggregate(total=Sum('amount'))['total'] or 0
         
         return Response({
-            'role': 'student',
+            'role': 'learner',
             'total_enrollments': total_enrollments,
             'active_enrollments': active_enrollments,
             'completed_enrollments': completed_enrollments,
@@ -373,23 +373,23 @@ class ProfileCompletionView(APIView):
         has_profile = False
         profile_data = {}
         
-        if user.role == 'student':
+        if user.role == 'learner':
             try:
-                profile = user.student_profile
+                profile = user.learner_profile
                 has_profile = True
-                profile_data = StudentProfileSerializer(profile).data
+                profile_data = LearnerProfileSerializer(profile).data
             except:
                 has_profile = False
                 
-        elif user.role == 'tutor':
+        elif user.role == 'knowledge_partner_instructor':
             try:
-                profile = user.tutor_profile
+                profile = user.instructor_profile
                 has_profile = True
-                profile_data = TutorProfileSerializer(profile).data
+                profile_data = InstructorProfileSerializer(profile).data
             except:
                 has_profile = False
                 
-        elif user.role == 'admin':
+        elif user.role == 'knowledge_partner_admin':
             try:
                 profile = user.admin_profile
                 has_profile = True
@@ -433,23 +433,23 @@ class ProfileCompletionView(APIView):
     
     def _get_required_fields(self, role):
         """Get required fields for each role."""
-        if role == 'student':
-            return []  # No required fields for students
-        elif role == 'tutor':
+        if role == 'learner':
+            return []  # No required fields for learners
+        elif role == 'knowledge_partner_instructor':
             return ['bio', 'title', 'highest_education', 'specializations', 'technologies']
-        elif role == 'admin':
+        elif role == 'knowledge_partner_admin':
             return ['job_title']
         return []
     
     def _get_optional_fields(self, role):
         """Get optional fields for each role."""
-        if role == 'student':
+        if role == 'learner':
             return [
                 'bio', 'profile_picture', 'date_of_birth', 'phone_number',
                 'education_level', 'field_of_study', 'current_institution',
                 'learning_goals'
             ]
-        elif role == 'tutor':
+        elif role == 'knowledge_partner_instructor':
             return [
                 'profile_picture', 'date_of_birth', 'phone_number',
                 'years_of_experience', 'hourly_rate', 'certifications',
@@ -457,7 +457,7 @@ class ProfileCompletionView(APIView):
                 'portfolio_url', 'personal_website', 'is_available', 
                 'availability_notes'
             ]
-        elif role == 'admin':
+        elif role == 'knowledge_partner_admin':
             return [
                 'bio', 'profile_picture', 'phone_number', 'department',
                 'office_location', 'office_phone', 'emergency_contact',
@@ -483,15 +483,15 @@ class UserProfileDetailView(APIView):
         has_profile = False
         
         try:
-            if user.role == 'student':
-                profile = user.student_profile
-                profile_data = StudentProfileSerializer(profile).data
+            if user.role == 'learner':
+                profile = user.learner_profile
+                profile_data = LearnerProfileSerializer(profile).data
                 has_profile = True
-            elif user.role == 'tutor':
-                profile = user.tutor_profile
-                profile_data = TutorProfileSerializer(profile).data
+            elif user.role == 'knowledge_partner_instructor':
+                profile = user.instructor_profile
+                profile_data = InstructorProfileSerializer(profile).data
                 has_profile = True
-            elif user.role == 'admin':
+            elif user.role == 'knowledge_partner_admin':
                 profile = user.admin_profile
                 profile_data = AdminProfileSerializer(profile).data
                 has_profile = True
@@ -526,14 +526,14 @@ class UserProfileDetailView(APIView):
         # Update role-specific profile data if provided
         if 'profile_data' in request.data:
             try:
-                if user.role == 'student':
-                    profile, created = user.student_profile, False
-                    if not hasattr(user, 'student_profile'):
+                if user.role == 'learner':
+                    profile, created = user.learner_profile, False
+                    if not hasattr(user, 'learner_profile'):
                         profile = None
                         created = True
                     
                     if created:
-                        profile_serializer = StudentProfileSerializer(
+                        profile_serializer = LearnerProfileSerializer(
                             data=request.data['profile_data']
                         )
                         if profile_serializer.is_valid():
@@ -544,7 +544,7 @@ class UserProfileDetailView(APIView):
                                 'errors': {'profile_data': profile_serializer.errors}
                             }, status=status.HTTP_400_BAD_REQUEST)
                     else:
-                        profile_serializer = StudentProfileSerializer(
+                        profile_serializer = LearnerProfileSerializer(
                             profile,
                             data=request.data['profile_data'],
                             partial=True
@@ -557,17 +557,17 @@ class UserProfileDetailView(APIView):
                                 'errors': {'profile_data': profile_serializer.errors}
                             }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Similar logic for tutor and admin...
-                elif user.role == 'tutor':
+                # Similar logic for instructor and admin...
+                elif user.role == 'knowledge_partner_instructor':
                     try:
-                        profile = user.tutor_profile
+                        profile = user.instructor_profile
                         created = False
                     except:
                         profile = None
                         created = True
                     
                     if created:
-                        profile_serializer = TutorProfileSerializer(
+                        profile_serializer = InstructorProfileSerializer(
                             data=request.data['profile_data']
                         )
                         if profile_serializer.is_valid():
@@ -578,7 +578,7 @@ class UserProfileDetailView(APIView):
                                 'errors': {'profile_data': profile_serializer.errors}
                             }, status=status.HTTP_400_BAD_REQUEST)
                     else:
-                        profile_serializer = TutorProfileSerializer(
+                        profile_serializer = InstructorProfileSerializer(
                             profile,
                             data=request.data['profile_data'],
                             partial=True
@@ -591,7 +591,7 @@ class UserProfileDetailView(APIView):
                                 'errors': {'profile_data': profile_serializer.errors}
                             }, status=status.HTTP_400_BAD_REQUEST)
                 
-                elif user.role == 'admin':
+                elif user.role == 'knowledge_partner_admin':
                     try:
                         profile = user.admin_profile
                         created = False

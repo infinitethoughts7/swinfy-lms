@@ -1,13 +1,13 @@
 from rest_framework import serializers
-from users.models import TrainingPartner
+from users.models import KnowledgePartner
 
 
-class TrainingPartnerSerializer(serializers.ModelSerializer):
-    """Serializer for TrainingPartner model."""
+class KnowledgePartnerSerializer(serializers.ModelSerializer):
+    """Serializer for KnowledgePartner model."""
     courses_count = serializers.SerializerMethodField()
     
     class Meta:
-        model = TrainingPartner
+        model = KnowledgePartner
         fields = [
             'id', 'name', 'type', 'description', 'website', 'email', 'phone',
             'address', 'logo', 'is_active', 'created_at', 'courses_count'
@@ -19,9 +19,9 @@ class TrainingPartnerSerializer(serializers.ModelSerializer):
         return obj.courses.count()
 
 
-class TrainingPartnerListSerializer(serializers.ModelSerializer):
-    """Simplified serializer for training partner lists."""
+class KnowledgePartnerListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for knowledge partner lists."""
     
     class Meta:
-        model = TrainingPartner
+        model = KnowledgePartner
         fields = ['id', 'name', 'type', 'logo', 'is_active']

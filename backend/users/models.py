@@ -3,8 +3,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 import uuid
 
-class TrainingPartner(models.Model):
-    """TrainingPartner model for managing institutions and companies."""
+class KnowledgePartner(models.Model):
+    """KnowledgePartner model for managing institutions and companies."""
     
     ORG_TYPE_CHOICES = [
         ('company', 'Company'),
@@ -84,20 +84,20 @@ class TrainingPartner(models.Model):
     
     @property
     def admin_user(self):
-        """Get the admin user for this training partner."""
-        return self.users.filter(role='admin').first()
+        """Get the admin user for this knowledge partner."""
+        return self.users.filter(role='knowledge_partner_admin').first()
     
     @property
-    def tutors_count(self):
-        """Get number of tutors."""
-        return self.users.filter(role='tutor').count()
+    def instructors_count(self):
+        """Get number of instructors."""
+        return self.users.filter(role='knowledge_partner_instructor').count()
     
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
     
     class Meta:
-        verbose_name = 'Training Partner'
-        verbose_name_plural = 'Training Partners'
+        verbose_name = 'Knowledge Partner'
+        verbose_name_plural = 'Knowledge Partners'
         ordering = ['name']
         indexes = [
             models.Index(fields=['is_active', 'is_verified']),
@@ -112,24 +112,24 @@ class User(AbstractUser):
     
     ROLE_CHOICES = [
         ('learner', 'Learner'),
-        ('kpi', 'Knowlege Patner Instructor'),
-        ('kpa', 'Knowlege Patner Admin'),
+        ('knowledge_partner_instructor', 'Knowledge Partner Instructor'),
+        ('knowledge_partner_admin', 'Knowledge Partner Admin'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Basic authentication fields only
     email = models.EmailField(unique=True, verbose_name='Email Address')
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='learner')
+    role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='learner')
     
-    # TrainingPartner relationship - NOW FLEXIBLE FOR ALL ROLES
+    # KnowledgePartner relationship - NOW FLEXIBLE FOR ALL ROLES
     organization = models.ForeignKey(
-        'TrainingPartner', 
+        'KnowledgePartner', 
         on_delete=models.CASCADE, 
         blank=True, 
         null=True,
         related_name='users',
-        help_text="Training partner organization (optional for students, required for tutors/admins)"
+        help_text="Knowledge partner organization (optional for learners, required for instructors/admins)"
     )
     
     # User status
@@ -149,25 +149,25 @@ class User(AbstractUser):
         """Custom validation for user model."""
         super().clean()
         
-        # Tutors and admins must have a training partner
-        if self.role in ['tutor', 'admin'] and not self.organization:
+        # Instructors and admins must have a knowledge partner
+        if self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin'] and not self.organization:
             raise ValidationError({
-                'organization': 'Tutors and Admins must belong to a training partner.'
+                'organization': 'Instructors and Admins must belong to a knowledge partner.'
             })
         
         # REMOVED: Students can now belong to organizations for private course access
         # This allows students to access private courses from their organization
         
-        # Only one admin per training partner
-        if self.role == 'admin' and self.organization:
+        # Only one admin per knowledge partner
+        if self.role == 'knowledge_partner_admin' and self.organization:
             existing_admin = User.objects.filter(
-                role='admin', 
+                role='knowledge_partner_admin', 
                 organization=self.organization
             ).exclude(pk=self.pk).first()
             
             if existing_admin:
                 raise ValidationError({
-                    'role': f'Training Partner "{self.organization.name}" already has an admin: {existing_admin.email}'
+                    'role': f'Knowledge Partner "{self.organization.name}" already has an admin: {existing_admin.email}'
                 })
     
     def save(self, *args, **kwargs):
@@ -177,10 +177,10 @@ class User(AbstractUser):
             self.first_name = name_parts[0]
             self.last_name = name_parts[1] if len(name_parts) > 1 else ''
         
-        # Auto-approve students and admins, tutors need approval
-        if self.role in ['student', 'admin']:
+        # Auto-approve learners and admins, instructors need approval
+        if self.role in ['learner', 'knowledge_partner_admin']:
             self.is_approved = True
-        elif self.role == 'tutor' and not self.pk:  # New tutor
+        elif self.role == 'knowledge_partner_instructor' and not self.pk:  # New instructor
             self.is_approved = False
         
         self.clean()
@@ -189,12 +189,12 @@ class User(AbstractUser):
     @property
     def can_create_courses(self):
         """Check if user can create courses."""
-        return self.role in ['admin', 'tutor'] and self.is_approved and self.organization
+        return self.role in ['knowledge_partner_admin', 'knowledge_partner_instructor'] and self.is_approved and self.organization
     
     @property
     def can_manage_organization(self):
-        """Check if user can manage training partner."""
-        return self.role == 'admin' and self.is_approved and self.organization
+        """Check if user can manage knowledge partner."""
+        return self.role == 'knowledge_partner_admin' and self.is_approved and self.organization
     
     @property
     def can_access_private_courses(self):
@@ -213,7 +213,7 @@ class User(AbstractUser):
     
     def can_enroll_in_course(self, course):
         """Check if user can enroll in a specific course."""
-        if self.role != 'student':
+        if self.role != 'learner':
             return False
         
         # For private courses, must be from same organization
@@ -227,9 +227,9 @@ class User(AbstractUser):
         """Get queryset of courses this user can access."""
         from courses.models import Course
         
-        if self.role == 'student':
+        if self.role == 'learner':
             if self.organization:
-                # Students with organization can see public courses + private courses from their org
+                # Learners with organization can see public courses + private courses from their org
                 return Course.objects.filter(
                     is_published=True,
                     is_approved_by_training_partner=True
@@ -238,14 +238,14 @@ class User(AbstractUser):
                     models.Q(is_private=True, training_partner=self.organization)  # Private from their org
                 )
             else:
-                # Independent students can only see public courses
+                # Independent learners can only see public courses
                 return Course.objects.filter(
                     is_published=True,
                     is_approved_by_training_partner=True,
                     is_private=False
                 )
-        elif self.role in ['tutor', 'admin']:
-            # Tutors and admins see all courses from their organization
+        elif self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin']:
+            # Instructors and admins see all courses from their organization
             return Course.objects.filter(training_partner=self.organization)
         
         return Course.objects.none()
@@ -264,11 +264,11 @@ class User(AbstractUser):
         ]
 
 
-class StudentProfile(models.Model):
-    """Profile for students with learning preferences and progress tracking."""
+class LearnerProfile(models.Model):
+    """Profile for learners with learning preferences and progress tracking."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
     
     # Personal Information
     bio = models.TextField(blank=True, null=True, help_text="Tell us about yourself")
@@ -296,18 +296,18 @@ class StudentProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name}'s Student Profile"
+        return f"{self.user.full_name}'s Learner Profile"
     
     class Meta:
-        verbose_name = 'Student Profile'
-        verbose_name_plural = 'Student Profiles'
+        verbose_name = 'Learner Profile'
+        verbose_name_plural = 'Learner Profiles'
 
 
-class TutorProfile(models.Model):
-    """Profile for tutors with qualifications and expertise."""
+class KPIProfile(models.Model):
+    """Profile for knowledge partner instructors with qualifications and expertise."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tutor_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
     
     # Personal Information
     bio = models.TextField(help_text="Professional bio for students to see")
@@ -351,15 +351,15 @@ class TutorProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name}'s Tutor Profile"
+        return f"{self.user.full_name}'s Instructor Profile"
     
     class Meta:
-        verbose_name = 'Tutor Profile'
-        verbose_name_plural = 'Tutor Profiles'
+        verbose_name = 'Instructor Profile'
+        verbose_name_plural = 'Instructor Profiles'
 
 
-class AdminProfile(models.Model):
-    """Profile for organization administrators."""
+class KPAProfile(models.Model):
+    """Profile for knowledge partner administrators."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')

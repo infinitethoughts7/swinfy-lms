@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, TrainingPartner, StudentProfile, TutorProfile, AdminProfile
+from .models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile
 
 
-@admin.register(TrainingPartner)
-class TrainingPartnerAdmin(admin.ModelAdmin):
+@admin.register(KnowledgePartner)
+class KnowledgePartnerAdmin(admin.ModelAdmin):
     list_display = ['name', 'type', 'location', 'is_active', 'created_at']
     list_filter = ['type', 'is_active', 'created_at']
     search_fields = ['name', 'location', 'description']
@@ -41,7 +41,7 @@ class CustomUserAdmin(UserAdmin):
         ('Personal Info', {
             'fields': ('full_name', 'first_name', 'last_name')
         }),
-        ('Role & Training Partner', {
+        ('Role & Knowledge Partner', {
             'fields': ('role', 'organization', 'is_verified', 'is_approved')
         }),
         ('Permissions', {
@@ -74,8 +74,8 @@ class CustomUserAdmin(UserAdmin):
         return readonly_fields
 
 
-@admin.register(StudentProfile)
-class StudentProfileAdmin(admin.ModelAdmin):
+@admin.register(LearnerProfile)
+class LearnerProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'education_level', 'field_of_study', 'created_at']
     list_filter = ['education_level', 'created_at']
     search_fields = ['user__full_name', 'user__email', 'field_of_study']
@@ -101,8 +101,8 @@ class StudentProfileAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(TutorProfile)
-class TutorProfileAdmin(admin.ModelAdmin):
+@admin.register(KPIProfile)
+class InstructorProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'years_of_experience', 'hourly_rate', 'is_available', 'created_at']
     list_filter = ['highest_education', 'is_available', 'created_at']
     search_fields = ['user__full_name', 'user__email', 'title', 'specializations', 'technologies']
@@ -137,7 +137,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(AdminProfile)
+@admin.register(KPAProfile)
 class AdminProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'job_title', 'department', 'created_at']
     list_filter = ['created_at']

@@ -32,7 +32,7 @@ from .course_view import (
     weekly_activity_analytics,
     student_distribution_analytics
 )
-from .training_partner_view import TrainingPartnerListView, TrainingPartnerDetailView, training_partner_list
+from .training_partner_view import KnowledgePartnerListView, KnowledgePartnerDetailView, knowledge_partner_list
 
 __all__ = [
     'CourseListView',
@@ -61,12 +61,12 @@ __all__ = [
     'NotificationView',
     'NotificationDetailView',
     'notification_list',
-    'TrainingPartnerListView',
-    'TrainingPartnerDetailView',
+    'KnowledgePartnerListView',
+    'KnowledgePartnerDetailView',
     'course_list',
     'course_stats',
     'featured_courses',
-    'training_partner_list',
+    'knowledge_partner_list',
     'enrollment_status',
     'weekly_activity_analytics',
     'student_distribution_analytics'

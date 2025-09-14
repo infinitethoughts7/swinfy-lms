@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
-from users.models import User, TrainingPartner
+from users.models import User, KnowledgePartner
 
 
 class Course(models.Model):
@@ -92,18 +92,18 @@ class Course(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='created_courses',
-        limit_choices_to={'role__in': ['tutor', 'admin']},
+        limit_choices_to={'role__in': ['knowledge_partner_instructor', 'knowledge_partner_admin']},
         null=True,
         blank=True,
         help_text="Tutor or Admin who created this course"
     )
     training_partner = models.ForeignKey(
-        TrainingPartner,
+        KnowledgePartner,
         on_delete=models.CASCADE,
         related_name='courses',
         null=True,
         blank=True,
-        help_text="Training partner"
+        help_text="Knowledge partner"
     )
     
     # UPDATED: Simplified Approval Workflow Fields (No Super Admin)
@@ -206,20 +206,20 @@ class Course(models.Model):
         """Custom validation for course model."""
         super().clean()
         
-        # Training partner validation
+        # Knowledge partner validation
         if not self.training_partner:
             raise ValidationError({
-                'training_partner': 'Course must have a training partner.'
+                'training_partner': 'Course must have a knowledge partner.'
             })
         
-        # Tutor must belong to the same training partner
+        # Instructor must belong to the same knowledge partner
         if self.tutor and self.training_partner:
             if self.tutor.organization != self.training_partner:
                 raise ValidationError({
-                    'tutor': 'Tutor must belong to the same training partner as the course.'
+                    'tutor': 'Instructor must belong to the same knowledge partner as the course.'
                 })
         
-        # Set training partner from tutor if not provided
+        # Set knowledge partner from instructor if not provided
         if self.tutor and not self.training_partner:
             self.training_partner = self.tutor.organization
         
@@ -348,8 +348,8 @@ class Course(models.Model):
         if not self.can_user_view(user):
             return False
         
-        # Must be a student
-        if not (user.is_authenticated and user.role == 'student'):
+        # Must be a learner
+        if not (user.is_authenticated and user.role == 'learner'):
             return False
         
         # Check if enrollment is open
