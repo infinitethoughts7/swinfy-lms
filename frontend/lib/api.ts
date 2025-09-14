@@ -461,6 +461,28 @@ export const studentDashboardApi = {
     
     return response.json();
   },
+
+  // Get weekly activity analytics
+  getWeeklyActivity: async () => {
+    const response = await authenticatedFetch('/api/courses/analytics/weekly-activity/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch weekly activity data');
+    }
+    
+    return response.json();
+  },
+
+  // Get student distribution analytics
+  getStudentDistribution: async () => {
+    const response = await authenticatedFetch('/api/courses/analytics/student-distribution/');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch student distribution data');
+    }
+    
+    return response.json();
+  },
 };
 
 // Admin Dashboard API methods

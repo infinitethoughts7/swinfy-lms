@@ -11,6 +11,8 @@ interface ProfileData {
   progressAnalytics: any;
   paymentHistory: any[];
   studySessions: any[];
+  weeklyActivity: any[];
+  studentDistribution: any[];
 }
 
 export default function StudentProfilePage() {
@@ -18,7 +20,9 @@ export default function StudentProfilePage() {
     userProfile: null,
     progressAnalytics: null,
     paymentHistory: [],
-    studySessions: []
+    studySessions: [],
+    weeklyActivity: [],
+    studentDistribution: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,12 +46,16 @@ export default function StudentProfilePage() {
           userProfileData,
           progressAnalyticsData,
           paymentHistoryData,
-          studySessionsData
+          studySessionsData,
+          weeklyActivityData,
+          studentDistributionData
         ] = await Promise.allSettled([
           userApi.getProfile(),
           studentDashboardApi.getProgressAnalytics(),
           paymentsApi.getPaymentHistory(),
-          studentDashboardApi.getStudySessions()
+          studentDashboardApi.getStudySessions(),
+          studentDashboardApi.getWeeklyActivity(),
+          studentDashboardApi.getStudentDistribution()
         ]);
 
         const profile = userProfileData.status === 'fulfilled' ? userProfileData.value : null;
@@ -56,7 +64,9 @@ export default function StudentProfilePage() {
           userProfile: profile,
           progressAnalytics: progressAnalyticsData.status === 'fulfilled' ? progressAnalyticsData.value : null,
           paymentHistory: paymentHistoryData.status === 'fulfilled' ? paymentHistoryData.value : [],
-          studySessions: studySessionsData.status === 'fulfilled' ? studySessionsData.value.results || [] : []
+          studySessions: studySessionsData.status === 'fulfilled' ? studySessionsData.value.results || [] : [],
+          weeklyActivity: weeklyActivityData.status === 'fulfilled' ? weeklyActivityData.value.weekly_activity || [] : [],
+          studentDistribution: studentDistributionData.status === 'fulfilled' ? studentDistributionData.value.student_distribution || [] : []
         });
 
         // Initialize form data
@@ -136,7 +146,7 @@ export default function StudentProfilePage() {
     );
   }
 
-  const { userProfile, progressAnalytics, paymentHistory, studySessions } = profileData;
+  const { userProfile, progressAnalytics, paymentHistory, studySessions, weeklyActivity, studentDistribution } = profileData;
   
   // Calculate stats from available data
   const enrolledCourses = profileData.studySessions?.map(session => session.course?.title).filter(Boolean) || [];
@@ -186,11 +196,7 @@ const achievements = [
     { month: 'No Data', score: 0 }
   ];
 
-  // Weekly activity from study sessions
-  const weeklyActivity = studySessions.slice(-7).map((session: any, index: number) => ({
-    day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] || 'Day',
-    hours: session.session_duration_minutes ? Math.round(session.session_duration_minutes / 60) : 0
-  }));
+  // Weekly activity is now fetched from backend analytics
 
   return (
     <div className="space-y-6">

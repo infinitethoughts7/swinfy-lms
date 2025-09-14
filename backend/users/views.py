@@ -227,6 +227,11 @@ def verify_email(request):
 @permission_classes([permissions.IsAuthenticated])
 def dashboard_stats(request):
     """Get dashboard statistics for different user roles."""
+    from courses.models import Course, Enrollment
+    from payments.models import Payment
+    from django.db.models import Count, Sum, Avg
+    from datetime import datetime, timedelta
+    
     user = request.user
     
     if user.role == 'admin' and user.organization:
@@ -237,25 +242,121 @@ def dashboard_stats(request):
             is_approved=False
         ).count()
         
+        # Course statistics
+        total_courses = Course.objects.filter(training_partner=user.organization).count()
+        published_courses = Course.objects.filter(
+            training_partner=user.organization, 
+            is_published=True
+        ).count()
+        
+        # Enrollment statistics
+        total_enrollments = Enrollment.objects.filter(
+            course__training_partner=user.organization
+        ).count()
+        active_enrollments = Enrollment.objects.filter(
+            course__training_partner=user.organization,
+            status='active'
+        ).count()
+        
+        # Payment statistics
+        total_payments = Payment.objects.filter(
+            enrollment__course__training_partner=user.organization
+        ).count()
+        total_revenue = Payment.objects.filter(
+            enrollment__course__training_partner=user.organization,
+            status__in=['paid', 'verified']
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Recent activity (last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        recent_enrollments = Enrollment.objects.filter(
+            course__training_partner=user.organization,
+            enrollment_date__gte=thirty_days_ago
+        ).count()
+        
+        recent_payments = Payment.objects.filter(
+            enrollment__course__training_partner=user.organization,
+            created_at__gte=thirty_days_ago
+        ).count()
+        
         return Response({
             'role': 'admin',
             'organization': user.organization.name,
             'total_users': organization_users,
             'pending_tutors': pending_tutors,
+            'total_courses': total_courses,
+            'published_courses': published_courses,
+            'total_enrollments': total_enrollments,
+            'active_enrollments': active_enrollments,
+            'total_payments': total_payments,
+            'total_revenue': float(total_revenue),
+            'recent_enrollments': recent_enrollments,
+            'recent_payments': recent_payments,
         })
     
     elif user.role == 'tutor':
         # Tutor dashboard stats
+        my_courses = Course.objects.filter(tutor=user)
+        total_courses = my_courses.count()
+        published_courses = my_courses.filter(is_published=True).count()
+        
+        # Enrollment statistics for my courses
+        total_enrollments = Enrollment.objects.filter(course__tutor=user).count()
+        active_enrollments = Enrollment.objects.filter(
+            course__tutor=user,
+            status='active'
+        ).count()
+        
+        # Payment statistics for my courses
+        total_payments = Payment.objects.filter(
+            enrollment__course__tutor=user
+        ).count()
+        total_revenue = Payment.objects.filter(
+            enrollment__course__tutor=user,
+            status__in=['paid', 'verified']
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Recent activity (last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        recent_enrollments = Enrollment.objects.filter(
+            course__tutor=user,
+            enrollment_date__gte=thirty_days_ago
+        ).count()
+        
         return Response({
             'role': 'tutor',
             'organization': user.organization.name if user.organization else None,
             'is_approved': user.is_approved,
+            'total_courses': total_courses,
+            'published_courses': published_courses,
+            'total_enrollments': total_enrollments,
+            'active_enrollments': active_enrollments,
+            'total_payments': total_payments,
+            'total_revenue': float(total_revenue),
+            'recent_enrollments': recent_enrollments,
         })
     
     else:
         # Student dashboard stats
+        my_enrollments = Enrollment.objects.filter(student=user)
+        total_enrollments = my_enrollments.count()
+        active_enrollments = my_enrollments.filter(status='active').count()
+        completed_enrollments = my_enrollments.filter(status='completed').count()
+        
+        # Payment statistics
+        total_payments = Payment.objects.filter(enrollment__student=user).count()
+        total_spent = Payment.objects.filter(
+            enrollment__student=user,
+            status__in=['paid', 'verified']
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
         return Response({
             'role': 'student',
+            'total_enrollments': total_enrollments,
+            'active_enrollments': active_enrollments,
+            'completed_enrollments': completed_enrollments,
+            'total_payments': total_payments,
+            'total_spent': float(total_spent),
         })
 
 

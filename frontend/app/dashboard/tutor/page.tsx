@@ -1,154 +1,85 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import StatsCard, { StudentStatsCard, SessionStatsCard } from '@/components/dashboard/StatsCard';
 import CourseCard from '@/components/dashboard/CourseCard';
 import StudentCard from '@/components/dashboard/StudentCard';
 import LiveSessionCard from '@/components/dashboard/LiveSessionCard';
 import { TutorQuickActions } from '@/components/dashboard/QuickActions';
 import { StudentDistributionChart, WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
+import { userApi, studentDashboardApi } from '@/lib/api';
 
-// Mock data for tutor dashboard
-const tutorStats = {
-  totalStudents: 47,
-  activeCourses: 3,
-  upcomingSessions: 2,
-  monthlyEarnings: 3200
-};
-
-const myCourses = [
-  {
-    id: 'react-advanced',
-    title: 'Advanced React Development',
-    description: 'Master advanced React concepts including hooks, context, and performance optimization',
-    image: '/assets/courses/react.svg',
-    duration: '12 weeks',
-    level: 'Advanced' as const,
-    students: 25,
-    rating: 4.8,
-    status: 'active' as const
-  },
-  {
-    id: 'javascript-fundamentals',
-    title: 'JavaScript Fundamentals',
-    description: 'Learn core JavaScript concepts from beginner to intermediate level',
-    image: '/assets/courses/javascript.svg',
-    duration: '8 weeks',
-    level: 'Beginner' as const,
-    students: 32,
-    rating: 4.9,
-    status: 'active' as const
-  },
-  {
-    id: 'web-performance',
-    title: 'Web Performance Optimization',
-    description: 'Optimize website performance using modern techniques and tools',
-    image: '/assets/courses/react.svg',
-    duration: '6 weeks',
-    level: 'Intermediate' as const,
-    students: 18,
-    rating: 4.7,
-    status: 'draft' as const
-  }
-];
-
-const recentStudents = [
-  {
-    id: 'student-1',
-    name: 'Emily Chen',
-    email: 'emily.chen@email.com',
-    avatar: '/assets/students/s1.jpg',
-    enrolledCourses: 2,
-    completedCourses: 1,
-    progress: 75,
-    lastActive: '2 hours ago',
-    status: 'active' as const,
-    joinDate: 'March 2024',
-    performance: { score: 88 }
-  },
-  {
-    id: 'student-2',
-    name: 'Marcus Johnson',
-    email: 'marcus.j@email.com',
-    avatar: '/assets/students/s2.jpg',
-    enrolledCourses: 1,
-    completedCourses: 0,
-    progress: 45,
-    lastActive: '1 day ago',
-    status: 'active' as const,
-    joinDate: 'April 2024',
-    performance: { score: 92 }
-  },
-  {
-    id: 'student-3',
-    name: 'Sofia Rodriguez',
-    email: 'sofia.r@email.com',
-    avatar: '/assets/students/s3.jpg',
-    enrolledCourses: 3,
-    completedCourses: 2,
-    progress: 90,
-    lastActive: '3 hours ago',
-    status: 'active' as const,
-    joinDate: 'February 2024',
-    performance: { score: 95 }
-  }
-];
-
-const upcomingSessions = [
-  {
-    id: 'session-1',
-    title: 'React Hooks Deep Dive',
-    course: 'Advanced React Development',
-    instructor: {
-      name: 'Dr. Michael Chen',
-      avatar: '/assets/students/s5.jpg'
-    },
-    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours from now
-    duration: 90,
-    participants: 18,
-    maxParticipants: 25,
-    status: 'upcoming' as const,
-    description: 'Deep dive into React hooks patterns and custom hooks development'
-  },
-  {
-    id: 'session-2',
-    title: 'JavaScript ES6+ Features',
-    course: 'JavaScript Fundamentals',
-    instructor: {
-      name: 'Dr. Michael Chen',
-      avatar: '/assets/students/s5.jpg'
-    },
-    startTime: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(), // tomorrow
-    duration: 60,
-    participants: 0,
-    maxParticipants: 30,
-    status: 'upcoming' as const,
-    description: 'Explore modern JavaScript features including arrow functions, destructuring, and async/await'
-  }
-];
-
-const studentDistribution = [
-  { level: 'Beginner', count: 20 },
-  { level: 'Intermediate', count: 18 },
-  { level: 'Advanced', count: 9 }
-];
-
-const weeklyActivity = [
-  { day: 'Mon', hours: 4 },
-  { day: 'Tue', hours: 6 },
-  { day: 'Wed', hours: 3 },
-  { day: 'Thu', hours: 5 },
-  { day: 'Fri', hours: 7 },
-  { day: 'Sat', hours: 2 },
-  { day: 'Sun', hours: 1 }
-];
+interface TutorDashboardData {
+  dashboardStats: any;
+  myCourses: any[];
+  recentStudents: any[];
+  upcomingSessions: any[];
+  userProfile: any;
+  weeklyActivity: any[];
+  studentDistribution: any[];
+}
 
 export default function TutorDashboard() {
-  const handleStartSession = () => {
-    console.log('Starting live session...');
-  };
+  const [dashboardData, setDashboardData] = useState<TutorDashboardData>({
+    dashboardStats: null,
+    myCourses: [],
+    recentStudents: [],
+    upcomingSessions: [],
+    userProfile: null,
+    weeklyActivity: [],
+    studentDistribution: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchTutorDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        // Fetch all tutor dashboard data in parallel
+        const [
+          dashboardStatsData,
+          myCoursesData,
+          userProfileData,
+          weeklyActivityData,
+          studentDistributionData
+        ] = await Promise.allSettled([
+          userApi.getDashboardStats(),
+          studentDashboardApi.getMyCourses(), // This will return courses taught by the tutor
+          userApi.getProfile(),
+          studentDashboardApi.getWeeklyActivity(),
+          studentDashboardApi.getStudentDistribution()
+        ]);
+
+        setDashboardData({
+          dashboardStats: dashboardStatsData.status === 'fulfilled' ? dashboardStatsData.value : null,
+          myCourses: myCoursesData.status === 'fulfilled' ? myCoursesData.value.results || [] : [],
+          recentStudents: [], // TODO: Implement recent students API
+          upcomingSessions: [], // TODO: Implement upcoming sessions API
+          userProfile: userProfileData.status === 'fulfilled' ? userProfileData.value : null,
+          weeklyActivity: weeklyActivityData.status === 'fulfilled' ? weeklyActivityData.value.weekly_activity || [] : [],
+          studentDistribution: studentDistributionData.status === 'fulfilled' ? studentDistributionData.value.student_distribution || [] : []
+        });
+
+      } catch (err) {
+        console.error('Error fetching tutor dashboard data:', err);
+        setError('Failed to load dashboard data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTutorDashboardData();
+  }, []);
 
   const handleCreateCourse = () => {
-    console.log('Creating new course...');
+    window.location.href = '/dashboard/tutor/courses/create';
+  };
+
+  const handleManageCourses = () => {
+    window.location.href = '/dashboard/tutor/courses';
   };
 
   const handleViewStudents = () => {
@@ -159,235 +90,252 @@ export default function TutorDashboard() {
     console.log('Scheduling session...');
   };
 
-  const handleViewProfile = (studentId: string) => {
-    console.log('Viewing student profile:', studentId);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading tutor dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleSendMessage = (studentId: string) => {
-    console.log('Sending message to student:', studentId);
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { dashboardStats, myCourses, recentStudents, upcomingSessions, userProfile, weeklyActivity, studentDistribution } = dashboardData;
+
+  // Calculate tutor stats from real data
+  const tutorStats = {
+    totalStudents: dashboardStats?.total_enrollments || 0,
+    activeCourses: dashboardStats?.published_courses || 0,
+    upcomingSessions: upcomingSessions.length,
+    monthlyEarnings: dashboardStats?.total_revenue || 0
   };
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Good morning, Dr. Chen! 👨‍🏫
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Ready to inspire and educate your students today?
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Tutor Dashboard 🎓
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Welcome back, {userProfile?.first_name || 'Tutor'}! Manage your courses and track student progress
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleCreateCourse}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Course
+          </button>
+          <button
+            onClick={handleManageCourses}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+          >
+            Manage Courses
+          </button>
+        </div>
       </div>
 
       {/* Quick Actions */}
       <TutorQuickActions
-        onStartSession={handleStartSession}
         onCreateCourse={handleCreateCourse}
+        onManageCourses={handleManageCourses}
         onViewStudents={handleViewStudents}
         onScheduleSession={handleScheduleSession}
-        liveStudents={0}
+        totalStudents={tutorStats.totalStudents}
+        activeCourses={tutorStats.activeCourses}
       />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StudentStatsCard 
-          count={tutorStats.totalStudents}
-          change={{ value: 12, type: 'increase', timeframe: 'this month' }}
+        <StudentStatsCard
+          totalStudents={tutorStats.totalStudents}
+          activeStudents={dashboardStats?.active_enrollments || 0}
+          newThisWeek={dashboardStats?.recent_enrollments || 0}
         />
         <StatsCard
-          title="Active Courses"
+          title="Published Courses"
           value={tutorStats.activeCourses}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           }
-          color="blue"
-          change={{ value: 1, type: 'increase', timeframe: 'this month' }}
-        />
-        <SessionStatsCard 
-          upcoming={tutorStats.upcomingSessions}
-          change={{ value: 0, type: 'increase', timeframe: 'this week' }}
+          color="green"
         />
         <StatsCard
-          title="Monthly Earnings"
-          value={`$${tutorStats.monthlyEarnings.toLocaleString()}`}
+          title="Total Revenue"
+          value={`₹${tutorStats.monthlyEarnings.toLocaleString()}`}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
           }
-          color="green"
-          change={{ value: 15, type: 'increase', timeframe: 'vs last month' }}
+          color="yellow"
+        />
+        <SessionStatsCard
+          upcomingSessions={tutorStats.upcomingSessions}
+          completedToday={0}
+          totalHours={0}
         />
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Courses and Sessions */}
+        {/* Left Column - Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* My Courses */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">My Courses</h2>
-              <button 
-                onClick={handleCreateCourse}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              <button
+                onClick={handleManageCourses}
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                Create New →
+                View All
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {myCourses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  variant="tutor"
-                  showProgress={false}
-                  onEdit={(courseId) => console.log('Editing course:', courseId)}
-                />
-              ))}
-            </div>
+            
+            {myCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No courses yet</h3>
+                <p className="text-gray-600 mb-4">Create your first course to start teaching</p>
+                <button
+                  onClick={handleCreateCourse}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Create Course
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myCourses.slice(0, 4).map((course) => (
+                  <CourseCard
+                    key={course.id || course.slug}
+                    course={{
+                      id: course.id || course.slug,
+                      title: course.title,
+                      description: course.description,
+                      image: course.thumbnail || '/assets/courses/default.svg',
+                      duration: course.duration_weeks ? `${course.duration_weeks} weeks` : 'N/A',
+                      level: course.level || 'Beginner',
+                      students: course.enrollment_count || 0,
+                      rating: course.average_rating || 0,
+                      status: course.is_published ? 'active' : 'draft'
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Upcoming Sessions */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Upcoming Sessions</h2>
-              <button 
-                onClick={handleScheduleSession}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                Schedule New →
-              </button>
-            </div>
-            <div className="space-y-4">
-              {upcomingSessions.map((session) => (
-                <LiveSessionCard
-                  key={session.id}
-                  session={session}
-                  variant="tutor"
-                  onJoin={(sessionId) => console.log('Starting session:', sessionId)}
-                  onEdit={(sessionId) => console.log('Editing session:', sessionId)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Students Activity */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Student Activity</h2>
-              <button 
+          {/* Recent Students */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Recent Students</h2>
+              <button
                 onClick={handleViewStudents}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                View All →
+                View All
               </button>
             </div>
-            <div className="space-y-4">
-              {recentStudents.map((student) => (
-                <StudentCard
-                  key={student.id}
-                  student={student}
-                  variant="list"
-                  onViewProfile={handleViewProfile}
-                  onSendMessage={handleSendMessage}
-                />
-              ))}
-            </div>
+            
+            {recentStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No students yet</h3>
+                <p className="text-gray-600">Students will appear here once they enroll in your courses</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentStudents.slice(0, 3).map((student) => (
+                  <StudentCard
+                    key={student.id}
+                    student={student}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column - Analytics and Quick Info */}
+        {/* Right Column - Sidebar */}
         <div className="space-y-6">
-          {/* Student Distribution */}
-          <StudentDistributionChart students={studentDistribution} />
-
-          {/* Weekly Teaching Hours */}
-          <WeeklyActivityChart activities={weeklyActivity} />
-
-          {/* Quick Stats */}
+          {/* Upcoming Sessions */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">This Week</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Sessions Completed</span>
-                <span className="font-semibold text-gray-900">8</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Hours Taught</span>
-                <span className="font-semibold text-gray-900">28</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">New Students</span>
-                <span className="font-semibold text-green-600">+5</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Avg. Rating</span>
-                <span className="font-semibold text-yellow-600">4.8 ⭐</span>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Upcoming Sessions</h2>
+              <button
+                onClick={handleScheduleSession}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Schedule
+              </button>
             </div>
+            
+            {upcomingSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No sessions scheduled</h3>
+                <p className="text-gray-600 mb-4">Schedule your first live session</p>
+                <button
+                  onClick={handleScheduleSession}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Schedule Session
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingSessions.slice(0, 3).map((session) => (
+                  <LiveSessionCard
+                    key={session.id}
+                    session={session}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Pending Tasks */}
+          {/* Weekly Activity Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Tasks</h3>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="rounded text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Grade React assignments</p>
-                  <p className="text-xs text-gray-500">15 submissions pending</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="rounded text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Update course materials</p>
-                  <p className="text-xs text-gray-500">Add new ES6 examples</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="rounded text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Respond to student messages</p>
-                  <p className="text-xs text-gray-500">3 unread messages</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <input type="checkbox" className="rounded text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Prepare next week's sessions</p>
-                  <p className="text-xs text-gray-500">2 sessions to plan</p>
-                </div>
-              </div>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Weekly Activity</h2>
+            <WeeklyActivityChart activities={weeklyActivity} />
           </div>
 
-          {/* Student Feedback */}
+          {/* Student Distribution Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Feedback</h3>
-            <div className="space-y-4">
-              <div className="border-l-4 border-green-400 pl-4">
-                <p className="text-sm text-gray-600 italic">
-                  "Dr. Chen's explanations are so clear and easy to follow!"
-                </p>
-                <p className="text-xs text-gray-500 mt-1">- Sarah M., React Course</p>
-              </div>
-              <div className="border-l-4 border-blue-400 pl-4">
-                <p className="text-sm text-gray-600 italic">
-                  "Love the hands-on approach and real-world examples."
-                </p>
-                <p className="text-xs text-gray-500 mt-1">- Mike J., JavaScript Course</p>
-              </div>
-              <div className="border-l-4 border-purple-400 pl-4">
-                <p className="text-sm text-gray-600 italic">
-                  "Best programming instructor I've had!"
-                </p>
-                <p className="text-xs text-gray-500 mt-1">- Lisa K., Web Performance</p>
-              </div>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Student Distribution</h2>
+            <StudentDistributionChart students={studentDistribution} />
           </div>
         </div>
       </div>

@@ -153,9 +153,14 @@ export default function AdminDashboard() {
   // Calculate system stats from real data
   const systemStats = {
     totalUsers: dashboardStats?.total_users || 0,
-    activeCourses: trainingPartnerCourses.length || 0,
-    totalRevenue: paymentAnalytics?.total_revenue || 0,
-    pendingApprovals: pendingPayments.length || 0
+    activeCourses: dashboardStats?.published_courses || 0,
+    totalRevenue: dashboardStats?.total_revenue || 0,
+    pendingApprovals: pendingPayments.length || 0,
+    totalEnrollments: dashboardStats?.total_enrollments || 0,
+    activeEnrollments: dashboardStats?.active_enrollments || 0,
+    totalPayments: dashboardStats?.total_payments || 0,
+    recentEnrollments: dashboardStats?.recent_enrollments || 0,
+    recentPayments: dashboardStats?.recent_payments || 0
   };
 
   // Recent activity from payment history and course activity
@@ -235,7 +240,7 @@ export default function AdminDashboard() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          title="Total Students"
+          title="Total Users"
           value={systemStats.totalUsers.toLocaleString()}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +250,7 @@ export default function AdminDashboard() {
           color="blue"
         />
         <StatsCard
-          title="Active Courses"
+          title="Published Courses"
           value={systemStats.activeCourses}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,6 +278,50 @@ export default function AdminDashboard() {
             </svg>
           }
           color="red"
+        />
+      </div>
+
+      {/* Additional Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total Enrollments"
+          value={systemStats.totalEnrollments.toLocaleString()}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+          color="purple"
+        />
+        <StatsCard
+          title="Active Enrollments"
+          value={systemStats.activeEnrollments.toLocaleString()}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          color="green"
+        />
+        <StatsCard
+          title="Total Payments"
+          value={systemStats.totalPayments.toLocaleString()}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-6 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          }
+          color="blue"
+        />
+        <StatsCard
+          title="Recent Activity"
+          value={`${systemStats.recentEnrollments + systemStats.recentPayments} this month`}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          }
+          color="indigo"
         />
       </div>
 

@@ -3,7 +3,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Avg, Count
+from django.db.models import Q, Avg, Count, Sum
+from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -673,5 +674,99 @@ def enrollment_status(request, slug):
     except Exception as e:
         return Response(
             {'error': 'Failed to check enrollment status'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def weekly_activity_analytics(request):
+    """Get weekly activity data for charts."""
+    try:
+        user = request.user
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        
+        # Get study sessions for the last 7 days
+        if user.role == 'student':
+            sessions = StudySession.objects.filter(
+                enrollment__student=user,
+                started_at__gte=seven_days_ago
+            )
+        elif user.role == 'tutor':
+            sessions = StudySession.objects.filter(
+                enrollment__course__tutor=user,
+                started_at__gte=seven_days_ago
+            )
+        elif user.role == 'admin' and user.organization:
+            sessions = StudySession.objects.filter(
+                enrollment__course__training_partner=user.organization,
+                started_at__gte=seven_days_ago
+            )
+        else:
+            sessions = StudySession.objects.none()
+        
+        # Group by day and calculate total hours
+        daily_activity = {}
+        for session in sessions:
+            day = session.started_at.strftime('%a')  # Mon, Tue, etc.
+            duration_hours = (session.session_duration_minutes or 0) / 60
+            daily_activity[day] = daily_activity.get(day, 0) + duration_hours
+        
+        # Create data for all 7 days
+        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        weekly_data = []
+        for day in days:
+            weekly_data.append({
+                'day': day,
+                'hours': round(daily_activity.get(day, 0), 1)
+            })
+        
+        return Response({
+            'weekly_activity': weekly_data
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch weekly activity data'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def student_distribution_analytics(request):
+    """Get student distribution data for charts."""
+    try:
+        user = request.user
+        
+        # Get enrollments based on user role
+        if user.role == 'tutor':
+            enrollments = Enrollment.objects.filter(course__tutor=user)
+        elif user.role == 'admin' and user.organization:
+            enrollments = Enrollment.objects.filter(course__training_partner=user.organization)
+        else:
+            enrollments = Enrollment.objects.none()
+        
+        # Group by course level
+        level_distribution = enrollments.values('course__level').annotate(
+            count=Count('id')
+        ).order_by('course__level')
+        
+        # Create data for chart
+        distribution_data = []
+        for item in level_distribution:
+            level = item['course__level'] or 'Unknown'
+            distribution_data.append({
+                'level': level.title(),
+                'count': item['count']
+            })
+        
+        return Response({
+            'student_distribution': distribution_data
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to fetch student distribution data'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

@@ -27,8 +27,8 @@ class IsTrainingPartnerAdmin(permissions.BasePermission):
         return (
             request.user.is_authenticated and
             request.user.role == 'admin' and
-            hasattr(request.user, 'training_partner') and
-            request.user.training_partner is not None
+            hasattr(request.user, 'organization') and
+            request.user.organization is not None
         )
 
 
@@ -83,8 +83,8 @@ class CanApproveCourse(permissions.BasePermission):
         
         # Training partner admin can approve courses from their organization
         if (request.user.role == 'admin' and 
-            hasattr(request.user, 'training_partner') and
-            request.user.training_partner == obj.training_partner):
+            hasattr(request.user, 'organization') and
+            request.user.organization == obj.training_partner):
             return True
         
         return False
@@ -107,8 +107,8 @@ class CanViewCourse(permissions.BasePermission):
         # Training partner admin can view courses from their organization
         if (request.user.is_authenticated and
             request.user.role == 'admin' and
-            hasattr(request.user, 'training_partner') and
-            request.user.training_partner == obj.training_partner):
+            hasattr(request.user, 'organization') and
+            request.user.organization == obj.training_partner):
             return True
         
         # Super admin can view any course
@@ -154,8 +154,8 @@ class CanAccessCourseContent(permissions.BasePermission):
         # Training partner admin can access content from their organization
         if (request.user.is_authenticated and
             request.user.role == 'admin' and
-            hasattr(request.user, 'training_partner') and
-            request.user.training_partner == obj.training_partner):
+            hasattr(request.user, 'organization') and
+            request.user.organization == obj.training_partner):
             return True
         
         # Super admin can access any content
@@ -204,7 +204,7 @@ class CanManageCourse(permissions.BasePermission):
         
         # Admins can manage courses from their training partner
         if request.user.role == 'admin':
-            return hasattr(request.user, 'training_partner')
+            return hasattr(request.user, 'organization')
         
         # Super admins can manage any course
         if request.user.role == 'super_admin':
@@ -222,8 +222,8 @@ class CanManageCourse(permissions.BasePermission):
         
         # Training partner admin can manage courses from their organization
         if (request.user.role == 'admin' and
-            hasattr(request.user, 'training_partner') and
-            request.user.training_partner == obj.training_partner):
+            hasattr(request.user, 'organization') and
+            request.user.organization == obj.training_partner):
             return True
         
         # Super admin can manage any course

@@ -16,6 +16,10 @@ urlpatterns = [
     path('my-courses/', views.MyCoursesView.as_view(), name='my-courses'),
     path('stats/', views.CourseStatsView.as_view(), name='course-stats'),
     
+    # Analytics endpoints
+    path('analytics/weekly-activity/', views.weekly_activity_analytics, name='weekly-activity-analytics'),
+    path('analytics/student-distribution/', views.student_distribution_analytics, name='student-distribution-analytics'),
+    
     # Notifications (must be before catch-all slug pattern)
     path('notifications/', views.notification_list, name='notifications'),
     path('notifications-class/', views.NotificationView.as_view(), name='notifications-class'),

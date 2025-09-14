@@ -256,7 +256,7 @@ export const StudentDistributionChart = ({ students }: {
   students: { level: string; count: number }[] 
 }) => (
   <ProgressChart
-    data={students.map(item => ({ label: item.level, value: item.count }))}
+    data={(students || []).map(item => ({ label: item.level, value: item.count }))}
     type="pie"
     title="Students by Level"
     height={300}
@@ -267,7 +267,7 @@ export const WeeklyActivityChart = ({ activities }: {
   activities: { day: string; hours: number }[] 
 }) => (
   <ProgressChart
-    data={activities.map(item => ({ label: item.day, value: item.hours }))}
+    data={(activities || []).map(item => ({ label: item.day, value: item.hours }))}
     type="bar"
     title="Weekly Activity"
     height={250}
