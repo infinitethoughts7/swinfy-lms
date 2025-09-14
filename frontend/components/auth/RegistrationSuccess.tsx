@@ -6,7 +6,7 @@ import Logo from '@/components/shared/Logo';
 import ProfileCompletionScreen from './ProfileCompletionScreen';
 
 interface RegistrationSuccessProps {
-  userRole: 'student' | 'tutor' | 'admin';
+  userRole: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
   userEmail: string;
   onComplete: () => void;
 }

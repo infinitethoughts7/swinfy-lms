@@ -7,6 +7,42 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegistrationData {
+  email: string;
+  full_name: string;
+  password: string;
+  confirm_password: string;
+  role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
+  organization_id?: string; // Backend field name
+  organization_details?: { // Backend field name
+    name: string;
+    type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
+    location: string;
+    website?: string;
+    description: string;
+    address?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    linkedin_url?: string;
+  };
+}
+
+export interface RegistrationResponse {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
+    is_verified: boolean;
+    is_approved: boolean;
+  };
+  tokens?: {
+    access: string;
+    refresh: string;
+  };
+}
+
 export interface LoginResponse {
   tokens: {
     access: string;
@@ -16,9 +52,9 @@ export interface LoginResponse {
     id: string;
     email: string;
     full_name: string;
-    role: 'student' | 'tutor' | 'admin';
+    role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
     is_verified: boolean;
-    organization?: {
+    knowledge_partner?: {
       id: string;
       name: string;
       type: string;
@@ -77,7 +113,7 @@ export const authApi = {
   },
 
   // Register user
-  register: async (userData: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  register: async (userData: RegistrationData): Promise<RegistrationResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/auth/register/`, {
       method: 'POST',
       headers: {
@@ -89,6 +125,11 @@ export const authApi = {
     const data = await response.json();
 
     if (!response.ok) {
+      // Handle validation errors
+      if (data.details) {
+        const errorMessages = Object.values(data.details).flat();
+        throw new Error(errorMessages.join(', '));
+      }
       throw new Error(data.error || 'Registration failed');
     }
 

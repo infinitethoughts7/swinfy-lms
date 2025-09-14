@@ -312,7 +312,6 @@ class KPIProfile(models.Model):
     # Personal Information
     bio = models.TextField(help_text="Professional bio for students to see")
     profile_picture = models.ImageField(upload_to='profiles/tutors/', blank=True, null=True)
-    date_of_birth = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     
     # Professional Information
@@ -371,16 +370,11 @@ class KPAProfile(models.Model):
     
     # Professional Information
     job_title = models.CharField(max_length=100, help_text="Your role in the organization")
-    department = models.CharField(max_length=100, blank=True, null=True)
 
     
     # Contact Information
     office_location = models.CharField(max_length=200, blank=True, null=True)
-    office_phone = models.CharField(max_length=15, blank=True, null=True)
-    emergency_contact = models.CharField(max_length=200, blank=True, null=True)
-    
-    # Social Links
-    linkedin_url = models.URLField(blank=True, null=True)
+
     professional_email = models.EmailField(blank=True, null=True)
     
     # Timestamps

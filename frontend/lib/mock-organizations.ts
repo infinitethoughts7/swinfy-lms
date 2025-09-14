@@ -1,4 +1,4 @@
-export const mockOrganizations = [
+export const mockKnowledgePartners = [
   {
     id: '1',
     name: 'TechCorp Solutions',
@@ -33,10 +33,13 @@ export const mockOrganizations = [
   },
   {
     id: '5',
-    name: 'Global Learning Organization',
+    name: 'Global Learning Knowledge Partner',
     type: 'organization',
     description: 'International learning platform',
     website: 'https://globallearning.org',
     location: 'New York, NY'
   }
 ];
+
+// Keep the old export for backward compatibility
+export const mockOrganizations = mockKnowledgePartners;

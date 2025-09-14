@@ -139,9 +139,9 @@ class InstructorProfileAdmin(admin.ModelAdmin):
 
 @admin.register(KPAProfile)
 class AdminProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'job_title', 'department', 'created_at']
+    list_display = ['user', 'job_title', 'office_location', 'created_at']
     list_filter = ['created_at']
-    search_fields = ['user__full_name', 'user__email', 'job_title', 'department']
+    search_fields = ['user__full_name', 'user__email', 'job_title', 'office_location']
     readonly_fields = ['created_at', 'updated_at']
     
     fieldsets = (

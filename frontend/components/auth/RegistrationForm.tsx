@@ -2,25 +2,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { mockOrganizations } from '@/lib/mock-organizations';
-// import { AuthAPI, RegisterRequest } from '@/lib/api/auth';
+import { mockKnowledgePartners } from '@/lib/mock-organizations';
+import { authApi, RegistrationData } from '@/lib/api';
 
-import OrganizationDetailsForm from './OrganizationDetailsForm';
+type UserRole = 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
 
-type UserRole = 'student' | 'tutor' | 'admin';
-
-interface OrganizationDetails {
-  name: string;
-  type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
-  location: string;
-  website: string;
-  description: string;
-  address: string;
-  contact_email: string;
-  contact_phone: string;
-  logo?: File | null;
-  linkedin_url?: string;
-}
 
 interface FormData {
   full_name: string;
@@ -28,6 +14,18 @@ interface FormData {
   password: string;
   confirm_password: string;
   role: UserRole;
+  knowledge_partner_id?: string;
+  knowledge_partner_details?: {
+    name: string;
+    type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
+    location: string;
+    website?: string;
+    description: string;
+    address?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    linkedin_url?: string;
+  };
 }
 
 interface FormErrors {
@@ -35,6 +33,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirm_password?: string;
+  knowledge_partner_id?: string;
 }
 
 const validationRules = {
@@ -61,7 +60,7 @@ const validationRules = {
 };
 
 interface RegistrationFormProps {
-  onSuccess?: (email: string, role: 'student' | 'tutor' | 'admin') => void;
+  onSuccess?: (email: string, role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin') => void;
 }
 
 export default function RegistrationForm({ onSuccess }: RegistrationFormProps = {}) {
@@ -70,9 +69,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     email: '',
     password: '',
     confirm_password: '',
-    role: 'student',
-    organization_id: '',
-    organization_details: {
+    role: 'learner',
+    knowledge_partner_id: '',
+    knowledge_partner_details: {
       name: '',
       type: 'university',
       location: '',
@@ -81,7 +80,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       address: '',
       contact_email: '',
       contact_phone: '',
-      logo: null,
       linkedin_url: ''
     }
   });
@@ -112,37 +110,15 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
         if (value !== formData.password) return validationRules.confirm_password.message;
         break;
       
-      case 'organization_id':
-        if (formData.role === 'tutor' && !value) {
-          return 'Please select an organization';
-        }
-        break;
+    case 'knowledge_partner_id':
+      if (formData.role === 'knowledge_partner_instructor' && !value) {
+        return 'Please select a knowledge partner';
+      }
+      break;
     }
     return undefined;
   };
 
-  const validateOrganizationDetails = (details: OrganizationDetails): Partial<Record<keyof OrganizationDetails, string>> => {
-    const orgErrors: Partial<Record<keyof OrganizationDetails, string>> = {};
-    
-    if (!details.name) orgErrors.name = 'Organization name is required';
-    if (!details.type) orgErrors.type = 'Organization type is required';
-    if (!details.location) orgErrors.location = 'Location is required';
-    if (!details.description) orgErrors.description = 'Description is required';
-    if (details.website && !/^https?:\/\/.+/.test(details.website)) {
-      orgErrors.website = 'Please enter a valid URL';
-    }
-    if (!details.address) orgErrors.address = 'Address is required';
-    if (!details.contact_email) orgErrors.contact_email = 'Contact email is required';
-    if (details.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.contact_email)) {
-      orgErrors.contact_email = 'Please enter a valid contact email';
-    }
-    if (!details.contact_phone) orgErrors.contact_phone = 'Contact phone is required';
-    if (details.linkedin_url && !/^https?:\/\/.+/.test(details.linkedin_url)) {
-      orgErrors.linkedin_url = 'Please enter a valid LinkedIn URL';
-    }
-    
-    return orgErrors;
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -158,8 +134,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     setFormData(prev => ({ 
       ...prev, 
       role, 
-      organization_id: role === 'student' ? '' : prev.organization_id,
-      organization_details: {
+      knowledge_partner_id: role === 'learner' ? '' : prev.knowledge_partner_id,
+      knowledge_partner_details: role === 'knowledge_partner_admin' ? prev.knowledge_partner_details : {
         name: '',
         type: 'university',
         location: '',
@@ -168,35 +144,26 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
         address: '',
         contact_email: '',
         contact_phone: '',
-        logo: null,
         linkedin_url: ''
       }
     }));
     
     // Clear relevant errors when switching roles
-    if (role === 'student') {
+    if (role === 'learner') {
       setErrors(prev => ({ 
         ...prev, 
-        organization_id: undefined,
-        organization_details: undefined
+        knowledge_partner_id: undefined,
+        knowledge_partner_details: undefined
       }));
     }
   };
 
-  const handleOrganizationDetailsChange = (details: OrganizationDetails) => {
-    setFormData(prev => ({ ...prev, organization_details: details }));
-    
-    // Clear organization details errors when user starts typing
-    if (errors.organization_details) {
-      setErrors(prev => ({ ...prev, organization_details: undefined }));
-    }
-  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     
     // Validate basic fields
-    const basicFields = ['full_name', 'email', 'password', 'confirm_password', 'organization_id'] as const;
+    const basicFields = ['full_name', 'email', 'password', 'confirm_password'] as const;
     basicFields.forEach(key => {
       const error = validateField(key, formData[key]);
       if (error) {
@@ -204,12 +171,10 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       }
     });
 
-    // Validate organization details for admin role
-    if (formData.role === 'admin') {
-      const orgErrors = validateOrganizationDetails(formData.organization_details);
-      if (Object.keys(orgErrors).length > 0) {
-        newErrors.organization_details = orgErrors;
-      }
+    // Validate knowledge_partner_id separately
+    const partnerError = validateField('knowledge_partner_id', formData.knowledge_partner_id || '');
+    if (partnerError) {
+      newErrors.knowledge_partner_id = partnerError;
     }
 
     setErrors(newErrors);
@@ -224,23 +189,26 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      console.log('Registration data:', formData);
-      
-      // Different messages based on role
-      let successMessage = 'Registration successful! (Demo mode)';
-      
-      if (formData.role === 'admin') {
-        successMessage = 'Admin registration successful! Your organization has been created.';
-      } else if (formData.role === 'tutor') {
-        successMessage = 'Tutor registration submitted! Waiting for organization admin approval.';
-      } else {
-        successMessage = 'Registration successful!';
+      // Prepare registration data
+      const registrationData: RegistrationData = {
+        email: formData.email,
+        full_name: formData.full_name,
+        password: formData.password,
+        confirm_password: formData.confirm_password,
+        role: formData.role,
+      };
+
+      // Add knowledge partner data based on role
+      if (formData.role === 'knowledge_partner_instructor' && formData.knowledge_partner_id) {
+        registrationData.organization_id = formData.knowledge_partner_id;
+      } else if (formData.role === 'knowledge_partner_admin' && formData.knowledge_partner_details) {
+        registrationData.organization_details = formData.knowledge_partner_details;
       }
+
+      // Make API call
+      const response = await authApi.register(registrationData);
       
-      console.log(successMessage);
+      console.log('Registration successful:', response);
       
       // Call onSuccess callback with email and role to proceed to OTP verification
       if (onSuccess) {
@@ -249,14 +217,15 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const requiresOrganizationSelection = formData.role === 'tutor';
-  const requiresOrganizationCreation = formData.role === 'admin';
+  const requiresKnowledgePartnerSelection = formData.role === 'knowledge_partner_instructor';
+  const requiresKnowledgePartnerCreation = formData.role === 'knowledge_partner_admin';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -308,11 +277,11 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
           I want to join as a
         </label>
         <div className="grid grid-cols-1 gap-3">
-          {([
-            { role: 'student', label: 'Student', description: 'Access courses and learn' },
-            { role: 'tutor', label: 'Tutor', description: 'Join existing organization (requires approval)' },
-            { role: 'admin', label: 'Admin', description: 'Create and manage new organization' }
-          ] as const).map(({ role, label, description }) => (
+                     {([
+                       { role: 'learner', label: 'Learner', description: 'Access courses and learn' },
+                       { role: 'knowledge_partner_instructor', label: 'Knowledge Partner Instructor', description: 'Join existing knowledge partner (requires approval)' },
+                       { role: 'knowledge_partner_admin', label: 'Knowledge Partner Admin', description: 'Create and manage new knowledge partner' }
+                     ] as const).map(({ role, label, description }) => (
             <button
               key={role}
               type="button"
@@ -330,51 +299,161 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
         </div>
       </div>
 
-      {/* Organization Selection for Tutors */}
+      {/* Knowledge Partner Selection for Instructors */}
       <div className={`transition-all duration-300 ${
-        requiresOrganizationSelection ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
+        requiresKnowledgePartnerSelection ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
       }`}>
-        {requiresOrganizationSelection && (
+        {requiresKnowledgePartnerSelection && (
           <>
-            <label htmlFor="organization_id" className="block text-sm font-medium text-gray-700 mb-2">
-              Select Organization to Join
+            <label htmlFor="knowledge_partner_id" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Knowledge Partner to Join
             </label>
             <select
-              id="organization_id"
-              name="organization_id"
-              value={formData.organization_id}
+              id="knowledge_partner_id"
+              name="knowledge_partner_id"
+              value={formData.knowledge_partner_id}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-                errors.organization_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+                errors.knowledge_partner_id ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
               }`}
             >
-              <option value="">Choose organization to request access...</option>
-              {mockOrganizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name} ({org.type})
+              <option value="">Choose knowledge partner to request access...</option>
+              {mockKnowledgePartners.map((kp) => (
+                <option key={kp.id} value={kp.id}>
+                  {kp.name} ({kp.type})
                 </option>
               ))}
             </select>
-            {errors.organization_id && (
-              <p className="mt-1 text-sm text-red-600">{errors.organization_id}</p>
+            {errors.knowledge_partner_id && (
+              <p className="mt-1 text-sm text-red-600">{errors.knowledge_partner_id}</p>
             )}
             <p className="mt-1 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-              💡 Your request will be sent to the organization admin for approval
+              💡 Your request will be sent to the knowledge partner admin for approval
             </p>
           </>
         )}
       </div>
 
-      {/* Organization Creation for Admins */}
+      {/* Knowledge Partner Creation for Knowledge Partner Admins */}
       <div className={`transition-all duration-300 ${
-        requiresOrganizationCreation ? 'opacity-100' : 'opacity-0 max-h-0 overflow-hidden'
+        requiresKnowledgePartnerCreation ? 'opacity-100' : 'opacity-0 max-h-0 overflow-hidden'
       }`}>
-        {requiresOrganizationCreation && (
-          <OrganizationDetailsForm
-            organizationDetails={formData.organization_details}
-            onChange={handleOrganizationDetailsChange}
-            errors={errors.organization_details}
-          />
+        {requiresKnowledgePartnerCreation && (
+          <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-lg font-semibold text-blue-900">Knowledge Partner Details</h3>
+            <p className="text-sm text-blue-700">Please provide details about your knowledge partner</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Knowledge Partner Name */}
+              <div>
+                <label htmlFor="kp_name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Knowledge Partner Name *
+                </label>
+                <input
+                  type="text"
+                  id="kp_name"
+                  value={formData.knowledge_partner_details?.name || ''}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    knowledge_partner_details: {
+                      ...prev.knowledge_partner_details!,
+                      name: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+                  placeholder="Enter knowledge partner name"
+                />
+              </div>
+
+              {/* Knowledge Partner Type */}
+              <div>
+                <label htmlFor="kp_type" className="block text-sm font-medium text-gray-700 mb-2">
+                  Knowledge Partner Type *
+                </label>
+                <select
+                  id="kp_type"
+                  value={formData.knowledge_partner_details?.type || 'university'}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    knowledge_partner_details: {
+                      ...prev.knowledge_partner_details!,
+                      type: e.target.value as any
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+                >
+                  <option value="university">University</option>
+                  <option value="company">Company</option>
+                  <option value="organization">Organization</option>
+                  <option value="institute">Institute</option>
+                  <option value="bootcamp">Bootcamp</option>
+                </select>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="kp_location" className="block text-sm font-medium text-gray-700 mb-2">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  id="kp_location"
+                  value={formData.knowledge_partner_details?.location || ''}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    knowledge_partner_details: {
+                      ...prev.knowledge_partner_details!,
+                      location: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+                  placeholder="City, State, Country"
+                />
+              </div>
+
+              {/* Website */}
+              <div>
+                <label htmlFor="kp_website" className="block text-sm font-medium text-gray-700 mb-2">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  id="kp_website"
+                  value={formData.knowledge_partner_details?.website || ''}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    knowledge_partner_details: {
+                      ...prev.knowledge_partner_details!,
+                      website: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label htmlFor="kp_description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description *
+              </label>
+              <textarea
+                id="kp_description"
+                value={formData.knowledge_partner_details?.description || ''}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  knowledge_partner_details: {
+                    ...prev.knowledge_partner_details!,
+                    description: e.target.value
+                  }
+                }))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+                placeholder="Describe your knowledge partner..."
+              />
+            </div>
+          </div>
         )}
       </div>
 
