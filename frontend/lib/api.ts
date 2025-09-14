@@ -196,6 +196,17 @@ export const coursesApi = {
     return response.json();
   },
 
+  // Alias for getAllCourses
+  getAllCourses: async (params?: {
+    category?: string;
+    level?: string;
+    org_type?: string;
+    search?: string;
+    featured?: boolean;
+  }) => {
+    return coursesApi.getCourses(params);
+  },
+
   // Get course details by slug
   getCourse: async (slug: string) => {
     const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/`);

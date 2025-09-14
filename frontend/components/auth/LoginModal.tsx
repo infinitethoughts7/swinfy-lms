@@ -59,6 +59,9 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       // Close modal
       onOpenChange(false);
 
+      // Dispatch login event to update navbar
+      window.dispatchEvent(new CustomEvent('userLogin', { detail: data.user }));
+
       // Call success callback if provided
       if (onLoginSuccess) {
         onLoginSuccess();

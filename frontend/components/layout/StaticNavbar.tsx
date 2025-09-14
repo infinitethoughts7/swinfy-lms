@@ -1,15 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MobileMenuToggle from './MobileMenuToggle';
 import { useModal } from '@/components/providers/ModalProvider';
 import Logo from '@/components/shared/Logo';
+import { getCurrentUser, logout, isAuthenticated } from '@/lib/auth';
+
+interface User {
+  name?: string;
+  email?: string;
+  role?: string;
+}
 
 const StaticNavbar = () => {
   const { openRegistrationModal, openLoginModal } = useModal();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check authentication status on component mount
+    const checkAuth = () => {
+      const currentUser = getCurrentUser();
+      const authenticated = isAuthenticated();
+      setUser(currentUser);
+      setIsLoggedIn(authenticated);
+    };
+
+    checkAuth();
+
+    // Listen for storage changes (login/logout from other tabs)
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+
+    // Listen for login events
+    const handleUserLogin = () => {
+      checkAuth();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userLogin', handleUserLogin);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLogin', handleUserLogin);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+    setIsLoggedIn(false);
+    // Dispatch logout event
+    window.dispatchEvent(new CustomEvent('userLogout'));
+    router.push('/');
+  };
+
+  const handleDashboardClick = () => {
+    if (user?.role) {
+      router.push(`/dashboard/${user.role}`);
+    }
+  };
   
   return (
     <nav
@@ -18,24 +73,23 @@ const StaticNavbar = () => {
       aria-label="Main navigation"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12 lg:h-14">
-          {/* Logo */}
-          <div className="flex-shrink-0">
+        <div className="flex items-center h-12 lg:h-14">
+          {/* Logo and Courses Button */}
+          <div className="flex items-center space-x-8">
             <Logo size="lg" showText={true} href="/" textClassName="text-text-primary" />
-          </div>
-
-          {/* Center Navigation - Only Courses */}
-          <div className="hidden md:flex items-center">
             <Link
               href="/courses"
-              className="text-text-primary hover:text-black transition-all duration-300 font-inter font-medium text-sm lg:text-base hover:scale-105 px-4 py-2 rounded-lg hover:bg-gray-50"
+              className="hidden md:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-full hover:border-blue-500 transition-all duration-300 hover:scale-105"
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
               Courses
             </Link>
           </div>
 
           {/* Search Box */}
-          <div className="hidden md:flex items-center flex-1 max-w-md ml-4 mr-4">
+          <div className="hidden md:flex items-center w-80 ml-8">
             <div className="relative w-full">
               <div className={`relative transition-all duration-300 ${isSearchFocused ? 'scale-105' : ''}`}>
                 <input
@@ -71,46 +125,56 @@ const StaticNavbar = () => {
             </div>
           </div>
 
-          {/* Join Session Button */}
-          <div className="hidden md:flex items-center mr-4">
-            <button
-              onClick={() => {
-                // TODO: Implement join session functionality
-                console.log('Join session clicked');
-              }}
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-            >
-              <svg 
-                className="w-4 h-4 mr-2" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" 
-                />
-              </svg>
-              Join Session
-            </button>
-          </div>
+          {/* Spacer to push right actions to the right */}
+          <div className="flex-1"></div>
 
-          {/* Right Actions - Login & Sign Up */}
+          {/* Right Actions - Conditional based on auth status */}
           <div className="hidden md:flex items-center space-x-2">
-            <button
-              onClick={openLoginModal}
-              className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
-            >
-              Login
-            </button>
-            <button
-              onClick={openRegistrationModal}
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
-            >
-              Sign up
-            </button>
+            {isLoggedIn ? (
+              // User is logged in - show user dropdown only
+              <div className="relative group">
+                <button className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {user?.name || user?.email || 'User'}
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {/* Dropdown menu */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <button
+                    onClick={handleDashboardClick}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // User is not logged in - show login and sign up
+              <>
+                <button
+                  onClick={openLoginModal}
+                  className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={openRegistrationModal}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
+                >
+                  Sign up
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
