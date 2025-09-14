@@ -9,14 +9,112 @@ import { TutorQuickActions } from '@/components/dashboard/QuickActions';
 import { StudentDistributionChart, WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
 import { userApi, studentDashboardApi } from '@/lib/api';
 
+// Type definitions
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  enrolledCourses: number;
+  completedCourses: number;
+  progress: number;
+  lastActive: string;
+  status: 'active' | 'inactive' | 'suspended';
+  joinDate: string;
+  performance?: {
+    score: number;
+    rank?: number;
+  };
+}
+
+interface Course {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  short_description?: string;
+  thumbnail?: string;
+  duration_weeks?: number;
+  level?: 'Beginner' | 'Intermediate' | 'Advanced';
+  level_display?: string;
+  enrollment_count?: number;
+  rating?: number;
+  average_rating?: number;
+  category?: string;
+  category_display?: string;
+  is_published?: boolean;
+  tutor?: {
+    full_name: string;
+    avatar?: string;
+  };
+}
+
+interface LiveSession {
+  id: string;
+  title: string;
+  course: string;
+  instructor: {
+    name: string;
+    avatar?: string;
+  };
+  startTime: string;
+  duration: number; // in minutes
+  participants?: number;
+  maxParticipants?: number;
+  status: 'upcoming' | 'live' | 'ended';
+  description?: string;
+  meetingLink?: string;
+  recordingAvailable?: boolean;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  role: 'student' | 'tutor' | 'admin';
+  is_verified: boolean;
+  date_joined: string;
+  phone?: string;
+  bio?: string;
+  goals?: string[];
+  profile_picture?: string;
+  organization?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  can_create_courses: boolean;
+  can_manage_organization: boolean;
+}
+
+interface WeeklyActivity {
+  day: string;
+  hours: number;
+}
+
+interface StudentDistribution {
+  level: string;
+  count: number;
+}
+
+interface DashboardStats {
+  total_enrollments: number;
+  active_enrollments: number;
+  recent_enrollments: number;
+  published_courses: number;
+  total_revenue: number;
+}
+
 interface TutorDashboardData {
-  dashboardStats: any;
-  myCourses: any[];
-  recentStudents: any[];
-  upcomingSessions: any[];
-  userProfile: any;
-  weeklyActivity: any[];
-  studentDistribution: any[];
+  dashboardStats: DashboardStats | null;
+  myCourses: Course[];
+  recentStudents: Student[];
+  upcomingSessions: LiveSession[];
+  userProfile: UserProfile | null;
+  weeklyActivity: WeeklyActivity[];
+  studentDistribution: StudentDistribution[];
 }
 
 export default function TutorDashboard() {
@@ -90,6 +188,10 @@ export default function TutorDashboard() {
     console.log('Scheduling session...');
   };
 
+  const handleStartSession = () => {
+    console.log('Starting session...');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -160,20 +262,17 @@ export default function TutorDashboard() {
 
       {/* Quick Actions */}
       <TutorQuickActions
+        onStartSession={handleStartSession}
         onCreateCourse={handleCreateCourse}
-        onManageCourses={handleManageCourses}
         onViewStudents={handleViewStudents}
         onScheduleSession={handleScheduleSession}
-        totalStudents={tutorStats.totalStudents}
-        activeCourses={tutorStats.activeCourses}
+        liveStudents={tutorStats.totalStudents}
       />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StudentStatsCard
-          totalStudents={tutorStats.totalStudents}
-          activeStudents={dashboardStats?.active_enrollments || 0}
-          newThisWeek={dashboardStats?.recent_enrollments || 0}
+          count={tutorStats.totalStudents}
         />
         <StatsCard
           title="Published Courses"
@@ -196,9 +295,7 @@ export default function TutorDashboard() {
           color="yellow"
         />
         <SessionStatsCard
-          upcomingSessions={tutorStats.upcomingSessions}
-          completedToday={0}
-          totalHours={0}
+          upcoming={tutorStats.upcomingSessions}
         />
       </div>
 
@@ -242,7 +339,7 @@ export default function TutorDashboard() {
                       description: course.description,
                       image: course.thumbnail || '/assets/courses/default.svg',
                       duration: course.duration_weeks ? `${course.duration_weeks} weeks` : 'N/A',
-                      level: course.level || 'Beginner',
+                      level: (course.level as 'Beginner' | 'Intermediate' | 'Advanced') || 'Beginner',
                       students: course.enrollment_count || 0,
                       rating: course.average_rating || 0,
                       status: course.is_published ? 'active' : 'draft'

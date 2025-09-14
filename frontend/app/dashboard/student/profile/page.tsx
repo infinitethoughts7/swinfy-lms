@@ -6,13 +6,87 @@ import StatsCard from '@/components/dashboard/StatsCard';
 import { PerformanceChart, WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
 import { userApi, studentDashboardApi, paymentsApi } from '@/lib/api';
 
+// User Profile Types
+interface UserProfile {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  role: 'student' | 'tutor' | 'admin';
+  is_verified: boolean;
+  date_joined: string;
+  phone?: string;
+  bio?: string;
+  goals?: string[];
+  profile_picture?: string;
+  organization?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  can_create_courses: boolean;
+  can_manage_organization: boolean;
+}
+
+// Progress Analytics Types
+interface ProgressAnalytics {
+  completed_courses: number;
+  average_progress: number;
+  monthly_progress: Array<{
+    month: string;
+    score: number;
+  }>;
+}
+
+// Payment History Types
+interface PaymentHistory {
+  id: string;
+  amount: string;
+  status: 'pending' | 'initiated' | 'paid' | 'failed' | 'verified' | 'rejected';
+  created_at: string;
+  course_title?: string;
+  enrollment?: {
+    course: {
+      title: string;
+    };
+  };
+}
+
+// Study Session Types
+interface StudySession {
+  id: string;
+  session_duration_minutes: number;
+  progress_made: number;
+  started_at: string;
+  ended_at?: string;
+  course?: {
+    title: string;
+  };
+}
+
+// Weekly Activity Types
+interface WeeklyActivity {
+  week: string;
+  sessions: number;
+  hours_studied: number;
+  lessons_completed: number;
+}
+
+// Student Distribution Types
+interface StudentDistribution {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
 interface ProfileData {
-  userProfile: any;
-  progressAnalytics: any;
-  paymentHistory: any[];
-  studySessions: any[];
-  weeklyActivity: any[];
-  studentDistribution: any[];
+  userProfile: UserProfile | null;
+  progressAnalytics: ProgressAnalytics | null;
+  paymentHistory: PaymentHistory[];
+  studySessions: StudySession[];
+  weeklyActivity: WeeklyActivity[];
+  studentDistribution: StudentDistribution[];
 }
 
 export default function StudentProfilePage() {
@@ -33,7 +107,7 @@ export default function StudentProfilePage() {
     email: '',
     phone: '',
     bio: '',
-    goals: []
+    goals: [] as string[]
   });
 
   useEffect(() => {
@@ -146,14 +220,13 @@ export default function StudentProfilePage() {
     );
   }
 
-  const { userProfile, progressAnalytics, paymentHistory, studySessions, weeklyActivity, studentDistribution } = profileData;
+  const { userProfile, progressAnalytics, paymentHistory, studySessions, weeklyActivity } = profileData;
   
   // Calculate stats from available data
-  const enrolledCourses = profileData.studySessions?.map(session => session.course?.title).filter(Boolean) || [];
+  const enrolledCourses = profileData.studySessions?.map((session: StudySession) => session.course?.title).filter(Boolean) || [];
   const uniqueCourses = [...new Set(enrolledCourses)];
   const totalCourses = uniqueCourses.length;
   const completedCourses = 0; // No progress data available yet
-  const averageProgress = 0; // No progress data available yet
 
   // Calculate achievements based on real data
 const achievements = [
@@ -308,7 +381,7 @@ const achievements = [
                     </h2>
                     <p className="text-gray-600">{userProfile?.email}</p>
                     <p className="text-gray-500 text-sm">
-                      Student • Joined {new Date(userProfile?.date_joined).toLocaleDateString()}
+                      Student • Joined {userProfile?.date_joined ? new Date(userProfile.date_joined).toLocaleDateString() : 'Unknown'}
                     </p>
                     {userProfile?.phone && (
                       <p className="text-gray-500 text-sm">📞 {userProfile.phone}</p>
@@ -425,8 +498,8 @@ const achievements = [
               <StatsCard
               title="Total Spent"
               value={`₹${paymentHistory
-                .filter((payment: any) => payment.status === 'paid' || payment.status === 'verified')
-                .reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || '0'), 0)
+                .filter((payment: PaymentHistory) => payment.status === 'paid' || payment.status === 'verified')
+                .reduce((sum: number, payment: PaymentHistory) => sum + parseFloat(payment.amount || '0'), 0)
                 .toLocaleString()}`}
               icon={
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -441,14 +514,17 @@ const achievements = [
             <PerformanceChart data={performanceData} />
 
             {/* Weekly Activity */}
-            <WeeklyActivityChart activities={weeklyActivity} />
+            <WeeklyActivityChart activities={weeklyActivity.map(activity => ({
+              day: activity.week,
+              hours: activity.hours_studied
+            }))} />
 
           {/* Recent Payments */}
           {paymentHistory.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Payments</h3>
               <div className="space-y-3">
-                {paymentHistory.slice(0, 5).map((payment: any) => (
+                {paymentHistory.slice(0, 5).map((payment: PaymentHistory) => (
                   <div key={payment.id} className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">

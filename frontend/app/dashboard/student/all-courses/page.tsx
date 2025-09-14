@@ -3,12 +3,43 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { coursesApi } from '@/lib/api';
 import CourseCard from '@/components/dashboard/CourseCard';
-import { Search, Filter, Grid, List } from 'lucide-react';
+import { Search, Grid, List } from 'lucide-react';
 
-interface AllCoursesPageProps {}
+// Define the course interface based on the API response structure
+interface Course {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  price: number;
+  duration_weeks: number;
+  category: string;
+  category_display: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  level_display: string;
+  rating: number;
+  average_rating?: number; // Some APIs might use this field name
+  total_reviews: number;
+  enrollment_count: number;
+  thumbnail: string | null;
+  is_featured: boolean;
+  is_published: boolean;
+  created_at: string;
+  tutor?: {
+    id: string;
+    full_name: string;
+    avatar?: string;
+  };
+  training_partner?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
 
 export default function AllCoursesPage() {
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -217,7 +248,7 @@ export default function AllCoursesPage() {
                 description: course.short_description || course.description,
                 image: course.thumbnail || '/assets/courses/default.svg',
                 duration: course.duration_weeks ? `${course.duration_weeks} weeks` : 'N/A',
-                level: course.level_display || course.level || 'Beginner',
+                level: (course.level_display || course.level || 'Beginner') as 'Beginner' | 'Intermediate' | 'Advanced',
                 students: course.enrollment_count || 0,
                 rating: course.rating || course.average_rating || 0,
                 status: course.is_published ? 'active' : 'draft',
