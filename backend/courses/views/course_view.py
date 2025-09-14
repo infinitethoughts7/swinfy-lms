@@ -9,15 +9,14 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from ..models import Course, CourseModule, Lesson, Enrollment, CourseProgress, LessonProgress, ModuleProgress, LessonMaterial, CourseResource, CourseNotification, StudySession
+from ..models import Course, CourseModule, Lesson, Enrollment, CourseProgress, LessonProgress, LessonMaterial, CourseResource, CourseNotification
 from ..serializers import (
     CourseSerializer, CourseListSerializer, CourseCreateSerializer,
     CourseUpdateSerializer, CourseApprovalSerializer, CourseStatsSerializer,
     CourseModuleSerializer, CourseModuleCreateSerializer, LessonSerializer, LessonCreateSerializer,
     EnrollmentCreateSerializer, CourseProgressSerializer, LessonProgressSerializer, 
-    ModuleProgressSerializer, LessonMaterialSerializer, LessonMaterialCreateSerializer,
-    CourseResourceSerializer, CourseResourceCreateSerializer, CourseNotificationSerializer,
-    StudySessionSerializer
+    LessonMaterialSerializer, LessonMaterialCreateSerializer,
+    CourseResourceSerializer, CourseResourceCreateSerializer, CourseNotificationSerializer
 )
 from ..filters import CourseFilter
 
@@ -124,9 +123,7 @@ class CourseApprovalView(generics.UpdateAPIView):
             if user.role == 'admin':
                 course.is_approved_by_training_partner = True
                 course.training_partner_admin_approved_by = user
-            elif user.role == 'super_admin':
-                course.is_approved_by_super_admin = True
-                course.super_admin_approved_by = user
+                course.approval_status = 'approved'
         elif action == 'reject':
             course.approval_status = 'rejected'
         
@@ -145,12 +142,9 @@ class CourseStatsView(generics.GenericAPIView):
         """Return course statistics based on user role."""
         user = request.user
         
-        if user.role == 'super_admin':
-            # Super admin sees all courses
-            queryset = Course.objects.all()
-        elif user.role == 'admin' and user.training_partner:
+        if user.role == 'admin' and hasattr(user, 'organization') and user.organization:
             # Admin sees courses from their training partner
-            queryset = Course.objects.filter(training_partner=user.training_partner)
+            queryset = Course.objects.filter(training_partner=user.organization)
         elif user.role == 'tutor':
             # Tutor sees their own courses
             queryset = Course.objects.filter(tutor=user)
@@ -161,7 +155,7 @@ class CourseStatsView(generics.GenericAPIView):
             'total_courses': queryset.count(),
             'published_courses': queryset.filter(is_published=True).count(),
             'draft_courses': queryset.filter(is_draft=True).count(),
-            'pending_approval': queryset.filter(approval_status__in=['training_partner_pending', 'super_pending']).count(),
+            'pending_approval': queryset.filter(approval_status='pending_approval').count(),
             'total_enrollments': queryset.aggregate(total=Count('enrollment_count'))['total'] or 0,
             'average_rating': queryset.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0,
             'featured_courses': queryset.filter(is_featured=True).count()
@@ -341,45 +335,20 @@ class LessonCompleteView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         serializer.save(is_completed=True, completed_at=timezone.now())
         
-        # Update module progress
-        lesson = self.get_object().lesson
-        module = lesson.module
-        enrollment = self.get_object().enrollment
-        
-        # Calculate module progress
-        total_lessons = module.lessons.filter(is_published=True).count()
-        completed_lessons = LessonProgress.objects.filter(
-            enrollment=enrollment,
-            lesson__module=module,
-            is_completed=True
-        ).count()
-        
-        module_progress, created = ModuleProgress.objects.get_or_create(
-            enrollment=enrollment,
-            module=module,
-            defaults={'progress_percentage': 0.0}
-        )
-        module_progress.progress_percentage = (completed_lessons / total_lessons) * 100
-        module_progress.is_completed = completed_lessons == total_lessons
-        module_progress.save()
-        
         # Update course progress
+        enrollment = self.get_object().enrollment
         self._update_course_progress(enrollment)
     
     def _update_course_progress(self, enrollment):
         """Update overall course progress."""
-        total_modules = enrollment.course.modules.filter(is_published=True).count()
-        completed_modules = ModuleProgress.objects.filter(
-            enrollment=enrollment,
-            is_completed=True
-        ).count()
-        
+        # Get course progress or create if doesn't exist
         course_progress, created = CourseProgress.objects.get_or_create(
             enrollment=enrollment,
             defaults={'overall_progress': 0.0}
         )
-        course_progress.overall_progress = (completed_modules / total_modules) * 100
-        course_progress.save()
+        
+        # Update progress using the model method
+        course_progress.update_progress()
 
 
 class LessonMaterialsView(generics.ListAPIView):
@@ -542,57 +511,6 @@ class CoursePerformanceAnalyticsView(generics.ListAPIView):
         return Response(analytics)
 
 
-# ==================== STUDY SESSION ENDPOINTS ====================
-
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def study_sessions_list(request):
-    """Get user study sessions."""
-    try:
-        sessions = StudySession.objects.filter(enrollment__student=request.user).select_related('enrollment__student', 'enrollment__course', 'lesson').order_by('-started_at')
-        
-        data = []
-        for session in sessions:
-            data.append({
-                'id': str(session.id),
-                'session_duration_minutes': session.session_duration_minutes,
-                'progress_made': float(session.progress_made),
-                'started_at': session.started_at.isoformat(),
-                'ended_at': session.ended_at.isoformat() if session.ended_at else None,
-                'created_at': session.created_at.isoformat(),
-                'course': {
-                    'title': session.enrollment.course.title,
-                    'slug': session.enrollment.course.slug
-                },
-                'lesson': {
-                    'title': session.lesson.title,
-                    'id': session.lesson.id
-                } if session.lesson else None
-            })
-        
-        return Response({'results': data, 'count': len(data)})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
-class StudySessionView(generics.ListCreateAPIView):
-    """List and create study sessions."""
-    serializer_class = StudySessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        return StudySession.objects.filter(enrollment__student=self.request.user).order_by('-started_at')
-    
-    def perform_create(self, serializer):
-        serializer.save()
-
-
-class StudySessionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Get, update, or delete a study session."""
-    serializer_class = StudySessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        return StudySession.objects.filter(enrollment__student=self.request.user)
 
 
 # ==================== NOTIFICATION ENDPOINTS ====================
@@ -681,36 +599,35 @@ def enrollment_status(request, slug):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def weekly_activity_analytics(request):
-    """Get weekly activity data for charts."""
+    """Get weekly activity data for charts based on lesson progress."""
     try:
         user = request.user
         seven_days_ago = timezone.now() - timedelta(days=7)
         
-        # Get study sessions for the last 7 days
+        # Get lesson progress for the last 7 days
         if user.role == 'student':
-            sessions = StudySession.objects.filter(
+            progress_records = LessonProgress.objects.filter(
                 enrollment__student=user,
-                started_at__gte=seven_days_ago
+                last_accessed__gte=seven_days_ago
             )
         elif user.role == 'tutor':
-            sessions = StudySession.objects.filter(
+            progress_records = LessonProgress.objects.filter(
                 enrollment__course__tutor=user,
-                started_at__gte=seven_days_ago
+                last_accessed__gte=seven_days_ago
             )
-        elif user.role == 'admin' and user.organization:
-            sessions = StudySession.objects.filter(
+        elif user.role == 'admin' and hasattr(user, 'organization') and user.organization:
+            progress_records = LessonProgress.objects.filter(
                 enrollment__course__training_partner=user.organization,
-                started_at__gte=seven_days_ago
+                last_accessed__gte=seven_days_ago
             )
         else:
-            sessions = StudySession.objects.none()
+            progress_records = LessonProgress.objects.none()
         
-        # Group by day and calculate total hours
+        # Group by day and calculate activity count
         daily_activity = {}
-        for session in sessions:
-            day = session.started_at.strftime('%a')  # Mon, Tue, etc.
-            duration_hours = (session.session_duration_minutes or 0) / 60
-            daily_activity[day] = daily_activity.get(day, 0) + duration_hours
+        for progress in progress_records:
+            day = progress.last_accessed.strftime('%a')  # Mon, Tue, etc.
+            daily_activity[day] = daily_activity.get(day, 0) + 1
         
         # Create data for all 7 days
         days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -718,7 +635,7 @@ def weekly_activity_analytics(request):
         for day in days:
             weekly_data.append({
                 'day': day,
-                'hours': round(daily_activity.get(day, 0), 1)
+                'activity_count': daily_activity.get(day, 0)
             })
         
         return Response({
@@ -742,7 +659,7 @@ def student_distribution_analytics(request):
         # Get enrollments based on user role
         if user.role == 'tutor':
             enrollments = Enrollment.objects.filter(course__tutor=user)
-        elif user.role == 'admin' and user.organization:
+        elif user.role == 'admin' and hasattr(user, 'organization') and user.organization:
             enrollments = Enrollment.objects.filter(course__training_partner=user.organization)
         else:
             enrollments = Enrollment.objects.none()

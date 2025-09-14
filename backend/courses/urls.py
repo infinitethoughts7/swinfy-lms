@@ -6,9 +6,6 @@ from . import views
 router = DefaultRouter()
 
 urlpatterns = [
-    # Study Sessions (must be first to avoid conflicts)
-    path('user-sessions/', views.study_sessions_list, name='study-sessions'),
-    
     # Course endpoints
     path('', views.CourseListView.as_view(), name='course-list'),
     path('search/', views.CourseSearchView.as_view(), name='course-search'),
@@ -54,8 +51,6 @@ urlpatterns = [
     path('analytics/student-progress/', views.StudentProgressAnalyticsView.as_view(), name='student-progress-analytics'),
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
     
-    # Study Sessions
-    path('study-sessions/<int:session_id>/', views.StudySessionDetailView.as_view(), name='study-session-detail'),
     
     # Training partner endpoints
     path('training-partners/', views.TrainingPartnerListView.as_view(), name='training-partner-list'),

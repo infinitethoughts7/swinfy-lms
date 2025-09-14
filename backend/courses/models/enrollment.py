@@ -11,15 +11,17 @@ from users.models import User
 
 class Enrollment(models.Model):
     """
-    Student enrollment in a course.
+    Student enrollment in a course with admin approval workflow.
     """
     
     STATUS_CHOICES = [
-        ('active', 'Active'),
+        ('pending_approval', 'Pending Admin Approval'),  # NEW: Waiting for admin approval
+        ('approved', 'Approved'),  # NEW: Admin approved, student can access
+        ('active', 'Active'),  # Student actively learning
         ('completed', 'Completed'),
+        ('rejected', 'Rejected'),  # NEW: Admin rejected enrollment
         ('dropped', 'Dropped'),
         ('suspended', 'Suspended'),
-        ('pending', 'Pending'),
     ]
     
     PAYMENT_STATUS_CHOICES = [
@@ -28,6 +30,11 @@ class Enrollment(models.Model):
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
         ('partial', 'Partial'),
+    ]
+    
+    ENROLLMENT_TYPE_CHOICES = [  # NEW: How enrollment was created
+        ('admin_created', 'Created by Admin'),
+        ('student_requested', 'Requested by Student'),
     ]
     
     # Primary Key
@@ -48,16 +55,53 @@ class Enrollment(models.Model):
         help_text="Course being enrolled in"
     )
     
+    # NEW: Admin Approval Workflow
+    enrollment_type = models.CharField(
+        max_length=20,
+        choices=ENROLLMENT_TYPE_CHOICES,
+        default='student_requested',
+        help_text="How this enrollment was created"
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_enrollments',
+        limit_choices_to={'role': 'admin'},
+        help_text="Training partner admin who approved this enrollment"
+    )
+    approval_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date when enrollment was approved"
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Reason for rejection (if applicable)"
+    )
+    admin_notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Admin notes about this enrollment"
+    )
+    
     # Enrollment Details
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='pending',
+        default='pending_approval',
         help_text="Enrollment status"
     )
     enrollment_date = models.DateTimeField(
         default=timezone.now,
-        help_text="Date of enrollment"
+        help_text="Date when enrollment was requested/created"
+    )
+    start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date when student started learning (after approval)"
     )
     completion_date = models.DateTimeField(
         null=True,
@@ -131,6 +175,8 @@ class Enrollment(models.Model):
             models.Index(fields=['course', 'status']),
             models.Index(fields=['enrollment_date']),
             models.Index(fields=['progress_percentage']),
+            models.Index(fields=['enrollment_type']),  # NEW
+            models.Index(fields=['approved_by']),  # NEW
         ]
     
     def clean(self):
@@ -148,13 +194,35 @@ class Enrollment(models.Model):
         
         if self.amount_paid > self.course.price:
             raise ValidationError('Amount paid cannot exceed course price.')
+        
+        # Validate admin approval logic
+        if self.status == 'approved' and not self.approved_by:
+            raise ValidationError('Approved enrollments must have an approver.')
+        
+        # Validate organization matching
+        if self.approved_by and self.student.organization:
+            if self.approved_by.organization != self.course.training_partner:
+                raise ValidationError('Approver must be from the same training partner as the course.')
+        
+        # For private courses, student must be from same organization
+        if self.course.is_private and self.student.organization != self.course.training_partner:
+            raise ValidationError('Students can only enroll in private courses from their own organization.')
     
     def save(self, *args, **kwargs):
-        """Update progress and status before saving."""
+        """Handle status transitions and timestamps."""
         self.clean()
         
-        # Update last accessed time
-        if not self.last_accessed:
+        # Set approval date when status changes to approved
+        if self.status == 'approved' and not self.approval_date:
+            self.approval_date = timezone.now()
+            self.start_date = timezone.now()
+        
+        # Set start date when status changes to active
+        if self.status == 'active' and not self.start_date:
+            self.start_date = timezone.now()
+        
+        # Update last accessed time for active enrollments
+        if self.status == 'active' and not self.last_accessed:
             self.last_accessed = timezone.now()
         
         # Update completion date if progress is 100%
@@ -165,28 +233,85 @@ class Enrollment(models.Model):
         super().save(*args, **kwargs)
     
     @property
+    def is_approved(self):
+        """Check if enrollment is approved."""
+        return self.status in ['approved', 'active', 'completed']
+    
+    @property
+    def is_pending(self):
+        """Check if enrollment is pending approval."""
+        return self.status == 'pending_approval'
+    
+    @property
+    def is_rejected(self):
+        """Check if enrollment was rejected."""
+        return self.status == 'rejected'
+    
+    @property
     def is_completed(self):
         """Check if enrollment is completed."""
         return self.status == 'completed' or self.progress_percentage >= 100
     
     @property
     def is_active(self):
-        """Check if enrollment is active."""
-        return self.status == 'active'
+        """Check if enrollment is active (student can learn)."""
+        return self.status in ['approved', 'active']
+    
+    @property
+    def can_access_content(self):
+        """Check if student can access course content."""
+        return self.is_active and not self.is_completed
     
     @property
     def days_since_enrollment(self):
-        """Get days since enrollment."""
+        """Get days since enrollment request."""
         if self.enrollment_date:
             return (timezone.now() - self.enrollment_date).days
         return 0
     
     @property
+    def days_since_start(self):
+        """Get days since learning started."""
+        if self.start_date:
+            return (timezone.now() - self.start_date).days
+        return 0
+    
+    @property
     def days_to_complete(self):
         """Get days taken to complete the course."""
-        if self.completion_date and self.enrollment_date:
-            return (self.completion_date - self.enrollment_date).days
+        if self.completion_date and self.start_date:
+            return (self.completion_date - self.start_date).days
         return None
+    
+    def approve(self, admin_user, notes=None):
+        """Approve enrollment by admin."""
+        if admin_user.role != 'admin':
+            raise ValueError("Only admins can approve enrollments.")
+        
+        if admin_user.organization != self.course.training_partner:
+            raise ValueError("Admin must be from the same training partner.")
+        
+        self.status = 'approved'
+        self.approved_by = admin_user
+        self.approval_date = timezone.now()
+        self.start_date = timezone.now()
+        if notes:
+            self.admin_notes = notes
+        self.save()
+    
+    def reject(self, admin_user, reason=None):
+        """Reject enrollment by admin."""
+        if admin_user.role != 'admin':
+            raise ValueError("Only admins can reject enrollments.")
+        
+        if admin_user.organization != self.course.training_partner:
+            raise ValueError("Admin must be from the same training partner.")
+        
+        self.status = 'rejected'
+        self.approved_by = admin_user
+        if reason:
+            self.rejection_reason = reason
+        self.save()
     
     def update_progress(self, completed_lessons_count, total_lessons_count):
         """Update progress percentage."""
@@ -231,10 +356,40 @@ class Enrollment(models.Model):
             self.progress_percentage = round(
                 (completed_lessons / total_lessons) * 100, 2
             )
-            self.save(update_fields=['progress_percentage'])
+            
+            # Update status to active if student is learning
+            if self.status == 'approved' and completed_lessons > 0:
+                self.status = 'active'
+            
+            self.save(update_fields=['progress_percentage', 'status'])
+    
+    @classmethod
+    def create_admin_enrollment(cls, student, course, admin_user, auto_approve=True):
+        """Create enrollment by admin (directly approved)."""
+        enrollment = cls.objects.create(
+            student=student,
+            course=course,
+            enrollment_type='admin_created',
+            status='approved' if auto_approve else 'pending_approval',
+            approved_by=admin_user if auto_approve else None,
+            approval_date=timezone.now() if auto_approve else None,
+            start_date=timezone.now() if auto_approve else None
+        )
+        return enrollment
+    
+    @classmethod
+    def create_student_request(cls, student, course):
+        """Create enrollment request by student (needs approval)."""
+        enrollment = cls.objects.create(
+            student=student,
+            course=course,
+            enrollment_type='student_requested',
+            status='pending_approval'
+        )
+        return enrollment
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.course.title}"
+        return f"{self.student.full_name} - {self.course.title} ({self.status})"
 
 
 class CourseReview(models.Model):
@@ -356,6 +511,8 @@ class CourseNotification(models.Model):
         ('assignment_due', 'Assignment Due'),
         ('live_session', 'Live Session'),
         ('course_update', 'Course Update'),
+        ('enrollment_approved', 'Enrollment Approved'),  # NEW
+        ('enrollment_rejected', 'Enrollment Rejected'),  # NEW
         ('other', 'Other'),
     ]
     

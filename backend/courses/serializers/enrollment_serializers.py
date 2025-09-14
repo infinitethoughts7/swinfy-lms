@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from ..models import (
     Enrollment, CourseReview, CourseWishlist, CourseNotification,
-    LessonProgress, ModuleProgress, CourseProgress, StudySession
+    LessonProgress, CourseProgress
 )
 from .course_serializer import CourseListSerializer
 from users.serializers import UserProfileSerializer 
@@ -20,23 +20,31 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(read_only=True)
     is_completed = serializers.BooleanField(read_only=True)
     is_active = serializers.BooleanField(read_only=True)
+    is_approved = serializers.BooleanField(read_only=True)
+    is_pending = serializers.BooleanField(read_only=True)
+    is_rejected = serializers.BooleanField(read_only=True)
+    can_access_content = serializers.BooleanField(read_only=True)
     days_since_enrollment = serializers.IntegerField(read_only=True)
+    days_since_start = serializers.IntegerField(read_only=True)
     days_to_complete = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = Enrollment
         fields = [
-            'id', 'student', 'course', 'status', 'enrollment_date',
-            'completion_date', 'last_accessed', 'progress_percentage',
-            'current_module', 'current_lesson', 'amount_paid',
-            'payment_status', 'payment_method', 'payment_reference',
-            'is_completed', 'is_active', 'days_since_enrollment',
+            'id', 'student', 'course', 'enrollment_type', 'status',
+            'enrollment_date', 'start_date', 'completion_date', 'last_accessed',
+            'progress_percentage', 'current_module', 'current_lesson',
+            'amount_paid', 'payment_status', 'payment_method', 'payment_reference',
+            'approved_by', 'approval_date', 'rejection_reason', 'admin_notes',
+            'is_completed', 'is_active', 'is_approved', 'is_pending', 'is_rejected',
+            'can_access_content', 'days_since_enrollment', 'days_since_start',
             'days_to_complete', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'enrollment_date', 'completion_date', 'last_accessed',
-            'progress_percentage', 'is_completed', 'is_active',
-            'days_since_enrollment', 'days_to_complete', 'created_at', 'updated_at'
+            'id', 'enrollment_date', 'start_date', 'completion_date', 'last_accessed',
+            'progress_percentage', 'is_completed', 'is_active', 'is_approved',
+            'is_pending', 'is_rejected', 'can_access_content', 'days_since_enrollment',
+            'days_since_start', 'days_to_complete', 'created_at', 'updated_at'
         ]
 
 
@@ -45,7 +53,7 @@ class EnrollmentCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Enrollment
-        fields = ['course', 'amount_paid', 'payment_method', 'payment_reference']
+        fields = ['course', 'amount_paid', 'payment_method', 'payment_reference', 'enrollment_type']
     
     def validate(self, data):
         """Validate enrollment data."""
@@ -148,13 +156,11 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         model = LessonProgress
         fields = [
             'id', 'enrollment', 'lesson', 'student', 'course', 'module',
-            'is_completed', 'is_started', 'completion_percentage',
-            'time_spent_minutes', 'started_at', 'completed_at',
+            'is_completed', 'is_started', 'started_at', 'completed_at',
             'last_accessed', 'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'enrollment', 'student', 'course', 'module',
-            'is_completed', 'is_started', 'completion_percentage',
             'started_at', 'completed_at', 'last_accessed',
             'created_at', 'updated_at'
         ]
@@ -178,38 +184,6 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         return CourseModuleSerializer(obj.module).data
 
 
-class ModuleProgressSerializer(serializers.ModelSerializer):
-    """Serializer for module progress."""
-    module = serializers.SerializerMethodField()
-    student = serializers.SerializerMethodField()
-    course = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = ModuleProgress
-        fields = [
-            'id', 'enrollment', 'module', 'student', 'course',
-            'is_completed', 'completion_percentage', 'lessons_completed',
-            'total_lessons', 'started_at', 'completed_at',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'enrollment', 'student', 'course', 'is_completed',
-            'completion_percentage', 'lessons_completed', 'total_lessons',
-            'started_at', 'completed_at', 'created_at', 'updated_at'
-        ]
-    
-    def get_module(self, obj):
-        """Get module information."""
-        from .content_serializers import CourseModuleSerializer
-        return CourseModuleSerializer(obj.module).data
-    
-    def get_student(self, obj):
-        """Get student information."""
-        return UserProfileSerializer(obj.student).data
-    
-    def get_course(self, obj):
-        """Get course information."""
-        return CourseListSerializer(obj.course).data
 
 
 class CourseProgressSerializer(serializers.ModelSerializer):
@@ -219,24 +193,23 @@ class CourseProgressSerializer(serializers.ModelSerializer):
     is_completed = serializers.BooleanField(read_only=True)
     days_since_started = serializers.IntegerField(read_only=True)
     days_to_complete = serializers.IntegerField(read_only=True)
+    completion_rate_per_day = serializers.DecimalField(read_only=True, max_digits=5, decimal_places=2)
     
     class Meta:
         model = CourseProgress
         fields = [
             'id', 'enrollment', 'student', 'course', 'overall_progress',
-            'modules_completed', 'total_modules', 'lessons_completed',
-            'total_lessons', 'total_time_spent_minutes',
-            'average_session_duration_minutes', 'started_at',
+            'lessons_completed', 'total_lessons', 'started_at',
             'completed_at', 'last_activity', 'is_completed',
-            'days_since_started', 'days_to_complete', 'created_at', 'updated_at'
+            'days_since_started', 'days_to_complete', 'completion_rate_per_day',
+            'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'enrollment', 'student', 'course', 'overall_progress',
-            'modules_completed', 'total_modules', 'lessons_completed',
-            'total_lessons', 'total_time_spent_minutes',
-            'average_session_duration_minutes', 'started_at',
+            'lessons_completed', 'total_lessons', 'started_at',
             'completed_at', 'last_activity', 'is_completed',
-            'days_since_started', 'days_to_complete', 'created_at', 'updated_at'
+            'days_since_started', 'days_to_complete', 'completion_rate_per_day',
+            'created_at', 'updated_at'
         ]
     
     def get_student(self, obj):
@@ -248,38 +221,6 @@ class CourseProgressSerializer(serializers.ModelSerializer):
         return CourseListSerializer(obj.course).data
 
 
-class StudySessionSerializer(serializers.ModelSerializer):
-    """Serializer for study sessions."""
-    student = serializers.SerializerMethodField()
-    course = serializers.SerializerMethodField()
-    lesson = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = StudySession
-        fields = [
-            'id', 'enrollment', 'lesson', 'student', 'course',
-            'session_duration_minutes', 'progress_made', 'started_at',
-            'ended_at', 'created_at'
-        ]
-        read_only_fields = [
-            'id', 'enrollment', 'student', 'course', 'session_duration_minutes',
-            'started_at', 'ended_at', 'created_at'
-        ]
-    
-    def get_student(self, obj):
-        """Get student information."""
-        return UserProfileSerializer(obj.enrollment.student).data
-    
-    def get_course(self, obj):
-        """Get course information."""
-        return CourseListSerializer(obj.enrollment.course).data
-    
-    def get_lesson(self, obj):
-        """Get lesson information."""
-        if obj.lesson:
-            from .content_serializers import LessonSerializer
-            return LessonSerializer(obj.lesson).data
-        return None
 
 
 class EnrollmentStatsSerializer(serializers.Serializer):

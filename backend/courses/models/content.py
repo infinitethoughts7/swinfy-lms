@@ -5,20 +5,76 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
 import uuid
+import logging
 from .course import Course
+
+logger = logging.getLogger(__name__)
+
+
+def detect_video_duration(video_path):
+    """
+    Detect video duration using multiple fallback methods.
+    
+    Args:
+        video_path (str): Path to the video file
+        
+    Returns:
+        int: Duration in minutes, or 0 if detection fails
+    """
+    duration_minutes = 0
+    
+    # Method 1: Try ffprobe (most reliable for video files)
+    try:
+        import subprocess
+        import json
+        result = subprocess.run([
+            'ffprobe', '-v', 'quiet', '-print_format', 'json',
+            '-show_format', video_path
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            metadata = json.loads(result.stdout)
+            duration_seconds = float(metadata['format']['duration'])
+            duration_minutes = int(duration_seconds / 60)
+            logger.info(f"Video duration detected via ffprobe: {duration_minutes} minutes")
+            return duration_minutes
+    except (subprocess.SubprocessError, FileNotFoundError, KeyError, ValueError, subprocess.TimeoutExpired) as e:
+        logger.debug(f"ffprobe failed: {e}")
+    
+    # Method 2: Try OpenCV if ffprobe fails and cv2 is available
+    try:
+        import cv2  # type: ignore # Optional dependency
+        cap = cv2.VideoCapture(video_path)
+        if cap.isOpened():
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            if fps > 0 and frame_count > 0:
+                duration_seconds = frame_count / fps
+                duration_minutes = int(duration_seconds / 60)
+                logger.info(f"Video duration detected via OpenCV: {duration_minutes} minutes")
+            cap.release()
+            return duration_minutes
+    except ImportError:
+        logger.debug("OpenCV (cv2) not available for video duration detection")
+    except Exception as e:
+        logger.debug(f"OpenCV video detection failed: {e}")
+    
+    # Method 3: Basic file-based detection (placeholder for future implementation)
+    # This could be expanded to parse specific video formats
+    logger.warning(f"Could not detect video duration for {video_path}")
+    return duration_minutes
 
 
 class CourseModule(models.Model):
     """
-    Course module model representing a section of a course.
+    Course module model representing a section/topic of a course.
     """
     
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Basic Information
-    title = models.CharField(max_length=200, help_text="Module title")
-    description = models.TextField(help_text="Module description")
+    title = models.CharField(max_length=200, help_text="Module/Topic title")
     slug = models.SlugField(max_length=220, help_text="URL-friendly version of title")
     
     # Course Relationship
@@ -33,11 +89,6 @@ class CourseModule(models.Model):
     order = models.PositiveIntegerField(
         default=0,
         help_text="Order of module in course"
-    )
-    duration_weeks = models.PositiveIntegerField(
-        default=1,
-        validators=[MinValueValidator(1), MaxValueValidator(52)],
-        help_text="Module duration in weeks"
     )
     is_published = models.BooleanField(
         default=True,
@@ -76,23 +127,22 @@ class CourseModule(models.Model):
 
 class Lesson(models.Model):
     """
-    Lesson model representing individual lessons within a module.
+    Lesson model representing individual lessons/subtopics within a module.
     """
     
     LESSON_TYPE_CHOICES = [
         ('video', 'Video Lesson'),
         ('text', 'Text Lesson'),
-        ('quiz', 'Quiz'),
         ('assignment', 'Assignment'),
-        ('live_session', 'Live Session'),
-        ('download', 'Download'),
+        ('image_gallery', 'Image Gallery'),
+        ('mixed', 'Mixed Content'),
     ]
     
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Basic Information
-    title = models.CharField(max_length=200, help_text="Lesson title")
+    title = models.CharField(max_length=200, help_text="Lesson/Subtopic title")
     description = models.TextField(blank=True, help_text="Lesson description")
     slug = models.SlugField(max_length=220, help_text="URL-friendly version of title")
     
@@ -117,7 +167,7 @@ class Lesson(models.Model):
     )
     duration_minutes = models.PositiveIntegerField(
         default=0,
-        help_text="Lesson duration in minutes"
+        help_text="Lesson duration in minutes (auto-detected from video files)"
     )
     is_preview = models.BooleanField(
         default=False,
@@ -127,27 +177,21 @@ class Lesson(models.Model):
         default=True,
         help_text="Lesson is visible to students"
     )
+    is_mandatory = models.BooleanField(
+        default=True,
+        help_text="Lesson must be completed to progress"
+    )
     
     # Content Fields
     content = models.TextField(
         blank=True,
-        help_text="Lesson content (for text lessons)"
-    )
-    video_url = models.URLField(
-        blank=True,
-        help_text="Video URL (for video lessons)"
+        help_text="Lesson content (rich text for text lessons, assignment instructions, etc.)"
     )
     video_file = models.FileField(
         upload_to='courses/lessons/videos/',
         blank=True,
         null=True,
-        help_text="Video file (for video lessons)"
-    )
-    attachment = models.FileField(
-        upload_to='courses/lessons/attachments/',
-        blank=True,
-        null=True,
-        help_text="Lesson attachment"
+        help_text="Video file upload (duration will be auto-detected)"
     )
     
     # Timestamps
@@ -166,7 +210,7 @@ class Lesson(models.Model):
         ]
     
     def save(self, *args, **kwargs):
-        """Generate slug if not provided."""
+        """Generate slug and auto-detect video duration."""
         if not self.slug:
             base_slug = slugify(self.title)
             slug = base_slug
@@ -175,12 +219,41 @@ class Lesson(models.Model):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
+        
+        # Auto-detect video duration if video file is uploaded
+        if self.video_file and not self.duration_minutes:
+            self.duration_minutes = detect_video_duration(self.video_file.path)
+        
         super().save(*args, **kwargs)
     
     @property
     def course(self):
         """Get the course this lesson belongs to."""
         return self.module.course
+    
+    @property
+    def has_video_content(self):
+        """Check if lesson has video content."""
+        return bool(self.video_file)
+    
+    @property
+    def duration_formatted(self):
+        """Get formatted duration (e.g., '1h 30m' or '45m')."""
+        if self.duration_minutes == 0:
+            return "Duration not set"
+        
+        hours = self.duration_minutes // 60
+        minutes = self.duration_minutes % 60
+        
+        if hours > 0:
+            return f"{hours}h {minutes}m" if minutes > 0 else f"{hours}h"
+        else:
+            return f"{minutes}m"
+    
+    @property
+    def total_materials_count(self):
+        """Get total count of lesson materials."""
+        return self.materials.count()
     
     def __str__(self):
         return f"{self.module.title} - {self.title}"
@@ -197,7 +270,8 @@ class LessonMaterial(models.Model):
         ('ppt', 'PowerPoint Presentation'),
         ('zip', 'ZIP Archive'),
         ('image', 'Image'),
-        ('audio', 'Audio File'),
+        ('video', 'Video File'),
+        ('code', 'Code File'),
         ('other', 'Other'),
     ]
     
@@ -239,6 +313,14 @@ class LessonMaterial(models.Model):
         default=False,
         help_text="Material is required for the lesson"
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Order of material in lesson"
+    )
+    is_downloadable = models.BooleanField(
+        default=True,
+        help_text="Students can download this material"
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -247,9 +329,9 @@ class LessonMaterial(models.Model):
     class Meta:
         verbose_name = 'Lesson Material'
         verbose_name_plural = 'Lesson Materials'
-        ordering = ['lesson', 'title']
+        ordering = ['lesson', 'order', 'title']
         indexes = [
-            models.Index(fields=['lesson']),
+            models.Index(fields=['lesson', 'order']),
             models.Index(fields=['material_type']),
         ]
     
@@ -263,6 +345,16 @@ class LessonMaterial(models.Model):
     def course(self):
         """Get the course this material belongs to."""
         return self.lesson.course
+    
+    @property
+    def file_size_formatted(self):
+        """Get human-readable file size."""
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
     
     def __str__(self):
         return f"{self.lesson.title} - {self.title}"
@@ -279,6 +371,7 @@ class CourseResource(models.Model):
         ('reference', 'Reference Material'),
         ('tool', 'Tool or Software'),
         ('link', 'External Link'),
+        ('certificate_template', 'Certificate Template'),
         ('other', 'Other'),
     ]
     
@@ -299,7 +392,7 @@ class CourseResource(models.Model):
     
     # Resource Details
     resource_type = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=RESOURCE_TYPE_CHOICES,
         default='other',
         help_text="Type of resource"
@@ -318,6 +411,10 @@ class CourseResource(models.Model):
         default=True,
         help_text="Resource is visible to all students"
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Order of resource"
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -326,11 +423,28 @@ class CourseResource(models.Model):
     class Meta:
         verbose_name = 'Course Resource'
         verbose_name_plural = 'Course Resources'
-        ordering = ['course', 'title']
+        ordering = ['course', 'order', 'title']
         indexes = [
-            models.Index(fields=['course']),
+            models.Index(fields=['course', 'order']),
             models.Index(fields=['resource_type']),
         ]
     
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
+
+# Helper function for auto-creating modules
+def get_or_create_default_module(course, module_number=1):
+    """
+    Get or create a default module for courses that don't use explicit modules.
+    """
+    module_title = f"Module {module_number}"
+    module, created = CourseModule.objects.get_or_create(
+        course=course,
+        order=module_number,
+        defaults={
+            'title': module_title,
+            'is_auto_created': True,
+        }
+    )
+    return module

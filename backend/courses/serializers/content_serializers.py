@@ -15,9 +15,8 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModule
         fields = [
-            'id', 'title', 'description', 'slug', 'course', 'order',
-            'duration_weeks', 'is_published', 'lessons_count',
-            'total_duration_minutes', 'created_at', 'updated_at'
+            'id', 'title', 'slug', 'course', 'order', 'is_published',
+            'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at']
     
@@ -36,7 +35,7 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModule
         fields = [
-            'title', 'description', 'course', 'order', 'duration_weeks', 'is_published'
+            'title', 'course', 'order', 'is_published'
         ]
     
     def validate(self, data):
@@ -57,19 +56,21 @@ class LessonSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
     materials_count = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    duration_formatted = serializers.CharField(read_only=True)
+    has_video_content = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'description', 'slug', 'module', 'course',
-            'lesson_type', 'order', 'duration_minutes', 'is_preview',
-            'is_published', 'content', 'video_url', 'video_file',
-            'attachment', 'materials_count', 'is_completed',
+            'lesson_type', 'order', 'duration_minutes', 'duration_formatted',
+            'is_preview', 'is_published', 'is_mandatory', 'content', 'video_file',
+            'materials_count', 'is_completed', 'has_video_content',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'slug', 'course', 'materials_count', 'is_completed',
-            'created_at', 'updated_at'
+            'duration_formatted', 'has_video_content', 'created_at', 'updated_at'
         ]
     
     def get_course(self, obj):
@@ -103,8 +104,8 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'title', 'description', 'module', 'lesson_type', 'order',
-            'duration_minutes', 'is_preview', 'is_published', 'content',
-            'video_url', 'video_file', 'attachment'
+            'duration_minutes', 'is_preview', 'is_published', 'is_mandatory',
+            'content', 'video_file'
         ]
     
     def validate(self, data):
@@ -118,8 +119,8 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         
         # Validate lesson type specific fields
         lesson_type = data.get('lesson_type', 'video')
-        if lesson_type == 'video' and not data.get('video_url') and not data.get('video_file'):
-            raise serializers.ValidationError('Video lessons must have either a video URL or video file.')
+        if lesson_type == 'video' and not data.get('video_file'):
+            raise serializers.ValidationError('Video lessons must have a video file.')
         
         if lesson_type == 'text' and not data.get('content'):
             raise serializers.ValidationError('Text lessons must have content.')
@@ -132,17 +133,19 @@ class LessonMaterialSerializer(serializers.ModelSerializer):
     lesson = LessonSerializer(read_only=True)
     course = serializers.SerializerMethodField()
     file_size_mb = serializers.SerializerMethodField()
+    file_size_formatted = serializers.CharField(read_only=True)
     
     class Meta:
         model = LessonMaterial
         fields = [
             'id', 'title', 'description', 'lesson', 'course',
-            'material_type', 'file', 'file_size', 'file_size_mb',
-            'download_count', 'is_required', 'created_at', 'updated_at'
+            'material_type', 'file', 'file_size', 'file_size_mb', 'file_size_formatted',
+            'download_count', 'is_required', 'order', 'is_downloadable',
+            'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'course', 'file_size', 'file_size_mb', 'download_count',
-            'created_at', 'updated_at'
+            'id', 'course', 'file_size', 'file_size_mb', 'file_size_formatted',
+            'download_count', 'created_at', 'updated_at'
         ]
     
     def get_course(self, obj):
@@ -163,7 +166,7 @@ class LessonMaterialCreateSerializer(serializers.ModelSerializer):
         model = LessonMaterial
         fields = [
             'title', 'description', 'lesson', 'material_type',
-            'file', 'is_required'
+            'file', 'is_required', 'order', 'is_downloadable'
         ]
     
     def validate_file(self, value):
@@ -192,7 +195,8 @@ class CourseResourceSerializer(serializers.ModelSerializer):
         model = CourseResource
         fields = [
             'id', 'title', 'description', 'course', 'resource_type',
-            'file', 'url', 'is_public', 'file_size_mb', 'created_at', 'updated_at'
+            'file', 'url', 'is_public', 'order', 'file_size_mb',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'course', 'file_size_mb', 'created_at', 'updated_at']
     
@@ -210,7 +214,7 @@ class CourseResourceCreateSerializer(serializers.ModelSerializer):
         model = CourseResource
         fields = [
             'title', 'description', 'course', 'resource_type',
-            'file', 'url', 'is_public'
+            'file', 'url', 'is_public', 'order'
         ]
     
     def validate(self, data):

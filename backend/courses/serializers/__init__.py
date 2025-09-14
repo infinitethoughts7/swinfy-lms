@@ -6,8 +6,7 @@ from .training_partner_serializer import TrainingPartnerSerializer, TrainingPart
 from .enrollment_serializers import (
     EnrollmentSerializer, EnrollmentCreateSerializer, CourseReviewSerializer,
     CourseWishlistSerializer, CourseNotificationSerializer, LessonProgressSerializer,
-    ModuleProgressSerializer, CourseProgressSerializer, StudySessionSerializer,
-    EnrollmentStatsSerializer
+    CourseProgressSerializer, EnrollmentStatsSerializer
 )
 from .content_serializers import (
     CourseModuleSerializer, CourseModuleCreateSerializer, LessonSerializer,
@@ -38,9 +37,7 @@ __all__ = [
     'CourseWishlistSerializer',
     'CourseNotificationSerializer',
     'LessonProgressSerializer',
-    'ModuleProgressSerializer',
     'CourseProgressSerializer',
-    'StudySessionSerializer',
     'EnrollmentStatsSerializer',
     
     # Content serializers

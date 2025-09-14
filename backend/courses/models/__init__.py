@@ -1,7 +1,7 @@
 from .course import Course
 from .content import CourseModule, Lesson, LessonMaterial, CourseResource
 from .enrollment import Enrollment, CourseReview, CourseWishlist, CourseNotification
-from .progress import LessonProgress, ModuleProgress, CourseProgress, StudySession
+from .progress import LessonProgress, CourseProgress
 
 __all__ = [
     'Course',
@@ -14,7 +14,5 @@ __all__ = [
     'CourseWishlist',
     'CourseNotification',
     'LessonProgress',
-    'ModuleProgress',
-    'CourseProgress',
-    'StudySession'
+    'CourseProgress'
 ]

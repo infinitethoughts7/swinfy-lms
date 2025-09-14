@@ -7,20 +7,18 @@ from users.models import User, TrainingPartner
 
 
 class Course(models.Model):
-    """Main course model with two-stage approval workflow."""
+    """Main course model with single-stage approval workflow and private/public visibility."""
     
     CATEGORY_CHOICES = [
-        ('frontend_development', 'Frontend Development'),
-        ('backend_development', 'Backend Development'),
-        ('data_analyst', 'Data Analyst'),
-        ('data_science', 'Data Science'),
-        ('interview_preparation', 'Interview Preparation'),
-        ('ai_kids', 'AI for Kids'),
-        ('programming_kids', 'Programming for Kids'),
-        ('robotics', 'Robotics'),
-        ('devops', 'DevOps'),
-        ('cybersecurity', 'Cybersecurity'),
-    ]
+    ('frontend_development', 'Frontend Development'),
+    ('backend_development', 'Backend Development'),
+    ('programming_languages', 'Programming Languages'),
+    ('ai', 'Artificial Intelligence'),
+    ('ai_tools', 'AI Tools'),
+    ('data_science', 'Data Science'),
+    ('data_analysis', 'Data Analysis'),
+    ('software_engineering', 'Software Engineering Essentials'), 
+     ]
     
     LEVEL_CHOICES = [
         ('beginner', 'Beginner'),
@@ -30,8 +28,7 @@ class Course(models.Model):
     
     APPROVAL_STATUS_CHOICES = [
         ('draft', 'Draft'),
-        ('training_partner_pending', 'Pending Training Partner Approval'),
-        ('super_pending', 'Pending Super Admin Approval'),
+        ('pending_approval', 'Pending Training Partner Approval'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
@@ -71,6 +68,25 @@ class Course(models.Model):
         help_text="Comma-separated tags for course discovery"
     )
     
+    # NEW: Course Visibility & Access Control
+    is_private = models.BooleanField(
+        default=True,
+        help_text="Private courses are only visible to learners from the same organization"
+    )
+    requires_admin_enrollment = models.BooleanField(
+        default=True,
+        help_text="All enrollments require training partner admin approval"
+    )
+    max_enrollments = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Maximum number of enrollments allowed (leave blank for unlimited)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Course is currently active and available for enrollments (inactive = ended/paused)"
+    )
+    
     # Relationship Fields
     tutor = models.ForeignKey(
         User,
@@ -90,14 +106,10 @@ class Course(models.Model):
         help_text="Training partner"
     )
     
-    # Approval Workflow Fields
+    # UPDATED: Simplified Approval Workflow Fields (No Super Admin)
     is_approved_by_training_partner = models.BooleanField(
         default=False,
         help_text="Training partner admin has approved this course"
-    )
-    is_approved_by_super_admin = models.BooleanField(
-        default=False,
-        help_text="Super admin has approved this course"
     )
     approval_status = models.CharField(
         max_length=30,
@@ -107,7 +119,7 @@ class Course(models.Model):
     approval_notes = models.TextField(
         blank=True,
         null=True,
-        help_text="Feedback from approvers"
+        help_text="Feedback from training partner admin"
     )
     training_partner_admin_approved_by = models.ForeignKey(
         User,
@@ -116,14 +128,6 @@ class Course(models.Model):
         blank=True,
         related_name='training_partner_approved_courses',
         help_text="Training partner admin who approved this course"
-    )
-    super_admin_approved_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='super_approved_courses',
-        help_text="Super admin who approved this course"
     )
     
     # Publication & Visibility Fields
@@ -195,6 +199,7 @@ class Course(models.Model):
             models.Index(fields=['approval_status']),
             models.Index(fields=['is_published', 'is_featured']),
             models.Index(fields=['training_partner']),
+            models.Index(fields=['is_private', 'is_active']),  # NEW: For visibility filtering
         ]
     
     def clean(self):
@@ -218,16 +223,10 @@ class Course(models.Model):
         if self.tutor and not self.training_partner:
             self.training_partner = self.tutor.organization
         
-        # Validate approval logic
-        if self.is_approved_by_super_admin and not self.is_approved_by_training_partner:
+        # Published courses must be approved by training partner only
+        if self.is_published and not self.is_approved_by_training_partner:
             raise ValidationError({
-                'is_approved_by_super_admin': 'Course must be approved by training partner admin first.'
-            })
-        
-        # Published courses must be fully approved
-        if self.is_published and not (self.is_approved_by_training_partner and self.is_approved_by_super_admin):
-            raise ValidationError({
-                'is_published': 'Only fully approved courses can be published.'
+                'is_published': 'Only approved courses can be published.'
             })
     
     def save(self, *args, **kwargs):
@@ -243,13 +242,11 @@ class Course(models.Model):
                 counter += 1
             self.slug = slug
         
-        # Update approval status based on approval fields
-        if self.is_approved_by_training_partner and self.is_approved_by_super_admin:
+        # UPDATED: Simplified approval status logic (no super admin)
+        if self.is_approved_by_training_partner:
             self.approval_status = 'approved'
-        elif self.is_approved_by_training_partner and not self.is_approved_by_super_admin:
-            self.approval_status = 'super_pending'
-        elif not self.is_approved_by_training_partner and not self.is_draft:
-            self.approval_status = 'training_partner_pending'
+        elif not self.is_draft:
+            self.approval_status = 'pending_approval'
         elif self.is_draft:
             self.approval_status = 'draft'
         
@@ -269,18 +266,29 @@ class Course(models.Model):
     
     @property
     def is_fully_approved(self):
-        """Check if course is approved by both training partner admin and super admin."""
-        return self.is_approved_by_training_partner and self.is_approved_by_super_admin
+        """Check if course is approved by training partner admin."""
+        return self.is_approved_by_training_partner
     
     @property
     def can_be_published(self):
         """Check if course can be published."""
-        return self.is_fully_approved and not self.is_draft
+        return self.is_fully_approved and not self.is_draft and self.is_active
+    
+    @property
+    def is_enrollment_open(self):
+        """Check if course is accepting enrollments."""
+        if not self.is_active or not self.is_published:
+            return False
+        
+        if self.max_enrollments and self.enrollment_count >= self.max_enrollments:
+            return False
+        
+        return True
     
     @property
     def display_price(self):
         """Get formatted price with currency."""
-        return f"{self.currency} {self.price}"
+        return f"₹ {self.price}"  # Using Indian Rupee symbol
     
     @property
     def category_display(self):
@@ -291,6 +299,11 @@ class Course(models.Model):
     def level_display(self):
         """Get human-readable level name."""
         return dict(self.LEVEL_CHOICES).get(self.level, self.level)
+    
+    @property
+    def visibility_display(self):
+        """Get human-readable visibility status."""
+        return "Private" if self.is_private else "Public"
     
     def get_tags_list(self):
         """Get tags as a list."""
@@ -313,5 +326,42 @@ class Course(models.Model):
             self.total_reviews = reviews.count()
             self.save(update_fields=['rating', 'total_reviews'])
     
+    def can_user_view(self, user):
+        """Check if a user can view this course."""
+        # Must be published and approved
+        if not (self.is_published and self.is_approved_by_training_partner):
+            return False
+        
+        # If public course, anyone can view
+        if not self.is_private:
+            return True
+        
+        # If private course, only users from same training partner
+        if user.is_authenticated and hasattr(user, 'organization'):
+            return user.organization == self.training_partner
+        
+        return False
+    
+    def can_user_enroll(self, user):
+        """Check if a user can request enrollment in this course."""
+        # Must be able to view the course first
+        if not self.can_user_view(user):
+            return False
+        
+        # Must be a student
+        if not (user.is_authenticated and user.role == 'student'):
+            return False
+        
+        # Check if enrollment is open
+        if not self.is_enrollment_open:
+            return False
+        
+        # Check if already enrolled
+        from courses.models import Enrollment
+        if Enrollment.objects.filter(student=user, course=self).exists():
+            return False
+        
+        return True
+    
     def __str__(self):
-        return f"{self.title} - {self.training_partner.name}"
+        return f"{self.title} - {self.training_partner.name} ({'Private' if self.is_private else 'Public'})"

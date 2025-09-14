@@ -1,5 +1,5 @@
 """
-Custom permissions for the courses app.
+Custom permissions for the courses app - using model methods for business logic.
 """
 from rest_framework import permissions
 
@@ -32,18 +32,6 @@ class IsTrainingPartnerAdmin(permissions.BasePermission):
         )
 
 
-class IsSuperAdmin(permissions.BasePermission):
-    """
-    Permission to allow only super admins to perform certain actions.
-    """
-    
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role == 'super_admin'
-        )
-
-
 class IsTutorOrAdmin(permissions.BasePermission):
     """
     Permission to allow tutors and admins to perform certain actions.
@@ -52,7 +40,7 @@ class IsTutorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.role in ['tutor', 'admin', 'super_admin']
+            request.user.role in ['tutor', 'admin']
         )
 
 
@@ -70,75 +58,37 @@ class IsStudent(permissions.BasePermission):
 
 class CanApproveCourse(permissions.BasePermission):
     """
-    Permission to allow course approval based on user role and course status.
+    Permission to allow course approval - only training partner admins can approve.
     """
     
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
         
-        # Super admin can approve any course
-        if request.user.role == 'super_admin':
-            return True
-        
-        # Training partner admin can approve courses from their organization
-        if (request.user.role == 'admin' and 
+        # Only training partner admin can approve courses from their organization
+        return (
+            request.user.role == 'admin' and
             hasattr(request.user, 'organization') and
-            request.user.organization == obj.training_partner):
-            return True
-        
-        return False
+            request.user.organization == obj.training_partner
+        )
 
 
 class CanViewCourse(permissions.BasePermission):
     """
-    Permission to determine if user can view a course.
+    Permission to determine if user can view a course - uses model method.
     """
     
     def has_object_permission(self, request, view, obj):
-        # Published courses can be viewed by anyone
-        if obj.is_published:
-            return True
-        
-        # Course owner can view their own courses
-        if obj.tutor == request.user:
-            return True
-        
-        # Training partner admin can view courses from their organization
-        if (request.user.is_authenticated and
-            request.user.role == 'admin' and
-            hasattr(request.user, 'organization') and
-            request.user.organization == obj.training_partner):
-            return True
-        
-        # Super admin can view any course
-        if (request.user.is_authenticated and
-            request.user.role == 'super_admin'):
-            return True
-        
-        return False
+        return obj.can_user_view(request.user)
 
 
 class CanEnrollInCourse(permissions.BasePermission):
     """
-    Permission to determine if user can enroll in a course.
+    Permission to determine if user can request enrollment - uses model method.
     """
     
     def has_object_permission(self, request, view, obj):
-        # User must be authenticated and be a student
-        if not (request.user.is_authenticated and request.user.role == 'student'):
-            return False
-        
-        # Course must be published and approved
-        if not (obj.is_published and obj.is_fully_approved):
-            return False
-        
-        # Check if user is already enrolled
-        from .models import Enrollment
-        if Enrollment.objects.filter(student=request.user, course=obj).exists():
-            return False
-        
-        return True
+        return obj.can_user_enroll(request.user)
 
 
 class CanAccessCourseContent(permissions.BasePermission):
@@ -158,21 +108,48 @@ class CanAccessCourseContent(permissions.BasePermission):
             request.user.organization == obj.training_partner):
             return True
         
-        # Super admin can access any content
-        if (request.user.is_authenticated and
-            request.user.role == 'super_admin'):
-            return True
-        
-        # Check if user is enrolled in the course
+        # For students, check if they have an approved enrollment
         if request.user.is_authenticated and request.user.role == 'student':
             from .models import Enrollment
-            return Enrollment.objects.filter(
-                student=request.user, 
-                course=obj, 
-                status__in=['active', 'completed']
-            ).exists()
+            try:
+                enrollment = Enrollment.objects.get(student=request.user, course=obj)
+                return enrollment.can_access_content
+            except Enrollment.DoesNotExist:
+                return False
         
         return False
+
+
+class CanManageEnrollment(permissions.BasePermission):
+    """
+    Permission to manage enrollments (approve, reject, create).
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Only training partner admins can manage enrollments
+        return (
+            request.user.role == 'admin' and
+            hasattr(request.user, 'organization')
+        )
+    
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Admin can only manage enrollments for courses from their training partner
+        if hasattr(obj, 'course'):  # Enrollment object
+            course = obj.course
+        else:  # Course object
+            course = obj
+        
+        return (
+            request.user.role == 'admin' and
+            hasattr(request.user, 'organization') and
+            request.user.organization == course.training_partner
+        )
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -186,7 +163,11 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
         
         # Write permissions are only allowed to the owner of the object
-        return obj.user == request.user
+        if hasattr(obj, 'user'):
+            return obj.user == request.user
+        elif hasattr(obj, 'student'):  # For enrollment objects
+            return obj.student == request.user
+        return False
 
 
 class CanManageCourse(permissions.BasePermission):
@@ -198,19 +179,8 @@ class CanManageCourse(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        # Tutors can manage their own courses
-        if request.user.role == 'tutor':
-            return True
-        
-        # Admins can manage courses from their training partner
-        if request.user.role == 'admin':
-            return hasattr(request.user, 'organization')
-        
-        # Super admins can manage any course
-        if request.user.role == 'super_admin':
-            return True
-        
-        return False
+        # Use model method for course creation permission
+        return request.user.can_create_courses
     
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
@@ -226,8 +196,86 @@ class CanManageCourse(permissions.BasePermission):
             request.user.organization == obj.training_partner):
             return True
         
-        # Super admin can manage any course
-        if request.user.role == 'super_admin':
-            return True
+        return False
+
+
+class CanCreateCourse(permissions.BasePermission):
+    """
+    Permission to create courses - uses model method.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Use the model method for course creation logic
+        return request.user.can_create_courses
+
+
+class CanManageOrganization(permissions.BasePermission):
+    """
+    Permission to manage training partner organization - uses model method.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Use the model method for organization management logic
+        return request.user.can_manage_organization
+
+
+# Utility permission mixins for common patterns
+class OrganizationMemberOnly(permissions.BasePermission):
+    """
+    Base permission for organization-specific access.
+    """
+    
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Get the training partner from the object
+        training_partner = None
+        if hasattr(obj, 'training_partner'):
+            training_partner = obj.training_partner
+        elif hasattr(obj, 'course'):
+            training_partner = obj.course.training_partner
+        elif hasattr(obj, 'organization'):
+            training_partner = obj.organization
+        
+        if not training_partner:
+            return False
+        
+        # Check if user belongs to the same organization
+        return (
+            hasattr(request.user, 'organization') and
+            request.user.organization == training_partner
+        )
+
+
+class StudentEnrollmentAccess(permissions.BasePermission):
+    """
+    Permission for students to access their own enrollment data.
+    """
+    
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Students can only access their own enrollments
+        if request.user.role == 'student':
+            if hasattr(obj, 'student'):  # Enrollment object
+                return obj.student == request.user
+            elif hasattr(obj, 'enrollment'):  # Related object
+                return obj.enrollment.student == request.user
+        
+        # Admins can access enrollments from their organization
+        if request.user.role == 'admin':
+            if hasattr(obj, 'course'):
+                return (
+                    hasattr(request.user, 'organization') and
+                    request.user.organization == obj.course.training_partner
+                )
         
         return False

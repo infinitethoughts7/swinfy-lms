@@ -45,7 +45,8 @@ class CourseCreateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'description', 'short_description', 'price', 'duration_weeks',
             'category', 'level', 'tags', 'learning_outcomes', 'prerequisites',
-            'thumbnail', 'banner_image', 'demo_video', 'training_partner', 'tutor'
+            'thumbnail', 'banner_image', 'demo_video', 'training_partner', 'tutor',
+            'is_private', 'requires_admin_enrollment', 'max_enrollments', 'is_active'
         ]
     
     def validate(self, data):
@@ -72,7 +73,8 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'description', 'short_description', 'price', 'duration_weeks',
             'category', 'level', 'tags', 'learning_outcomes', 'prerequisites',
-            'thumbnail', 'banner_image', 'demo_video', 'is_published', 'is_featured'
+            'thumbnail', 'banner_image', 'demo_video', 'is_published', 'is_featured',
+            'is_private', 'requires_admin_enrollment', 'max_enrollments', 'is_active'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
@@ -86,6 +88,8 @@ class CourseSerializer(serializers.ModelSerializer):
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)
+    visibility_display = serializers.CharField(read_only=True)
+    is_enrollment_open = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Course
@@ -95,14 +99,17 @@ class CourseSerializer(serializers.ModelSerializer):
             'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
             'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
             'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
-            'is_approved_by_training_partner', 'is_approved_by_super_admin',
-            'is_fully_approved', 'can_be_published', 'training_partner', 'tutor',
+            'is_approved_by_training_partner', 'is_fully_approved', 'can_be_published',
+            'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
+            'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
+            'approval_notes', 'training_partner_admin_approved_by',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
-            'approval_status', 'is_approved_by_training_partner', 'is_approved_by_super_admin',
-            'is_fully_approved', 'can_be_published', 'created_at', 'updated_at',
+            'approval_status', 'is_approved_by_training_partner', 'is_fully_approved',
+            'can_be_published', 'visibility_display', 'is_enrollment_open',
+            'training_partner_admin_approved_by', 'created_at', 'updated_at',
             'published_at', 'last_enrollment'
         ]
     
@@ -139,6 +146,8 @@ class CourseDetailSerializer(serializers.ModelSerializer):
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)
+    visibility_display = serializers.CharField(read_only=True)
+    is_enrollment_open = serializers.BooleanField(read_only=True)
     modules_count = serializers.SerializerMethodField()
     lessons_count = serializers.SerializerMethodField()
     total_duration_minutes = serializers.SerializerMethodField()
@@ -151,16 +160,20 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
             'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
             'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
-            'is_approved_by_training_partner', 'is_approved_by_super_admin',
-            'is_fully_approved', 'can_be_published', 'training_partner', 'tutor',
+            'is_approved_by_training_partner', 'is_fully_approved', 'can_be_published',
+            'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
+            'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
             'modules_count', 'lessons_count', 'total_duration_minutes',
+            'approval_notes', 'training_partner_admin_approved_by',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
-            'approval_status', 'is_approved_by_training_partner', 'is_approved_by_super_admin',
-            'is_fully_approved', 'can_be_published', 'modules_count', 'lessons_count',
-            'total_duration_minutes', 'created_at', 'updated_at', 'published_at', 'last_enrollment'
+            'approval_status', 'is_approved_by_training_partner', 'is_fully_approved',
+            'can_be_published', 'visibility_display', 'is_enrollment_open',
+            'modules_count', 'lessons_count', 'total_duration_minutes',
+            'training_partner_admin_approved_by', 'created_at', 'updated_at',
+            'published_at', 'last_enrollment'
         ]
     
     def get_tags_list(self, obj):
@@ -188,7 +201,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
 
 class CourseAdminSerializer(serializers.ModelSerializer):
-    """Serializer for Super Admin course management with full control."""
+    """Serializer for Admin course management with full control."""
     training_partner = TrainingPartnerSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
@@ -196,6 +209,8 @@ class CourseAdminSerializer(serializers.ModelSerializer):
     tags_list = serializers.SerializerMethodField()
     is_fully_approved = serializers.BooleanField(read_only=True)
     can_be_published = serializers.BooleanField(read_only=True)
+    visibility_display = serializers.CharField(read_only=True)
+    is_enrollment_open = serializers.BooleanField(read_only=True)
     modules_count = serializers.SerializerMethodField()
     lessons_count = serializers.SerializerMethodField()
     total_duration_minutes = serializers.SerializerMethodField()
@@ -209,19 +224,19 @@ class CourseAdminSerializer(serializers.ModelSerializer):
             'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
             'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
             'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
-            'is_approved_by_training_partner', 'is_approved_by_super_admin',
-            'is_fully_approved', 'can_be_published', 'training_partner', 'tutor',
+            'is_approved_by_training_partner', 'is_fully_approved', 'can_be_published',
+            'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
+            'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
             'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_stats',
-            'approval_notes', 'training_partner_admin_approved_by', 'super_admin_approved_by',
-            'training_partner_approved_at', 'super_admin_approved_at',
+            'approval_notes', 'training_partner_admin_approved_by',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
-            'is_fully_approved', 'can_be_published', 'modules_count', 'lessons_count',
-            'total_duration_minutes', 'enrollment_stats', 'training_partner_admin_approved_by',
-            'super_admin_approved_by', 'training_partner_approved_at', 'super_admin_approved_at',
-            'created_at', 'updated_at', 'published_at', 'last_enrollment'
+            'is_fully_approved', 'can_be_published', 'visibility_display', 'is_enrollment_open',
+            'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_stats',
+            'training_partner_admin_approved_by', 'created_at', 'updated_at',
+            'published_at', 'last_enrollment'
         ]
     
     def get_tags_list(self, obj):
