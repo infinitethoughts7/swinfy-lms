@@ -56,11 +56,11 @@ export default function AdminDashboard() {
 
         setDashboardData({
           dashboardStats: dashboardStatsData.status === 'fulfilled' ? dashboardStatsData.value : null,
-          pendingPayments: pendingPaymentsData.status === 'fulfilled' ? pendingPaymentsData.value : [],
+          pendingPayments: pendingPaymentsData.status === 'fulfilled' ? (pendingPaymentsData.value.results || pendingPaymentsData.value || []) : [],
           paymentAnalytics: paymentAnalyticsData.status === 'fulfilled' ? paymentAnalyticsData.value : null,
-          paymentHistory: paymentHistoryData.status === 'fulfilled' ? paymentHistoryData.value : [],
+          paymentHistory: paymentHistoryData.status === 'fulfilled' ? (paymentHistoryData.value.results || paymentHistoryData.value || []) : [],
           coursePerformance: coursePerformanceData.status === 'fulfilled' ? coursePerformanceData.value : null,
-          trainingPartnerCourses: trainingPartnerCoursesData.status === 'fulfilled' ? trainingPartnerCoursesData.value : [],
+          trainingPartnerCourses: trainingPartnerCoursesData.status === 'fulfilled' ? (trainingPartnerCoursesData.value.results || trainingPartnerCoursesData.value || []) : [],
           userProfile: userProfileData.status === 'fulfilled' ? userProfileData.value : null
         });
 
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
 
   // Recent activity from payment history and course activity
   const recentActivity = [
-    ...pendingPayments.slice(0, 3).map((payment: any) => ({
+    ...(pendingPayments || []).slice(0, 3).map((payment: any) => ({
       id: `payment-${payment.id}`,
       type: 'payment',
       user: payment.user?.first_name || 'Student',
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
       icon: '💳',
       color: 'bg-yellow-100 text-yellow-800'
     })),
-    ...paymentHistory.slice(0, 2).map((payment: any) => ({
+    ...(paymentHistory || []).slice(0, 2).map((payment: any) => ({
       id: `history-${payment.id}`,
       type: 'payment_verified',
       user: payment.user?.first_name || 'Student',
@@ -188,8 +188,8 @@ export default function AdminDashboard() {
   // User distribution data
   const userDistribution = [
     { level: 'Students', count: dashboardStats?.total_users || 0 },
-    { level: 'Courses', count: trainingPartnerCourses.length || 0 },
-    { level: 'Payments', count: paymentHistory.length || 0 }
+    { level: 'Courses', count: (trainingPartnerCourses || []).length },
+    { level: 'Payments', count: (paymentHistory || []).length }
   ];
 
   // Weekly revenue data from payment analytics
