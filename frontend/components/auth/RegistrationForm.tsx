@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { mockOrganizations, Organization } from '@/lib/mock-organizations';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import OrganizationDetailsForm from './OrganizationDetailsForm';
 
 type UserRole = 'student' | 'tutor' | 'admin';

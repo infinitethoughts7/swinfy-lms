@@ -3,26 +3,94 @@ from django.db import models
 from django.core.exceptions import ValidationError
 import uuid
 
-
 class TrainingPartner(models.Model):
     """TrainingPartner model for managing institutions and companies."""
     
     ORG_TYPE_CHOICES = [
-        ('university', 'University'),
         ('company', 'Company'),
+        ('organization', 'Organization'),
+        ('university', 'University'),
         ('institute', 'Institute'),
         ('bootcamp', 'Bootcamp'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Basic Information
     name = models.CharField(max_length=200, unique=True)
     type = models.CharField(max_length=50, choices=ORG_TYPE_CHOICES)
+    description = models.TextField()
+    
+    # Contact Information
     location = models.CharField(max_length=200)
     website = models.URLField(blank=True, null=True)
-    description = models.TextField()
+    email = models.EmailField(blank=True, null=True)  # NEW: Official email
+    phone = models.CharField(max_length=20, blank=True, null=True)  # NEW: Contact phone
+    
+    # Branding & Social
+    logo = models.ImageField(
+        upload_to='training_partners/logos/',
+        blank=True,
+        null=True,
+        help_text="Organization logo"
+    )  # NEW: Logo field
+    linkedin_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="LinkedIn company page URL"
+    )  # NEW: LinkedIn URL
+    
+    
+    # Status
     is_active = models.BooleanField(default=True)
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Organization has been verified by admin"
+    )  # NEW: Verification status
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def clean(self):
+        """Custom validation for training partner."""
+        super().clean()
+        
+        # Validate LinkedIn URL format
+        if self.linkedin_url:
+            if not ('linkedin.com' in self.linkedin_url.lower()):
+                raise ValidationError({
+                    'linkedin_url': 'Please enter a valid LinkedIn URL.'
+                })
+    
+    @property
+    def total_courses(self):
+        """Get total number of courses."""
+        return self.courses.count()
+    
+    @property
+    def published_courses(self):
+        """Get number of published courses."""
+        return self.courses.filter(is_published=True).count()
+    
+    @property
+    def total_students(self):
+        """Get total number of enrolled students across all courses."""
+        from courses.models import Enrollment
+        return Enrollment.objects.filter(
+            course__training_partner=self,
+            status__in=['approved', 'active', 'completed']
+        ).values('student').distinct().count()
+    
+    @property
+    def admin_user(self):
+        """Get the admin user for this training partner."""
+        return self.users.filter(role='admin').first()
+    
+    @property
+    def tutors_count(self):
+        """Get number of tutors."""
+        return self.users.filter(role='tutor').count()
     
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
@@ -31,30 +99,37 @@ class TrainingPartner(models.Model):
         verbose_name = 'Training Partner'
         verbose_name_plural = 'Training Partners'
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_active', 'is_verified']),
+            models.Index(fields=['type']),
+        ]
+
+
 
 
 class User(AbstractUser):
-    """Custom user model for authentication only."""
+    """Custom user model for authentication with flexible organization membership."""
     
     ROLE_CHOICES = [
-        ('student', 'Student'),
-        ('tutor', 'Tutor'),
-        ('admin', 'Admin'),
+        ('learner', 'Learner'),
+        ('kpi', 'Knowlege Patner Instructor'),
+        ('kpa', 'Knowlege Patner Admin'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Basic authentication fields only
     email = models.EmailField(unique=True, verbose_name='Email Address')
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='learner')
     
-    # TrainingPartner relationship
+    # TrainingPartner relationship - NOW FLEXIBLE FOR ALL ROLES
     organization = models.ForeignKey(
-        TrainingPartner, 
+        'TrainingPartner', 
         on_delete=models.CASCADE, 
         blank=True, 
         null=True,
-        related_name='users'
+        related_name='users',
+        help_text="Training partner organization (optional for students, required for tutors/admins)"
     )
     
     # User status
@@ -80,11 +155,8 @@ class User(AbstractUser):
                 'organization': 'Tutors and Admins must belong to a training partner.'
             })
         
-        # Students should not have a training partner
-        if self.role == 'student' and self.organization:
-            raise ValidationError({
-                'organization': 'Students cannot belong to a training partner.'
-            })
+        # REMOVED: Students can now belong to organizations for private course access
+        # This allows students to access private courses from their organization
         
         # Only one admin per training partner
         if self.role == 'admin' and self.organization:
@@ -117,20 +189,79 @@ class User(AbstractUser):
     @property
     def can_create_courses(self):
         """Check if user can create courses."""
-        return self.role in ['admin', 'tutor'] and self.is_approved
+        return self.role in ['admin', 'tutor'] and self.is_approved and self.organization
     
     @property
     def can_manage_organization(self):
         """Check if user can manage training partner."""
-        return self.role == 'admin' and self.is_approved
+        return self.role == 'admin' and self.is_approved and self.organization
+    
+    @property
+    def can_access_private_courses(self):
+        """Check if user can access private courses from their organization."""
+        return self.organization is not None
+    
+    @property
+    def organization_name(self):
+        """Get organization name or 'Independent' for users without organization."""
+        return self.organization.name if self.organization else 'Independent'
+    
+    @property
+    def is_organization_member(self):
+        """Check if user belongs to any organization."""
+        return self.organization is not None
+    
+    def can_enroll_in_course(self, course):
+        """Check if user can enroll in a specific course."""
+        if self.role != 'student':
+            return False
+        
+        # For private courses, must be from same organization
+        if course.is_private:
+            return self.organization == course.training_partner
+        
+        # For public courses, any student can enroll
+        return True
+    
+    def get_accessible_courses(self):
+        """Get queryset of courses this user can access."""
+        from courses.models import Course
+        
+        if self.role == 'student':
+            if self.organization:
+                # Students with organization can see public courses + private courses from their org
+                return Course.objects.filter(
+                    is_published=True,
+                    is_approved_by_training_partner=True
+                ).filter(
+                    models.Q(is_private=False) |  # Public courses
+                    models.Q(is_private=True, training_partner=self.organization)  # Private from their org
+                )
+            else:
+                # Independent students can only see public courses
+                return Course.objects.filter(
+                    is_published=True,
+                    is_approved_by_training_partner=True,
+                    is_private=False
+                )
+        elif self.role in ['tutor', 'admin']:
+            # Tutors and admins see all courses from their organization
+            return Course.objects.filter(training_partner=self.organization)
+        
+        return Course.objects.none()
     
     def __str__(self):
-        return f"{self.full_name} ({self.email})"
+        org_info = f" - {self.organization.name}" if self.organization else " - Independent"
+        return f"{self.full_name} ({self.email}){org_info}"
     
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['role', 'organization']),
+            models.Index(fields=['organization', 'is_approved']),
+        ]
 
 
 class StudentProfile(models.Model):
