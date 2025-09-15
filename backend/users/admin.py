@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib import messages
 from django.contrib.auth.admin import UserAdmin
 from django.db import transaction
+from django.utils import timezone
 from .models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile, KnowledgePartnerApplication
 
 
@@ -175,14 +176,13 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
         'knowledge_partner_name',
         'knowledge_partner_type',
         'status',
-        'created_knowledge_partner',
-        'created_admin_user',
+        'created_knowledge_partner_name',
         'reviewed_by',
         'created_at',
     ]
     list_filter = ['status', 'knowledge_partner_type', 'created_at']
     search_fields = ['knowledge_partner_name', 'knowledge_partner_email', 'contact_number']
-    readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
+    readonly_fields = ['created_at', 'updated_at', 'reviewed_at', 'reviewed_by']
 
     fieldsets = (
         ('Knowledge Partner Details', {
@@ -213,7 +213,6 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
         ('Created Entities', {
             'fields': (
                 'created_knowledge_partner',
-                'created_admin_user',
             )
         }),
         ('Timestamps', {
@@ -223,6 +222,10 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
     )
 
     actions = ['approve_applications', 'reject_applications']
+
+    def created_knowledge_partner_name(self, obj):
+        return obj.created_knowledge_partner.name if obj.created_knowledge_partner else '-'
+    created_knowledge_partner_name.short_description = 'Created knowledge partner'
 
     def approve_applications(self, request, queryset):
         """Admin action: approve selected pending applications and create KP + Admin user."""
@@ -236,13 +239,33 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
                 continue
             try:
                 with transaction.atomic():
-                    application.approve_and_create_kp(admin_user=request.user)
+                    # Only superusers can review/approve
+                    if not request.user.is_superuser:
+                        raise Exception('Only superusers can approve applications')
+
+                    # Create Knowledge Partner (no admin user creation here)
+                    kp = KnowledgePartner.objects.create(
+                        name=application.knowledge_partner_name,
+                        type=application.knowledge_partner_type,
+                        description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
+                        location="To be updated",
+                        website=application.website_url,
+                        email=application.knowledge_partner_email,
+                        phone=application.contact_number,
+                        is_verified=True,
+                    )
+
+                    application.status = 'approved'
+                    application.reviewed_by = request.user
+                    application.reviewed_at = timezone.now()
+                    application.created_knowledge_partner = kp
+                    application.save()
                     approved_count += 1
             except Exception as exc:  # noqa: BLE001
                 errors += 1
                 self.message_user(
                     request,
-                    f"Failed to approve application {application.organization_name}: {exc}",
+                    f"Failed to approve application {application.knowledge_partner_name}: {exc}",
                     level=messages.ERROR,
                 )
 
@@ -264,15 +287,18 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
                 skipped += 1
                 continue
             try:
+                if not request.user.is_superuser:
+                    raise Exception('Only superusers can reject applications')
+
                 application.reject_application(
                     admin_user=request.user,
-                    rejection_reason='Rejected by admin via Django admin action.',
+                    rejection_reason='Rejected by superuser via Django admin action.',
                 )
                 rejected += 1
             except Exception as exc:  # noqa: BLE001
                 self.message_user(
                     request,
-                    f"Failed to reject application {application.organization_name}: {exc}",
+                    f"Failed to reject application {application.knowledge_partner_name}: {exc}",
                     level=messages.ERROR,
                 )
 
@@ -282,3 +308,9 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
             self.message_user(request, f"Skipped {skipped} non-pending application(s).", level=messages.WARNING)
 
     reject_applications.short_description = "Reject selected applications"
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Limit reviewed_by to superusers only
+        if db_field.name == 'reviewed_by':
+            kwargs["queryset"] = User.objects.filter(is_superuser=True)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)

@@ -180,20 +180,34 @@ def approve_application(request, application_id):
     
     try:
         with transaction.atomic():
-            # Approve application and create KP + Admin user
-            knowledge_partner, admin_user, temp_password = application.approve_and_create_kp(request.user)
-            
-            # Send welcome email to new admin
-            send_welcome_email(admin_user, knowledge_partner, temp_password)
-            
+            # Only superusers can approve applications
+            if not request.user.is_superuser:
+                return Response({'success': False, 'message': 'Only superusers can approve applications.'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Create Knowledge Partner only (no admin user creation)
+            knowledge_partner = KnowledgePartner.objects.create(
+                name=application.knowledge_partner_name,
+                type=application.knowledge_partner_type,
+                description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
+                location="To be updated",
+                website=application.website_url,
+                email=application.knowledge_partner_email,
+                phone=application.contact_number,
+                is_verified=True,
+            )
+
+            application.status = 'approved'
+            application.reviewed_by = request.user
+            application.reviewed_at = timezone.now()
+            application.created_knowledge_partner = knowledge_partner
+            application.save()
+
             return Response({
                 'success': True,
                 'message': f'Application approved successfully! {knowledge_partner.name} has been created.',
                 'application_id': application.id,
                 'knowledge_partner_id': knowledge_partner.id,
-                'admin_email': admin_user.email,
                 'knowledge_partner_name': knowledge_partner.name,
-                'temporary_password': temp_password,
             }, status=status.HTTP_200_OK)
             
     except Exception as e:

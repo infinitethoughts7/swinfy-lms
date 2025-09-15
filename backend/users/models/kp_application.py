@@ -8,6 +8,15 @@ from django.core.exceptions import ValidationError
 
 class KnowledgePartnerApplication(models.Model):
     """Model for Knowledge Partner applications before approval."""
+
+    KP_TYPE_CHOICES = [
+        ('company', 'Company'),
+        ('organization', 'Organization'),
+        ('university', 'University'),
+        ('institute', 'Institute'),
+        ('bootcamp', 'Bootcamp'),
+        ('other', 'Other'),
+    ]
     
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
