@@ -14,6 +14,14 @@ from .content_serializers import (
     CourseResourceSerializer, CourseResourceCreateSerializer, CourseContentSerializer,
     ModuleContentSerializer
 )
+from .instructor_serializers import (
+    InstructorCourseCreateSerializer, InstructorCourseListSerializer, InstructorCourseDetailSerializer,
+    InstructorModuleCreateSerializer, InstructorModuleListSerializer,
+    InstructorLessonCreateSerializer, InstructorLessonListSerializer, InstructorLessonDetailSerializer,
+    InstructorLessonMaterialCreateSerializer, InstructorLessonMaterialListSerializer,
+    InstructorCourseResourceCreateSerializer, InstructorCourseResourceListSerializer,
+    InstructorCourseStatsSerializer, StudentProgressSummarySerializer
+)
 
 __all__ = [
     # Course serializers
@@ -50,5 +58,21 @@ __all__ = [
     'CourseResourceSerializer',
     'CourseResourceCreateSerializer',
     'CourseContentSerializer',
-    'ModuleContentSerializer'
+    'ModuleContentSerializer',
+    
+    # Instructor serializers
+    'InstructorCourseCreateSerializer',
+    'InstructorCourseListSerializer', 
+    'InstructorCourseDetailSerializer',
+    'InstructorModuleCreateSerializer',
+    'InstructorModuleListSerializer',
+    'InstructorLessonCreateSerializer',
+    'InstructorLessonListSerializer',
+    'InstructorLessonDetailSerializer',
+    'InstructorLessonMaterialCreateSerializer',
+    'InstructorLessonMaterialListSerializer',
+    'InstructorCourseResourceCreateSerializer',
+    'InstructorCourseResourceListSerializer',
+    'InstructorCourseStatsSerializer',
+    'StudentProgressSummarySerializer'
 ]

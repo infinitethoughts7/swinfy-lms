@@ -142,6 +142,22 @@ class LoginView(TokenObtainPairView):
         }, status=status.HTTP_200_OK)
 
 
+class LogoutView(APIView):
+    """Logout view that blacklists the refresh token."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserProfileView(APIView):
     """User profile management view."""
     

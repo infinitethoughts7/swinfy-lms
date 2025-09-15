@@ -1,37 +1,74 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Users, Calendar, Clock, TrendingUp, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
-
-interface InstructorStats {
-  total_courses: number;
-  active_courses: number;
-  total_students: number;
-  upcoming_sessions: number;
-  completed_sessions: number;
-  average_rating: number;
-}
+import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
+import { BookOpen, Users, Clock, Star, TrendingUp, Calendar, Plus, Eye, Edit, Trash2, Video, FileText, Award } from 'lucide-react';
 
 export default function InstructorDashboard() {
   const [user, setUser] = useState(getCurrentUser());
   const [stats, setStats] = useState<InstructorStats | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock instructor stats for now
-    setTimeout(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch dashboard stats and courses in parallel
+      const [statsData, coursesData] = await Promise.all([
+        instructorApi.getDashboardStats(),
+        instructorApi.courses.list()
+      ]);
+      
+      setStats(statsData);
+      setCourses(Array.isArray(coursesData) ? coursesData : coursesData?.results || []);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+      
+      // Mock data for demo
       setStats({
         total_courses: 0,
-        active_courses: 0,
-        total_students: 0,
-        upcoming_sessions: 0,
-        completed_sessions: 0,
-        average_rating: 0,
+        published_courses: 0,
+        draft_courses: 0,
+        pending_approval_courses: 0,
+        total_enrollments: 0,
+        total_modules: 0,
+        total_lessons: 0,
+        total_duration_hours: 0,
+        avg_course_rating: 0,
+        recent_courses: []
       });
+      setCourses([]);
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
+  const handleDeleteCourse = async (courseSlug: string) => {
+    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await instructorApi.courses.delete(courseSlug);
+      setCourses(prev => prev.filter(course => course.slug !== courseSlug));
+      // Refresh stats
+      const updatedStats = await instructorApi.getDashboardStats();
+      setStats(updatedStats);
+    } catch (err) {
+      console.error('Error deleting course:', err);
+      alert('Failed to delete course. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -42,151 +79,221 @@ export default function InstructorDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">
-          Welcome back, {user?.full_name || 'Instructor'}! 👋
-        </h1>
-        <p className="text-blue-100">
-          Ready to inspire and educate? Your dashboard shows your teaching activity and progress.
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Total Courses</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats?.total_courses || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Users className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Total Students</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats?.total_students || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Calendar className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Upcoming Sessions</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats?.upcoming_sessions || 0}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profile Status */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Status</h3>
-          <div className="space-y-3">
-            <div className="flex items-center p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-900">Account Active</p>
-                <p className="text-sm text-gray-600">Your instructor account is active and ready</p>
-              </div>
-            </div>
-            <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-              <Clock className="h-5 w-5 text-blue-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-900">Profile Complete</p>
-                <p className="text-sm text-gray-600">All required information is filled</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-left">
-              <BookOpen className="h-5 w-5 text-blue-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-900">Create New Course</p>
-                <p className="text-sm text-gray-600">Start building your next course</p>
-              </div>
-            </button>
-            <button className="w-full flex items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-left">
-              <Calendar className="h-5 w-5 text-green-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-900">Schedule Session</p>
-                <p className="text-sm text-gray-600">Plan your next teaching session</p>
-              </div>
-            </button>
-            <button className="w-full flex items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-left">
-              <TrendingUp className="h-5 w-5 text-purple-600 mr-3" />
-              <div>
-                <p className="font-medium text-gray-900">View Analytics</p>
-                <p className="text-sm text-gray-600">Track your teaching performance</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Getting Started */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Getting Started as an Instructor</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Create Your First Course</h4>
-            <p className="text-sm text-gray-600">Design and structure your course content to engage students effectively.</p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Users className="h-6 w-6 text-green-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Connect with Students</h4>
-            <p className="text-sm text-gray-600">Build relationships and provide personalized learning experiences.</p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
-            </div>
-            <h4 className="font-medium text-gray-900 mb-2">Track Progress</h4>
-            <p className="text-sm text-gray-600">Monitor student progress and adjust your teaching approach accordingly.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Welcome Message */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <CheckCircle className="h-5 w-5 text-blue-500" />
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">Welcome to the Knowledge Partner Platform!</h3>
-            <p className="mt-1 text-sm text-blue-700">
-              Your account has been successfully created with the password <strong>rockyg07</strong>. 
-              You can now start creating courses and connecting with students. 
-              Don't forget to update your profile with additional information about your expertise.
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, {user?.full_name || 'Instructor'}! 👋
+            </h1>
+            <p className="text-blue-100">
+              Ready to create amazing courses? Manage your content and track student progress.
             </p>
           </div>
+          <Link
+            href="/dashboard/instructor/courses/create"
+            className="inline-flex items-center px-6 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/20"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create Course
+          </Link>
         </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Total Courses */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <BookOpen className="h-6 w-6 text-blue-600" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">{stats?.total_courses || 0}</span>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">Total Courses</h3>
+          <p className="text-sm text-gray-600">All your courses</p>
+        </div>
+
+        {/* Published Courses */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <Award className="h-6 w-6 text-green-600" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">{stats?.published_courses || 0}</span>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">Published</h3>
+          <p className="text-sm text-gray-600">Live courses</p>
+        </div>
+
+        {/* Total Enrollments */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-purple-100 rounded-xl">
+              <Users className="h-6 w-6 text-purple-600" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">{stats?.total_enrollments || 0}</span>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">Enrollments</h3>
+          <p className="text-sm text-gray-600">Total students</p>
+        </div>
+
+        {/* Content Stats */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-orange-100 rounded-xl">
+              <Video className="h-6 w-6 text-orange-600" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">{stats?.total_lessons || 0}</span>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-1">Lessons</h3>
+          <p className="text-sm text-gray-600">{Math.round(stats?.total_duration_hours || 0)}h content</p>
+        </div>
+      </div>
+
+      {/* Course Management Section */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">My Courses</h2>
+            <p className="text-gray-600 mt-1">Manage your course content and track progress</p>
+          </div>
+          <Link
+            href="/dashboard/instructor/courses"
+            className="text-blue-600 hover:text-blue-700 font-medium flex items-center"
+          >
+            View All Courses
+            <TrendingUp className="h-4 w-4 ml-1" />
+          </Link>
+        </div>
+
+        {(Array.isArray(courses) ? courses : []).length === 0 ? (
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
+            <p className="text-gray-600 mb-6">Create your first course to start teaching students</p>
+            <Link
+              href="/dashboard/instructor/courses/create"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Create Your First Course
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(Array.isArray(courses) ? courses : []).slice(0, 6).map((course) => (
+              <div key={course.id} className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
+                {/* Course Thumbnail */}
+                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-4 flex items-center justify-center">
+                  {course.thumbnail ? (
+                    <img 
+                      src={course.thumbnail} 
+                      alt={course.title}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    <BookOpen className="h-8 w-8 text-white" />
+                  )}
+                </div>
+
+                {/* Course Info */}
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{course.title}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">{course.short_description}</p>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center space-x-4">
+                      <span>{course.modules_count} modules</span>
+                      <span>{course.lessons_count} lessons</span>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      course.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
+                      course.approval_status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {course.approval_status_display}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        href={`/dashboard/instructor/courses/${course.slug}`}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        title="View Course"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                      <Link
+                        href={`/dashboard/instructor/courses/${course.slug}/edit`}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                        title="Edit Course"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteCourse(course.slug)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        title="Delete Course"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">₹{course.price}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Link
+          href="/dashboard/instructor/courses/create"
+          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
+        >
+          <div className="flex items-center mb-4">
+            <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-200">
+              <Plus className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Create New Course</h3>
+          <p className="text-gray-600 text-sm">Start building your next course with our easy-to-use tools</p>
+        </Link>
+
+        <Link
+          href="/dashboard/instructor/courses"
+          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
+        >
+          <div className="flex items-center mb-4">
+            <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-200">
+              <BookOpen className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Manage Courses</h3>
+          <p className="text-gray-600 text-sm">Edit content, track progress, and manage enrollments</p>
+        </Link>
+
+        <Link
+          href="/dashboard/instructor/analytics"
+          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
+        >
+          <div className="flex items-center mb-4">
+            <div className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors duration-200">
+              <TrendingUp className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+          <h3 className="font-semibold text-gray-900 mb-2">Analytics</h3>
+          <p className="text-gray-600 text-sm">View detailed insights about your courses and students</p>
+        </Link>
       </div>
     </div>
   );

@@ -56,6 +56,18 @@ class IsStudent(permissions.BasePermission):
         )
 
 
+class IsKnowledgePartnerInstructor(permissions.BasePermission):
+    """
+    Permission to allow only KP instructors to perform certain actions.
+    """
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'knowledge_partner_instructor'
+        )
+
+
 class CanApproveCourse(permissions.BasePermission):
     """
     Permission to allow course approval - only training partner admins can approve.

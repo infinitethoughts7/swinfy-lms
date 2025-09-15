@@ -9,7 +9,7 @@ import Logo from '@/components/shared/Logo';
 import { getCurrentUser, logout, isAuthenticated } from '@/lib/auth';
 
 interface User {
-  name?: string;
+  full_name?: string;
   email?: string;
   role?: string;
 }

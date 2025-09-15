@@ -7,10 +7,10 @@ import { authApi } from '@/lib/api';
 import { logout } from '@/lib/auth';
 
 interface User {
-  name: string;
+  full_name?: string;
   email: string;
   avatar?: string;
-  role: 'student' | 'tutor' | 'admin';
+  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
 }
 
 interface HeaderProps {
@@ -254,19 +254,19 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                 {user.avatar ? (
                   <Image
                     src={user.avatar}
-                    alt={user.name}
+                    alt={user.full_name || 'User'}
                     width={32}
                     height={32}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-sm font-medium text-gray-600">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 )}
               </div>
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
                 <p className="text-xs text-gray-500 capitalize">{user.role}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,7 +279,7 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                 <div className="py-2">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                    <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <a

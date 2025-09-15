@@ -1,11 +1,43 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from .views.instructor_views import (
+    InstructorCourseListCreateView,
+    InstructorCourseDetailView,
+    InstructorModuleListCreateView,
+    InstructorModuleDetailView,
+    InstructorLessonListCreateView,
+    InstructorLessonDetailView,
+    InstructorLessonMaterialListCreateView,
+    InstructorLessonMaterialDetailView,
+    InstructorCourseResourceListCreateView,
+    InstructorCourseResourceDetailView,
+    instructor_dashboard_stats,
+    instructor_student_progress,
+    submit_course_for_approval,
+    course_analytics
+)
 
 # Create router for API views
 router = DefaultRouter()
 
 urlpatterns = [
+    # KP Instructor Management
+    path('instructor/dashboard/stats/', instructor_dashboard_stats, name='instructor-dashboard-stats'),
+    path('instructor/dashboard/student-progress/', instructor_student_progress, name='instructor-student-progress'),
+    path('instructor/courses/', InstructorCourseListCreateView.as_view(), name='instructor-course-list-create'),
+    path('instructor/courses/<slug:slug>/', InstructorCourseDetailView.as_view(), name='instructor-course-detail'),
+    path('instructor/courses/<slug:course_slug>/submit-approval/', submit_course_for_approval, name='instructor-submit-course-approval'),
+    path('instructor/courses/<slug:course_slug>/analytics/', course_analytics, name='instructor-course-analytics'),
+    path('instructor/courses/<slug:course_slug>/modules/', InstructorModuleListCreateView.as_view(), name='instructor-module-list-create'),
+    path('instructor/modules/<uuid:id>/', InstructorModuleDetailView.as_view(), name='instructor-module-detail'),
+    path('instructor/courses/<slug:course_slug>/modules/<uuid:module_id>/lessons/', InstructorLessonListCreateView.as_view(), name='instructor-lesson-list-create'),
+    path('instructor/lessons/<uuid:id>/', InstructorLessonDetailView.as_view(), name='instructor-lesson-detail'),
+    path('instructor/lessons/<uuid:lesson_id>/materials/', InstructorLessonMaterialListCreateView.as_view(), name='instructor-material-list-create'),
+    path('instructor/materials/<uuid:id>/', InstructorLessonMaterialDetailView.as_view(), name='instructor-material-detail'),
+    path('instructor/courses/<slug:course_slug>/resources/', InstructorCourseResourceListCreateView.as_view(), name='instructor-resource-list-create'),
+    path('instructor/resources/<uuid:id>/', InstructorCourseResourceDetailView.as_view(), name='instructor-resource-detail'),
+    
     # Course endpoints
     path('', views.CourseListView.as_view(), name='course-list'),
     path('search/', views.CourseSearchView.as_view(), name='course-search'),
@@ -51,15 +83,12 @@ urlpatterns = [
     path('analytics/student-progress/', views.StudentProgressAnalyticsView.as_view(), name='student-progress-analytics'),
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
     
-    
     # Knowledge partner endpoints
     path('knowledge-partners/', views.KnowledgePartnerListView.as_view(), name='knowledge-partner-list'),
     path('knowledge-partners/<int:pk>/', views.KnowledgePartnerDetailView.as_view(), name='knowledge-partner-detail'),
-    
     
     # Legacy endpoints for backward compatibility
     path('legacy/list/', views.course_list, name='course-list-legacy'),
     path('legacy/stats/', views.course_stats, name='course-stats-legacy'),
     path('legacy/featured/', views.featured_courses, name='featured-courses-legacy'),
-    path('legacy/knowledge-partners/', views.knowledge_partner_list, name='knowledge-partner-list-legacy'),
 ]

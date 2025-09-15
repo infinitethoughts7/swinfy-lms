@@ -153,6 +153,8 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
 export const authApi = {
   // Login user
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+    console.log('🔐 Attempting login with:', { email: credentials.email, password: '***' });
+    
     const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
       method: 'POST',
       headers: {
@@ -162,11 +164,14 @@ export const authApi = {
     });
 
     const data = await response.json();
+    console.log('🔐 Login response status:', response.status, response.statusText);
 
     if (!response.ok) {
+      console.error('🔐 Login failed:', data);
       throw new Error(data.error || 'Login failed');
     }
 
+    console.log('🔐 Login successful for:', data.user?.email);
     return data;
   },
 
@@ -863,6 +868,436 @@ export const userApi = {
       }
       
       return response.status === 204;
+    },
+  },
+};
+
+// Course management interfaces
+export interface Course {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  price: number;
+  duration_weeks: number;
+  category: string;
+  category_display: string;
+  level: string;
+  level_display: string;
+  tags?: string;
+  tags_list?: string[];
+  learning_outcomes?: string;
+  prerequisites?: string;
+  thumbnail?: string;
+  banner_image?: string;
+  demo_video?: string;
+  approval_status: string;
+  approval_status_display: string;
+  is_published: boolean;
+  is_active: boolean;
+  is_private: boolean;
+  requires_admin_enrollment: boolean;
+  max_enrollments?: number;
+  modules_count: number;
+  lessons_count: number;
+  total_duration_minutes: number;
+  enrollment_count: number;
+  approval_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseCreateData {
+  title: string;
+  description: string;
+  short_description: string;
+  price: number;
+  duration_weeks: number;
+  category: string;
+  level: string;
+  tags?: string;
+  learning_outcomes?: string;
+  prerequisites?: string;
+  thumbnail?: File;
+  banner_image?: File;
+  demo_video?: File;
+  is_private: boolean;
+  requires_admin_enrollment: boolean;
+  max_enrollments?: number;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  slug: string;
+  order: number;
+  is_published: boolean;
+  lessons_count: number;
+  total_duration_minutes: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModuleCreateData {
+  title: string;
+  order: number;
+  is_published: boolean;
+}
+
+export interface Lesson {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  lesson_type: string;
+  lesson_type_display: string;
+  order: number;
+  content?: string;
+  video_file?: string;
+  duration_minutes: number;
+  duration_formatted: string;
+  has_video_content: boolean;
+  is_preview: boolean;
+  is_published: boolean;
+  is_mandatory: boolean;
+  total_materials_count: number;
+  module_title: string;
+  course_title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LessonCreateData {
+  title: string;
+  description: string;
+  lesson_type: string;
+  order: number;
+  content?: string;
+  video_file?: File;
+  duration_minutes?: number;
+  is_preview: boolean;
+  is_published: boolean;
+  is_mandatory: boolean;
+}
+
+export interface InstructorStats {
+  total_courses: number;
+  published_courses: number;
+  draft_courses: number;
+  pending_approval_courses: number;
+  total_enrollments: number;
+  total_modules: number;
+  total_lessons: number;
+  total_duration_hours: number;
+  avg_course_rating: number;
+  recent_courses: Course[];
+}
+
+// Instructor course management API
+export const instructorApi = {
+  // Dashboard
+  getDashboardStats: async (): Promise<InstructorStats> => {
+    const token = getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/courses/instructor/dashboard/stats/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard stats');
+    }
+    
+    return response.json();
+  },
+
+  // Courses
+  courses: {
+    list: async (): Promise<Course[]> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      
+      const data = await response.json();
+      return data.results || data; // Handle paginated response
+    },
+
+    create: async (courseData: CourseCreateData): Promise<Course> => {
+      const token = getAuthToken();
+      
+      const formData = new FormData();
+      Object.entries(courseData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (value instanceof File) {
+            formData.append(key, value);
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create course');
+      }
+      
+      return response.json();
+    },
+
+    get: async (courseSlug: string): Promise<Course> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch course');
+      }
+      
+      return response.json();
+    },
+
+    update: async (courseSlug: string, courseData: Partial<CourseCreateData>): Promise<Course> => {
+      const token = getAuthToken();
+      
+      const formData = new FormData();
+      Object.entries(courseData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (value instanceof File) {
+            formData.append(key, value);
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update course');
+      }
+      
+      return response.json();
+    },
+
+    delete: async (courseSlug: string): Promise<void> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+    },
+  },
+
+  // Modules
+  modules: {
+    list: async (courseSlug: string): Promise<Module[]> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch modules');
+      }
+      
+      const data = await response.json();
+      return data.results || data; // Handle paginated response
+    },
+
+    create: async (courseSlug: string, moduleData: ModuleCreateData): Promise<Module> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(moduleData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create module');
+      }
+      
+      return response.json();
+    },
+
+    update: async (moduleId: string, moduleData: Partial<ModuleCreateData>): Promise<Module> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/modules/${moduleId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(moduleData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update module');
+      }
+      
+      return response.json();
+    },
+
+    delete: async (moduleId: string): Promise<void> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/modules/${moduleId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete module');
+      }
+    },
+  },
+
+  // Lessons
+  lessons: {
+    list: async (courseSlug: string, moduleId: string): Promise<Lesson[]> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch lessons');
+      }
+      
+      const data = await response.json();
+      return data.results || data; // Handle paginated response
+    },
+
+    create: async (courseSlug: string, moduleId: string, lessonData: LessonCreateData): Promise<Lesson> => {
+      const token = getAuthToken();
+      
+      const formData = new FormData();
+      Object.entries(lessonData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (value instanceof File) {
+            formData.append(key, value);
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create lesson');
+      }
+      
+      return response.json();
+    },
+
+    update: async (lessonId: string, lessonData: Partial<LessonCreateData>): Promise<Lesson> => {
+      const token = getAuthToken();
+      
+      const formData = new FormData();
+      Object.entries(lessonData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (value instanceof File) {
+            formData.append(key, value);
+          } else {
+            formData.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/lessons/${lessonId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update lesson');
+      }
+      
+      return response.json();
+    },
+
+    delete: async (lessonId: string): Promise<void> => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/lessons/${lessonId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete lesson');
+      }
     },
   },
 };
