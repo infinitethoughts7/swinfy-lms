@@ -86,7 +86,6 @@ export interface InstructorUpdateData {
   languages_spoken?: string;
   linkedin_url?: string;
   is_available?: boolean;
-  availability_notes?: string;
   user_email?: string;
   user_full_name?: string;
 }
@@ -125,7 +124,6 @@ export interface InstructorDetail {
   languages_spoken: string;
   linkedin_url?: string;
   is_available: boolean;
-  availability_notes?: string;
   created_at: string;
 }
 

@@ -33,7 +33,7 @@ urlpatterns = [
     
     # KP Instructor management (KP Admin only)
     path('kp/instructors/', views.KPInstructorListCreateView.as_view(), name='kp_instructor_list_create'),
-    path('kp/instructors/<uuid:instructor_id>/', views.KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
+    path('kp/instructors/<uuid:id>/', views.KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
     
     # ==========================================
     # KNOWLEDGE PARTNER APPLICATION - SIMPLIFIED

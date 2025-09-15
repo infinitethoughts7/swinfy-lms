@@ -593,20 +593,20 @@ class KPInstructorDetailView(APIView):
         from django.shortcuts import get_object_or_404
         return get_object_or_404(KPInstructorProfile.objects.select_related('user'), pk=pk)
 
-    def get(self, request, instructor_id):
-        profile = self.get_object(instructor_id)
+    def get(self, request, id):
+        profile = self.get_object(id)
         serializer = KPInstructorDetailSerializer(profile)
         return Response(serializer.data)
 
-    def patch(self, request, instructor_id):
-        profile = self.get_object(instructor_id)
+    def patch(self, request, id):
+        profile = self.get_object(id)
         serializer = KPInstructorUpdateSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(KPInstructorDetailSerializer(profile).data)
 
-    def delete(self, request, instructor_id):
-        profile = self.get_object(instructor_id)
+    def delete(self, request, id):
+        profile = self.get_object(id)
         # Delete both profile and linked user
         user = profile.user
         profile.delete()

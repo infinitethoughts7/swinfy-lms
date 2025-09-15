@@ -341,7 +341,6 @@ class KPInstructorCreateSerializer(serializers.Serializer):
             years_of_experience=0,
             languages_spoken='English',
             is_available=True,  # Default to available
-            availability_notes='',
         )
 
         return user
@@ -375,7 +374,7 @@ class KPInstructorDetailSerializer(serializers.ModelSerializer):
             'id', 'user', 'bio', 'profile_picture', 'phone_number',
             'title', 'years_of_experience', 'highest_education', 'certifications',
             'specializations', 'technologies', 'languages_spoken', 'linkedin_url',
-            'is_available', 'availability_notes', 'created_at'
+            'is_available', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -392,8 +391,7 @@ class KPInstructorUpdateSerializer(serializers.ModelSerializer):
             'bio', 'profile_picture', 'phone_number',
             'title', 'years_of_experience', 'highest_education', 'certifications',
             'specializations', 'technologies', 'languages_spoken', 'linkedin_url',
-            'is_available', 'availability_notes',
-            'user_email', 'user_full_name'
+            'is_available', 'user_email', 'user_full_name'
         ]
 
     def validate_user_email(self, value: str):
