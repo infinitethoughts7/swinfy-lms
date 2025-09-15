@@ -12,6 +12,15 @@ from .views.application_views import (
     reject_application,
 )
 
+# Import course review views
+from .views.course_review_views import (
+    CourseReviewListView,
+    CourseReviewDetailView,
+    approve_course,
+    reject_course,
+    course_review_stats,
+)
+
 app_name = 'users'
 
 urlpatterns = [
@@ -59,4 +68,11 @@ urlpatterns = [
     path('admin/applications/<uuid:application_id>/reject/', 
          reject_application, 
          name='kp_application_reject'),
+    
+    # Course Review endpoints (KP Admin only)
+    path('admin/course-review/', CourseReviewListView.as_view(), name='course_review_list'),
+    path('admin/course-review/stats/', course_review_stats, name='course_review_stats'),
+    path('admin/course-review/<uuid:course_id>/', CourseReviewDetailView.as_view(), name='course_review_detail'),
+    path('admin/course-review/<uuid:course_id>/approve/', approve_course, name='course_approve'),
+    path('admin/course-review/<uuid:course_id>/reject/', reject_course, name='course_reject'),
 ]
