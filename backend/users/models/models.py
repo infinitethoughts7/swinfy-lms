@@ -13,6 +13,7 @@ KP_TYPE_CHOICES = [
     ('other', 'Other'),
 ]
 
+
 class UserManager(BaseUserManager):
     """Custom manager for User model with email as username."""
     
@@ -182,8 +183,7 @@ class KPInstructorProfile(models.Model):
     linkedin_url = models.URLField(blank=True, null=True)
     
     # Status
-    is_available = models.BooleanField(default=True)
-    availability_notes = models.TextField(blank=True, null=True)
+    is_available = models.BooleanField(default=True)  
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

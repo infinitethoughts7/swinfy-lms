@@ -319,8 +319,16 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href || 
-            (item.href !== `/dashboard/${userRole}` && pathname.startsWith(item.href));
+          // Precise active state logic - only exact match or sub-pages (but not dashboard root)
+          let isActive = false;
+          
+          if (pathname === item.href) {
+            // Exact match
+            isActive = true;
+          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin') {
+            // For non-dashboard root pages, check if current path starts with the item href
+            isActive = pathname.startsWith(item.href + '/');
+          }
           
           return (
             <Link
