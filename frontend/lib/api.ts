@@ -114,6 +114,8 @@ export interface InstructorDetail {
     is_approved: boolean;
   };
   bio: string;
+  profile_picture?: string;
+  phone_number?: string;
   title: string;
   highest_education: string;
   specializations: string;
