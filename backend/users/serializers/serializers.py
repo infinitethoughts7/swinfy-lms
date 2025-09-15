@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile
+from ..models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile
 
 
 class KnowledgePartnerSerializer(serializers.ModelSerializer):
@@ -14,23 +14,20 @@ class KnowledgePartnerSerializer(serializers.ModelSerializer):
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration matching frontend form."""
+    """Simplified serializer for learner registration only."""
     
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True)
-    organization_details = serializers.DictField(write_only=True, required=False)
     organization_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
     
     class Meta:
         model = User
         fields = [
-            'email', 'full_name', 'role', 'password', 'confirm_password',
-            'organization_id', 'organization_details'
+            'email', 'full_name', 'password', 'confirm_password', 'organization_id'
         ]
         extra_kwargs = {
             'email': {'required': True},
             'full_name': {'required': True},
-            'role': {'required': True},
         }
     
     def validate(self, attrs):
@@ -49,85 +46,42 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 'password': e.messages
             })
         
-        # Role-specific validation
-        role = attrs.get('role')
+        # Validate organization if provided
         organization_id = attrs.get('organization_id')
-        organization_details = attrs.get('organization_details')
-        
-        if role == 'learner':
-            # Learners can optionally have organization
-            pass  # No validation needed, learners can be independent or belong to org
-        
-        elif role == 'knowledge_partner_instructor':
-            # Instructors must select an existing organization
-            if not organization_id:
-                raise serializers.ValidationError({
-                    'organization_id': 'Instructors must select an organization.'
-                })
-            
-            # Check if organization exists
+        if organization_id:
             try:
-                KnowledgePartner.objects.get(id=organization_id)
+                KnowledgePartner.objects.get(id=organization_id, is_active=True)
             except KnowledgePartner.DoesNotExist:
                 raise serializers.ValidationError({
-                    'organization_id': 'Selected organization does not exist.'
-                })
-        
-        elif role == 'knowledge_partner_admin':
-            # Admins must create a new organization
-            if not organization_details:
-                raise serializers.ValidationError({
-                    'organization_details': 'Admins must provide organization details.'
-                })
-            
-            # Validate organization details
-            required_fields = ['name', 'type', 'location', 'description']
-            for field in required_fields:
-                if not organization_details.get(field):
-                    raise serializers.ValidationError({
-                        'organization_details': f'{field.title()} is required for organization.'
-                    })
-            
-            # Check if organization name already exists
-            if KnowledgePartner.objects.filter(name=organization_details['name']).exists():
-                raise serializers.ValidationError({
-                    'organization_details': 'An organization with this name already exists.'
+                    'organization_id': 'Selected organization does not exist or is not active.'
                 })
         
         return attrs
     
     def create(self, validated_data):
-        """Create user and handle organization assignment."""
+        """Create learner user only."""
         # Remove non-model fields
         password = validated_data.pop('password')
         validated_data.pop('confirm_password')
         organization_id = validated_data.pop('organization_id', None)
-        organization_details = validated_data.pop('organization_details', None)
         
-        # Handle organization assignment based on role
-        if validated_data['role'] == 'knowledge_partner_instructor' and organization_id:
-            # Assign instructor to existing organization
+        # Force role to learner - SECURITY: Only learners can register publicly
+        validated_data['role'] = 'learner'
+        validated_data['is_verified'] = False  # Email verification required
+        validated_data['is_approved'] = True   # Learners are auto-approved
+        
+        # Handle organization assignment for learners
+        if organization_id:
             validated_data['organization'] = KnowledgePartner.objects.get(id=organization_id)
-            validated_data['is_approved'] = False  # Instructors need approval
-        
-        elif validated_data['role'] == 'knowledge_partner_admin' and organization_details:
-            # Create new organization for admin
-            organization = KnowledgePartner.objects.create(
-                name=organization_details['name'],
-                type=organization_details['type'],
-                location=organization_details['location'],
-                website=organization_details.get('website', ''),
-                description=organization_details['description']
-            )
-            validated_data['organization'] = organization
-            validated_data['is_approved'] = True  # Admins are auto-approved
         
         # Create user
         user = User.objects.create_user(
-            username=validated_data['email'],  # Use email as username
             password=password,
             **validated_data
         )
+        
+        # Always create learner profile
+        LearnerProfile.objects.create(user=user)
         
         return user
 

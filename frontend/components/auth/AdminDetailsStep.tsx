@@ -8,11 +8,7 @@ interface AdminDetails {
   profile_picture?: File | null;
   phone_number: string;
   job_title: string;
-  department: string;
   office_location: string;
-  office_phone: string;
-  emergency_contact: string;
-  linkedin_url: string;
   professional_email: string;
 }
 
@@ -31,7 +27,7 @@ export default function AdminDetailsStep({
   onBack,
   errors
 }: AdminDetailsStepProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -49,9 +45,6 @@ export default function AdminDetailsStep({
     if (!details.job_title) adminErrors.job_title = 'Job title is required';
     if (details.professional_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.professional_email)) {
       adminErrors.professional_email = 'Please enter a valid professional email';
-    }
-    if (details.linkedin_url && !/^https?:\/\/.+/.test(details.linkedin_url)) {
-      adminErrors.linkedin_url = 'Please enter a valid LinkedIn URL';
     }
     
     return adminErrors;
@@ -78,7 +71,7 @@ export default function AdminDetailsStep({
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Job Title */}
         <div>
           <label htmlFor="job_title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -90,30 +83,19 @@ export default function AdminDetailsStep({
             name="job_title"
             value={adminDetails.job_title}
             onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-              errors?.job_title ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              errors?.job_title ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
             }`}
             placeholder="e.g., CEO, Director, Manager"
           />
           {errors?.job_title && (
-            <p className="mt-1 text-sm text-red-600">{errors.job_title}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.job_title}
+            </p>
           )}
-        </div>
-
-        {/* Department */}
-        <div>
-          <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-            Department
-          </label>
-          <input
-            type="text"
-            id="department"
-            name="department"
-            value={adminDetails.department}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
-            placeholder="e.g., Education, Technology, Operations"
-          />
         </div>
 
         {/* Bio */}
@@ -126,8 +108,8 @@ export default function AdminDetailsStep({
             name="bio"
             value={adminDetails.bio}
             onChange={handleInputChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
             placeholder="Tell us about yourself and your role in the organization"
           />
         </div>
@@ -143,7 +125,7 @@ export default function AdminDetailsStep({
             name="phone_number"
             value={adminDetails.phone_number}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
             placeholder="+1 (555) 123-4567"
           />
         </div>
@@ -159,24 +141,8 @@ export default function AdminDetailsStep({
             name="office_location"
             value={adminDetails.office_location}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
             placeholder="City, State, Country"
-          />
-        </div>
-
-        {/* Office Phone */}
-        <div>
-          <label htmlFor="office_phone" className="block text-sm font-medium text-gray-700 mb-2">
-            Office Phone
-          </label>
-          <input
-            type="tel"
-            id="office_phone"
-            name="office_phone"
-            value={adminDetails.office_phone}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
-            placeholder="+1 (555) 123-4567"
           />
         </div>
 
@@ -191,51 +157,19 @@ export default function AdminDetailsStep({
             name="professional_email"
             value={adminDetails.professional_email}
             onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-              errors?.professional_email ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 ${
+              errors?.professional_email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
             }`}
             placeholder="admin@organization.com"
           />
           {errors?.professional_email && (
-            <p className="mt-1 text-sm text-red-600">{errors.professional_email}</p>
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errors.professional_email}
+            </p>
           )}
-        </div>
-
-        {/* LinkedIn URL */}
-        <div>
-          <label htmlFor="linkedin_url" className="block text-sm font-medium text-gray-700 mb-2">
-            LinkedIn URL
-          </label>
-          <input
-            type="url"
-            id="linkedin_url"
-            name="linkedin_url"
-            value={adminDetails.linkedin_url}
-            onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-              errors?.linkedin_url ? 'border-red-500 focus:border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="https://linkedin.com/in/yourprofile"
-          />
-          {errors?.linkedin_url && (
-            <p className="mt-1 text-sm text-red-600">{errors.linkedin_url}</p>
-          )}
-        </div>
-
-        {/* Emergency Contact */}
-        <div>
-          <label htmlFor="emergency_contact" className="block text-sm font-medium text-gray-700 mb-2">
-            Emergency Contact
-          </label>
-          <input
-            type="text"
-            id="emergency_contact"
-            name="emergency_contact"
-            value={adminDetails.emergency_contact}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
-            placeholder="Name and phone number"
-          />
         </div>
 
         {/* Profile Picture */}
@@ -249,8 +183,9 @@ export default function AdminDetailsStep({
             name="profile_picture"
             onChange={handleFileChange}
             accept="image/*"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
           />
+          <p className="mt-1 text-xs text-gray-500">Optional: Upload a profile picture (JPG, PNG, GIF)</p>
         </div>
       </div>
 

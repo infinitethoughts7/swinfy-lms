@@ -6,8 +6,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from .models import User, KnowledgePartner
-from .serializers import (
+from rest_framework import generics
+from ..models import User, KnowledgePartner  
+
+from ..serializers import (
     UserRegistrationSerializer, 
     UserProfileSerializer, 
     ChangePasswordSerializer,
@@ -19,68 +21,55 @@ from .serializers import (
 )
 
 
-class RegisterView(APIView):
-    """User registration view that matches frontend form."""
+
+class RegisterView(generics.CreateAPIView):
+    """User registration endpoint - learners only."""
     
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
     
-    def post(self, request):
-        """Handle user registration."""
-        serializer = UserRegistrationSerializer(data=request.data)
+    def create(self, request, *args, **kwargs):
+        """Create a new learner account."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        if serializer.is_valid():
-            try:
-                user = serializer.save()
-                
-                # Generate tokens for immediate login (except for tutors waiting approval)
-                refresh = RefreshToken.for_user(user)
-                access_token = refresh.access_token
-                
-                # Prepare response data
-                response_data = {
-                    'message': 'Registration successful!',
-                    'user': {
-                        'id': user.id,
-                        'email': user.email,
-                        'full_name': user.full_name,
-                        'role': user.role,
-                        'is_verified': user.is_verified,
-                        'is_approved': user.is_approved,
-                    }
-                }
-                
-                # Add tokens for approved users
-                if user.is_approved:
-                    response_data['tokens'] = {
-                        'access': str(access_token),
-                        'refresh': str(refresh),
-                    }
-                else:
-                    response_data['message'] = 'Registration successful! Waiting for admin approval.'
-                
-                # Add training partner info if applicable
-                if user.organization:
-                    response_data['user']['organization'] = {
-                        'id': user.organization.id,
-                        'name': user.organization.name,
-                        'type': user.organization.type,
-                    }
-                
-                return Response(response_data, status=status.HTTP_201_CREATED)
-                
-            except ValidationError as e:
-                return Response(
-                    {'error': 'Validation failed', 'details': e.message_dict},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            except Exception as e:
-                return Response(
-                    {'error': 'Registration failed', 'details': str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+        # Create user (role automatically set to 'learner')
+        user = serializer.save()
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        
+        # Send verification email (optional)
+        try:
+            self.send_verification_email(user)
+        except Exception as e:
+            # Log error but don't fail registration
+            print(f"Failed to send verification email: {e}")
+        
+        # Response
+        response_data = {
+            'success': True,
+            'message': 'Registration successful! Please check your email for verification.',
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role,
+                'organization': user.organization.name if user.organization else None,
+                'is_verified': user.is_verified,
+            },
+            'tokens': {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }
+        }
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    def send_verification_email(self, user):
+        """Send email verification (implement as needed)."""
+        #Todo : Implement email verification
+        pass
 
 class LoginView(TokenObtainPairView):
     """Custom login view with additional user info."""

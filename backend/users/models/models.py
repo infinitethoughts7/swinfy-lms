@@ -3,22 +3,27 @@ from django.db import models
 from django.core.exceptions import ValidationError
 import uuid
 
+from django.contrib.auth import get_user_model
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+
 class KnowledgePartner(models.Model):
     """KnowledgePartner model for managing institutions and companies."""
     
-    ORG_TYPE_CHOICES = [
+    KP_TYPE_CHOICES = [
         ('company', 'Company'),
         ('organization', 'Organization'),
         ('university', 'University'),
         ('institute', 'Institute'),
         ('bootcamp', 'Bootcamp'),
+        ('other', 'Other'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Basic Information
     name = models.CharField(max_length=200, unique=True)
-    type = models.CharField(max_length=50, choices=ORG_TYPE_CHOICES)
+    type = models.CharField(max_length=50, choices=KP_TYPE_CHOICES)
     description = models.TextField()
     
     # Contact Information
@@ -107,13 +112,47 @@ class KnowledgePartner(models.Model):
 
 
 
+# Add this BEFORE your User class in backend/users/models.py
+
+from django.contrib.auth.models import BaseUserManager
+
+class UserManager(BaseUserManager):
+    """Custom manager for User model with email as username."""
+    
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+    
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_verified', True)
+        extra_fields.setdefault('is_approved', True)
+        extra_fields.setdefault('role', 'learner')  # Default role for superuser
+        
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        
+        return self.create_user(email, password, **extra_fields)
+
+
 class User(AbstractUser):
-    """Custom user model for authentication with flexible organization membership."""
+    """Custom user model for authentication with flexible knowledge partner membership."""
+    
+    username = None  # Remove username field completely
     
     ROLE_CHOICES = [
         ('learner', 'Learner'),
         ('knowledge_partner_instructor', 'Knowledge Partner Instructor'),
         ('knowledge_partner_admin', 'Knowledge Partner Admin'),
+        ('super_admin', 'Super Admin'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -122,23 +161,40 @@ class User(AbstractUser):
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='learner')
     
-    # KnowledgePartner relationship - NOW FLEXIBLE FOR ALL ROLES
-    organization = models.ForeignKey(
+    # Knowledge Partner relationship - Controls private course access
+    knowledge_partner = models.ForeignKey(
         'KnowledgePartner', 
         on_delete=models.CASCADE, 
         blank=True, 
         null=True,
         related_name='users',
-        help_text="Knowledge partner organization (optional for learners, required for instructors/admins)"
+        help_text="Knowledge partner organization - gives access to private courses. Only KP Admin can add learners to their organization."
     )
     
     # User status
     is_verified = models.BooleanField(default=False, verbose_name='Email Verified')
     is_approved = models.BooleanField(default=True, verbose_name='Admin Approved')  # For tutors
     
+    # Access control for learners
+    is_added_by_kp_admin = models.BooleanField(
+        default=False,
+        help_text="True if this learner was added to knowledge partner by KP Admin (gives private course access)"
+    )
+    added_by_admin = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='added_learners',
+        help_text="KP Admin who added this learner to the organization"
+    )
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Use custom manager
+    objects = UserManager()
     
     # Authentication settings
     USERNAME_FIELD = 'email'
@@ -149,25 +205,29 @@ class User(AbstractUser):
         """Custom validation for user model."""
         super().clean()
         
-        # Instructors and admins must have a knowledge partner
-        if self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin'] and not self.organization:
+        # Instructors must have a knowledge partner
+        if self.role == 'knowledge_partner_instructor' and not self.knowledge_partner:
             raise ValidationError({
-                'organization': 'Instructors and Admins must belong to a knowledge partner.'
+                'knowledge_partner': 'Instructors must belong to a knowledge partner.'
             })
         
-        # REMOVED: Students can now belong to organizations for private course access
-        # This allows students to access private courses from their organization
-        
         # Only one admin per knowledge partner
-        if self.role == 'knowledge_partner_admin' and self.organization:
+        if self.role == 'knowledge_partner_admin' and self.knowledge_partner:
             existing_admin = User.objects.filter(
                 role='knowledge_partner_admin', 
-                organization=self.organization
+                knowledge_partner=self.knowledge_partner
             ).exclude(pk=self.pk).first()
             
             if existing_admin:
                 raise ValidationError({
-                    'role': f'Knowledge Partner "{self.organization.name}" already has an admin: {existing_admin.email}'
+                    'role': f'Knowledge Partner "{self.knowledge_partner.name}" already has an admin: {existing_admin.email}'
+                })
+        
+        # Learners can only be added to KP by KP Admin, not self-select
+        if self.role == 'learner' and self.knowledge_partner:
+            if not self.is_added_by_kp_admin or not self.added_by_admin:
+                raise ValidationError({
+                    'knowledge_partner': 'Learners can only be added to Knowledge Partner by KP Admin.'
                 })
     
     def save(self, *args, **kwargs):
@@ -189,38 +249,50 @@ class User(AbstractUser):
     @property
     def can_create_courses(self):
         """Check if user can create courses."""
-        return self.role in ['knowledge_partner_admin', 'knowledge_partner_instructor'] and self.is_approved and self.organization
+        return self.role in ['knowledge_partner_admin', 'knowledge_partner_instructor'] and self.is_approved and self.knowledge_partner
     
     @property
-    def can_manage_organization(self):
+    def can_manage_knowledge_partner(self):
         """Check if user can manage knowledge partner."""
-        return self.role == 'knowledge_partner_admin' and self.is_approved and self.organization
+        return self.role == 'knowledge_partner_admin' and self.is_approved and self.knowledge_partner
     
     @property
     def can_access_private_courses(self):
-        """Check if user can access private courses from their organization."""
-        return self.organization is not None
+        """Check if user can access private courses from their knowledge partner."""
+        if self.role == 'learner':
+            # Learners can only access private courses if they were added by KP Admin
+            return self.knowledge_partner is not None and self.is_added_by_kp_admin
+        elif self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin']:
+            # Instructors and admins always have access to their organization's private courses
+            return self.knowledge_partner is not None
+        return False
     
     @property
-    def organization_name(self):
-        """Get organization name or 'Independent' for users without organization."""
-        return self.organization.name if self.organization else 'Independent'
+    def can_add_learners_to_kp(self):
+        """Check if user can add learners to their knowledge partner."""
+        return self.role == 'knowledge_partner_admin' and self.knowledge_partner
     
     @property
-    def is_organization_member(self):
-        """Check if user belongs to any organization."""
-        return self.organization is not None
+    def knowledge_partner_name(self):
+        """Get knowledge partner name or 'Independent' for users without organization."""
+        return self.knowledge_partner.name if self.knowledge_partner else 'Independent'
+    
+    @property
+    def is_knowledge_partner_member(self):
+        """Check if user belongs to any knowledge partner."""
+        return self.knowledge_partner is not None
     
     def can_enroll_in_course(self, course):
         """Check if user can enroll in a specific course."""
         if self.role != 'learner':
             return False
         
-        # For private courses, must be from same organization
+        # For private courses, must be added to the same knowledge partner by KP Admin
         if course.is_private:
-            return self.organization == course.training_partner
+            return (self.knowledge_partner == course.training_partner and 
+                    self.is_added_by_kp_admin)
         
-        # For public courses, any student can enroll
+        # For public courses, any learner can enroll
         return True
     
     def get_accessible_courses(self):
@@ -228,39 +300,78 @@ class User(AbstractUser):
         from courses.models import Course
         
         if self.role == 'learner':
-            if self.organization:
-                # Learners with organization can see public courses + private courses from their org
-                return Course.objects.filter(
-                    is_published=True,
-                    is_approved_by_training_partner=True
-                ).filter(
-                    models.Q(is_private=False) |  # Public courses
-                    models.Q(is_private=True, training_partner=self.organization)  # Private from their org
-                )
-            else:
-                # Independent learners can only see public courses
-                return Course.objects.filter(
+            # All learners can see public courses
+            public_courses = Course.objects.filter(
+                is_published=True,
+                is_approved_by_training_partner=True,
+                is_private=False
+            )
+            
+            # Only learners added by KP Admin can see private courses from their KP
+            if self.can_access_private_courses:
+                private_courses = Course.objects.filter(
                     is_published=True,
                     is_approved_by_training_partner=True,
-                    is_private=False
+                    is_private=True,
+                    training_partner=self.knowledge_partner
                 )
+                return public_courses.union(private_courses)
+            
+            return public_courses
+            
         elif self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin']:
-            # Instructors and admins see all courses from their organization
-            return Course.objects.filter(training_partner=self.organization)
+            # Instructors and admins see all courses from their knowledge partner
+            return Course.objects.filter(training_partner=self.knowledge_partner)
         
         return Course.objects.none()
     
+    def add_learner_to_kp(self, learner_user):
+        """Allow KP Admin to add a learner to their knowledge partner."""
+        if not self.can_add_learners_to_kp:
+            raise ValidationError("Only Knowledge Partner Admins can add learners to their organization.")
+        
+        if learner_user.role != 'learner':
+            raise ValidationError("Only learners can be added to Knowledge Partner organizations.")
+        
+        if learner_user.knowledge_partner:
+            raise ValidationError(f"Learner is already part of {learner_user.knowledge_partner.name}")
+        
+        # Add learner to KP
+        learner_user.knowledge_partner = self.knowledge_partner
+        learner_user.is_added_by_kp_admin = True
+        learner_user.added_by_admin = self
+        learner_user.save()
+        
+        return True
+    
+    def remove_learner_from_kp(self, learner_user):
+        """Allow KP Admin to remove a learner from their knowledge partner."""
+        if not self.can_add_learners_to_kp:
+            raise ValidationError("Only Knowledge Partner Admins can remove learners from their organization.")
+        
+        if learner_user.knowledge_partner != self.knowledge_partner:
+            raise ValidationError("Learner is not part of your Knowledge Partner organization.")
+        
+        # Remove learner from KP
+        learner_user.knowledge_partner = None
+        learner_user.is_added_by_kp_admin = False
+        learner_user.added_by_admin = None
+        learner_user.save()
+        
+        return True
+    
     def __str__(self):
-        org_info = f" - {self.organization.name}" if self.organization else " - Independent"
-        return f"{self.full_name} ({self.email}){org_info}"
+        kp_info = f" - {self.knowledge_partner.name}" if self.knowledge_partner else " - Independent"
+        return f"{self.full_name} ({self.email}){kp_info}"
     
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['role', 'organization']),
-            models.Index(fields=['organization', 'is_approved']),
+            models.Index(fields=['role', 'knowledge_partner']),
+            models.Index(fields=['knowledge_partner', 'is_approved']),
+            models.Index(fields=['is_added_by_kp_admin']),
         ]
 
 

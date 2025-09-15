@@ -1,6 +1,16 @@
+# backend/users/urls.py
+
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from . import views
+from .views import views
+
+# Import only essential application views
+from .views.application_views import (
+    KnowledgePartnerApplicationCreateView,
+    KnowledgePartnerApplicationListView,
+    approve_application,
+    reject_application,
+)
 
 app_name = 'users'
 
@@ -20,4 +30,28 @@ urlpatterns = [
     # Utility endpoints
     path('knowledge-partners/', views.get_knowledge_partners, name='knowledge_partners'),
     path('dashboard/', views.dashboard_stats, name='dashboard'),
+    
+    # ==========================================
+    # KNOWLEDGE PARTNER APPLICATION - SIMPLIFIED
+    # ==========================================
+    
+    # 1. Submit application from homepage
+    path('knowledge-partner/apply/', 
+         KnowledgePartnerApplicationCreateView.as_view(), 
+         name='kp_application_create'),
+    
+    # 2. Super admin views pending applications  
+    path('admin/applications/', 
+         KnowledgePartnerApplicationListView.as_view(), 
+         name='kp_application_list'),
+    
+    # 3. Super admin approves application
+    path('admin/applications/<uuid:application_id>/approve/', 
+         approve_application, 
+         name='kp_application_approve'),
+    
+    # 4. Super admin rejects application
+    path('admin/applications/<uuid:application_id>/reject/', 
+         reject_application, 
+         name='kp_application_reject'),
 ]

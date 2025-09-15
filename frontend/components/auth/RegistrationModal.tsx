@@ -12,7 +12,7 @@ import {
 import RegistrationForm from './RegistrationForm';
 import OTPVerification from './OTPVerification';
 import RegistrationSuccess from './RegistrationSuccess';
-import OrganizationDetailsStep from './OrganizationDetailsStep';
+import KnowledgePartnerDetailsStep from './KnowledgePartnerDetailsStep';
 import AdminDetailsStep from './AdminDetailsStep';
 import Logo from '@/components/shared/Logo';
 
@@ -22,16 +22,15 @@ interface RegistrationModalProps {
   onSwitchToLogin?: () => void;
 }
 
-interface OrganizationDetails {
+interface KnowledgePartnerDetails {
   name: string;
   type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
   location: string;
-  website: string;
+  website?: string;
   description: string;
-  address: string;
-  contact_email: string;
-  contact_phone: string;
-  logo?: File | null;
+  address?: string;
+  contact_email?: string;
+  contact_phone?: string;
   linkedin_url?: string;
 }
 
@@ -40,19 +39,16 @@ interface AdminDetails {
   profile_picture?: File | null;
   phone_number: string;
   job_title: string;
-  department: string;
   office_location: string;
-  office_phone: string;
-  emergency_contact: string;
-  linkedin_url: string;
   professional_email: string;
 }
 
+
 export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin }: RegistrationModalProps) {
-  const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'organization-details' | 'admin-details' | 'success'>('registration');
+  const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'knowledge-partner-details' | 'admin-details' | 'success'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
   const [userRole, setUserRole] = useState<'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin'>('learner');
-  const [organizationDetails, setOrganizationDetails] = useState<OrganizationDetails>({
+  const [knowledgePartnerDetails, setKnowledgePartnerDetails] = useState<KnowledgePartnerDetails>({
     name: '',
     type: 'university',
     location: '',
@@ -61,7 +57,6 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     address: '',
     contact_email: '',
     contact_phone: '',
-    logo: null,
     linkedin_url: ''
   });
   const [adminDetails, setAdminDetails] = useState<AdminDetails>({
@@ -69,11 +64,7 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     profile_picture: null,
     phone_number: '',
     job_title: '',
-    department: '',
     office_location: '',
-    office_phone: '',
-    emergency_contact: '',
-    linkedin_url: '',
     professional_email: ''
   });
 
@@ -86,13 +77,14 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
   const handleOTPVerificationSuccess = () => {
     // Determine next step based on user role
     if (userRole === 'knowledge_partner_admin') {
-      setCurrentStep('organization-details');
+      setCurrentStep('knowledge-partner-details');
     } else {
       setCurrentStep('success');
     }
   };
 
-  const handleOrganizationDetailsNext = () => {
+  const handleKnowledgePartnerDetailsNext = () => {
+    // For knowledge partner admins, go to admin details step
     if (userRole === 'knowledge_partner_admin') {
       setCurrentStep('admin-details');
     } else {
@@ -104,6 +96,11 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     setCurrentStep('success');
   };
 
+  const handleBackToKnowledgePartnerDetails = () => {
+    setCurrentStep('knowledge-partner-details');
+  };
+
+
   const handleSuccessComplete = () => {
     onOpenChange(false);
     // Reset state when modal closes
@@ -111,7 +108,7 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
       setCurrentStep('registration');
       setRegistrationEmail('');
       setUserRole('learner');
-      setOrganizationDetails({
+      setKnowledgePartnerDetails({
         name: '',
         type: 'university',
         location: '',
@@ -120,7 +117,6 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
         address: '',
         contact_email: '',
         contact_phone: '',
-        logo: null,
         linkedin_url: ''
       });
       setAdminDetails({
@@ -128,11 +124,7 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
         profile_picture: null,
         phone_number: '',
         job_title: '',
-        department: '',
         office_location: '',
-        office_phone: '',
-        emergency_contact: '',
-        linkedin_url: '',
         professional_email: ''
       });
     }, 300);
@@ -146,9 +138,6 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     setCurrentStep('otp-verification');
   };
 
-  const handleBackToOrganizationDetails = () => {
-    setCurrentStep('organization-details');
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,18 +152,18 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
           
           {currentStep !== 'success' && (
             <>
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                {currentStep === 'registration' && 'Create Your Account'}
-                {currentStep === 'otp-verification' && 'Email Verification'}
-                {currentStep === 'organization-details' && 'Organization Details'}
-                {currentStep === 'admin-details' && 'Admin Profile'}
-              </DialogTitle>
-              <DialogDescription className="text-gray-600">
-                {currentStep === 'registration' && 'Join thousands of learners and start your personalized learning journey'}
-                {currentStep === 'otp-verification' && 'We need to verify your email address to complete registration'}
-                {currentStep === 'organization-details' && 'Please provide details about your organization'}
-                {currentStep === 'admin-details' && 'Complete your admin profile information'}
-              </DialogDescription>
+                        <DialogTitle className="text-2xl font-bold text-gray-900">
+                          {currentStep === 'registration' && 'Create Your Account'}
+                          {currentStep === 'otp-verification' && 'Email Verification'}
+                          {currentStep === 'knowledge-partner-details' && 'Knowledge Partner Details'}
+                          {currentStep === 'admin-details' && 'Admin Profile Details'}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-600">
+                          {currentStep === 'registration' && 'Join thousands of learners and start your personalized learning journey'}
+                          {currentStep === 'otp-verification' && 'We need to verify your email address to complete registration'}
+                          {currentStep === 'knowledge-partner-details' && 'Please provide details about your knowledge partner organization'}
+                          {currentStep === 'admin-details' && 'Complete your admin profile information'}
+                        </DialogDescription>
             </>
           )}
         </DialogHeader>
@@ -211,27 +200,27 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
                 </p>
               </div>
             </>
-          ) : currentStep === 'otp-verification' ? (
-            <OTPVerification
-              email={registrationEmail}
-              onVerificationSuccess={handleOTPVerificationSuccess}
-              onBack={handleBackToRegistration}
-            />
-          ) : currentStep === 'organization-details' ? (
-            <OrganizationDetailsStep
-              organizationDetails={organizationDetails}
-              onChange={setOrganizationDetails}
-              onNext={handleOrganizationDetailsNext}
-              onBack={handleBackToOTP}
-            />
-          ) : currentStep === 'admin-details' ? (
-            <AdminDetailsStep
-              adminDetails={adminDetails}
-              onChange={setAdminDetails}
-              onNext={handleAdminDetailsNext}
-              onBack={handleBackToOrganizationDetails}
-            />
-          ) : (
+                     ) : currentStep === 'otp-verification' ? (
+                       <OTPVerification
+                         email={registrationEmail}
+                         onVerificationSuccess={handleOTPVerificationSuccess}
+                         onBack={handleBackToRegistration}
+                       />
+                     ) : currentStep === 'knowledge-partner-details' ? (
+                       <KnowledgePartnerDetailsStep
+                         knowledgePartnerDetails={knowledgePartnerDetails}
+                         onChange={setKnowledgePartnerDetails}
+                         onNext={handleKnowledgePartnerDetailsNext}
+                         onBack={handleBackToOTP}
+                       />
+                     ) : currentStep === 'admin-details' ? (
+                       <AdminDetailsStep
+                         adminDetails={adminDetails}
+                         onChange={setAdminDetails}
+                         onNext={handleAdminDetailsNext}
+                         onBack={handleBackToKnowledgePartnerDetails}
+                       />
+                     ) : (
             <RegistrationSuccess
               userRole={userRole}
               userEmail={registrationEmail}

@@ -28,7 +28,7 @@ class KnowledgePartnerAdmin(admin.ModelAdmin):
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ['email', 'full_name', 'role', 'organization', 'is_verified', 'is_approved', 'is_staff', 'created_at']
+    list_display = ['email', 'full_name', 'role', 'knowledge_partner_name', 'is_verified', 'is_approved', 'is_staff', 'created_at']
     list_filter = ['role', 'is_verified', 'is_approved', 'is_staff', 'is_superuser', 'is_active', 'created_at']
     search_fields = ['email', 'full_name', 'first_name', 'last_name']
     ordering = ['-created_at']
@@ -42,7 +42,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('full_name', 'first_name', 'last_name')
         }),
         ('Role & Knowledge Partner', {
-            'fields': ('role', 'organization', 'is_verified', 'is_approved')
+            'fields': ('role', 'knowledge_partner', 'is_verified', 'is_approved')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
