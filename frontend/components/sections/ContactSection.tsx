@@ -1,5 +1,5 @@
 // File: components/ContactSection.tsx (Server Component)
-import { Phone, Mail, Building2, Clock,Award, Target, TrendingUp, Shield } from 'lucide-react';
+import { Phone, Mail, Building2, Clock, Award, Target, TrendingUp, Shield } from 'lucide-react';
 import ContactForm from '../shared/ContactForm';
 
 const ContactSection = () => {
@@ -71,7 +71,7 @@ const ContactSection = () => {
               </p>
             </div>
             
-            {/* Contact Form Component */}
+            {/* Contact Form Component - Client Component */}
             <ContactForm />
           </div>
         </div>
@@ -83,7 +83,7 @@ const ContactSection = () => {
             {/* Contact Details */}
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <h4 className="font-sora font-bold text-xl mb-6 text-center">
-                Prefered to directly contact us?
+                Prefer Direct Contact?
               </h4>
               
               <div className="space-y-4">
@@ -124,7 +124,7 @@ const ContactSection = () => {
                   <span className="font-medium">Business Hours</span>
                 </div>
                 <p className="text-blue-100 text-sm">Mon-Fri: 9:00 AM - 6:00 PM IST</p>
-                <p className="text-blue-100 text-sm">📞 We&apos;ll call you within 24-48 hours</p>
+                <p className="text-blue-100 text-sm">We&apos;ll call you within 24-48 hours</p>
               </div>
             </div>
 
@@ -150,8 +150,8 @@ const ContactSection = () => {
                     <span className="text-white text-xs font-bold">2</span>
                   </div>
                   <div>
-                    <h5 className="font-semibold text-white">Phone Interview</h5>
-                    <p className="text-blue-100 text-sm">We&apos;ll call you to discuss your goals and answer questions</p>
+                    <h5 className="font-semibold text-white">Application Review</h5>
+                    <p className="text-blue-100 text-sm">Our team reviews your application and organization details</p>
                   </div>
                 </div>
 
@@ -160,8 +160,8 @@ const ContactSection = () => {
                     <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>
-                    <h5 className="font-semibold text-white">Get Access</h5>
-                    <p className="text-blue-100 text-sm">Receive login credentials and start building courses</p>
+                    <h5 className="font-semibold text-white">Phone Interview</h5>
+                    <p className="text-blue-100 text-sm">We&apos;ll call you to discuss your goals and answer questions</p>
                   </div>
                 </div>
 
@@ -170,9 +170,20 @@ const ContactSection = () => {
                     <Award className="w-3 h-3 text-white" />
                   </div>
                   <div>
-                    <h5 className="font-semibold text-white">Launch & Grow</h5>
-                    <p className="text-blue-100 text-sm">Create courses, manage students, track progress</p>
+                    <h5 className="font-semibold text-white">Get Access</h5>
+                    <p className="text-blue-100 text-sm">Receive login credentials and access your dashboard</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                <h6 className="text-white font-semibold text-sm mb-2">Why Apply?</h6>
+                <div className="grid grid-cols-2 gap-2 text-xs text-blue-100">
+                  <div>• Reach more learners</div>
+                  <div>• Track progress easily</div>
+                  <div>• Flexible course types</div>
+                  <div>• Professional platform</div>
                 </div>
               </div>
             </div>
@@ -186,15 +197,24 @@ const ContactSection = () => {
               Ready to Transform Education?
             </h4>
             <p className="text-blue-100 mb-6">
-              Join hundreds of knowledge partners who are already making an impact through our platform.
+              Join successful knowledge partners who are already making an impact through our platform.
             </p>
-            <a 
-              href="mailto:rockyg.swinfy@gmail.com?subject=Knowledge Partner Application&body=Hi,%0D%0A%0D%0AI would like to apply as a Knowledge Partner for our organization.%0D%0A%0D%0APlease find our details:%0D%0AOrganization: %0D%0AWebsite: %0D%0AContact: %0D%0A%0D%0AThank you!"
-              className="inline-flex items-center gap-2 bg-white text-blue-800 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-105"
-            >
-              <Mail className="w-5 h-5" />
-              Contact Us
-            </a>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a 
+                href="mailto:rockyg.swinfy@gmail.com?subject=Knowledge Partner Application&body=Hi,%0D%0A%0D%0AI would like to apply as a Knowledge Partner for our organization.%0D%0A%0D%0APlease find our details:%0D%0AOrganization: %0D%0AWebsite: %0D%0AContact: %0D%0A%0D%0AThank you!"
+                className="inline-flex items-center gap-2 bg-white text-blue-800 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-105"
+              >
+                <Mail className="w-5 h-5" />
+                Email Us Directly
+              </a>
+              <a 
+                href="tel:+917981313783"
+                className="inline-flex items-center gap-2 border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-800 transition-all duration-300 hover:scale-105"
+              >
+                <Phone className="w-5 h-5" />
+                Call Us Now
+              </a>
+            </div>
           </div>
         </div>
       </div>

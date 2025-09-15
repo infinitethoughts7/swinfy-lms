@@ -1,5 +1,3 @@
-# Create new file: backend/users/views/application_views.py
-
 from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -7,23 +5,16 @@ from rest_framework.pagination import PageNumberPagination
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
-from django.db import models
 
-from ..models import KnowledgePartner, KnowledgePartnerApplication
-from ..serializers.application_serializer import (
+from ..models import KnowledgePartnerApplication
+from ..serializers import (
     KnowledgePartnerApplicationCreateSerializer,
     KnowledgePartnerApplicationListSerializer,
-    KnowledgePartnerApplicationDetailSerializer,
     ApplicationApprovalSerializer,
     ApplicationRejectionSerializer,
-    ApplicationUpdateNotesSerializer,
-    ApplicationActionResponseSerializer,
 )
-
-User = get_user_model()
 
 
 class ApplicationPagination(PageNumberPagination):
@@ -115,9 +106,9 @@ Organization Details:
 - Email: {application.organization_email}
 - Phone: {application.contact_number}
 
-Course Interest: {application.courses_interested_display}
-Experience: {application.experience_display}
-Expected Tutors: {application.tutors_display}
+Course Interest: {application.get_courses_interested_in_display()}
+Experience: {application.get_experience_years_display()}
+Expected Tutors: {application.get_expected_tutors_display()}
 
 Message from Applicant:
 {application.partner_message or 'No additional message'}
@@ -161,21 +152,13 @@ class KnowledgePartnerApplicationListView(generics.ListAPIView):
         # Search by organization name or email
         search = self.request.query_params.get('search', None)
         if search:
+            from django.db.models import Q
             queryset = queryset.filter(
-                models.Q(organization_name__icontains=search) |
-                models.Q(organization_email__icontains=search)
+                Q(organization_name__icontains=search) |
+                Q(organization_email__icontains=search)
             )
         
         return queryset.order_by('-created_at')
-
-
-class KnowledgePartnerApplicationDetailView(generics.RetrieveAPIView):
-    """Get detailed view of a knowledge partner application (admin only)."""
-    
-    queryset = KnowledgePartnerApplication.objects.all()
-    serializer_class = KnowledgePartnerApplicationDetailSerializer
-    permission_classes = [permissions.IsAdminUser]
-    lookup_field = 'id'
 
 
 @api_view(['POST'])
@@ -185,10 +168,10 @@ def approve_application(request, application_id):
     
     application = get_object_or_404(KnowledgePartnerApplication, id=application_id)
     
-    if not application.can_be_approved:
+    if application.status != 'pending':
         return Response({
             'success': False,
-            'message': f'Application cannot be approved. Current status: {application.get_status_display()}'
+            'message': f'Application is not pending. Current status: {application.get_status_display()}'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Validate request data
@@ -198,10 +181,7 @@ def approve_application(request, application_id):
     try:
         with transaction.atomic():
             # Approve application and create KP + Admin user
-            knowledge_partner, admin_user, temp_password = application.approve_and_create_kp(
-                admin_user=request.user,
-                admin_notes=serializer.validated_data.get('admin_notes', '')
-            )
+            knowledge_partner, admin_user, temp_password = application.approve_and_create_kp(request.user)
             
             # Send welcome email to new admin
             send_welcome_email(admin_user, knowledge_partner, temp_password)
@@ -213,6 +193,7 @@ def approve_application(request, application_id):
                 'knowledge_partner_id': knowledge_partner.id,
                 'admin_email': admin_user.email,
                 'organization_name': knowledge_partner.name,
+                'temporary_password': temp_password,
             }, status=status.HTTP_200_OK)
             
     except Exception as e:
@@ -229,10 +210,10 @@ def reject_application(request, application_id):
     
     application = get_object_or_404(KnowledgePartnerApplication, id=application_id)
     
-    if not application.can_be_rejected:
+    if application.status != 'pending':
         return Response({
             'success': False,
-            'message': f'Application cannot be rejected. Current status: {application.get_status_display()}'
+            'message': f'Application is not pending. Current status: {application.get_status_display()}'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Validate request data
@@ -262,51 +243,6 @@ def reject_application(request, application_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['PATCH'])
-@permission_classes([permissions.IsAdminUser])
-def update_application_notes(request, application_id):
-    """Update admin notes for an application."""
-    
-    application = get_object_or_404(KnowledgePartnerApplication, id=application_id)
-    
-    serializer = ApplicationUpdateNotesSerializer(
-        instance=application,
-        data=request.data,
-        partial=True
-    )
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    
-    return Response({
-        'success': True,
-        'message': 'Notes updated successfully.',
-        'application_id': application.id,
-        'admin_notes': application.admin_notes,
-    }, status=status.HTTP_200_OK)
-
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAdminUser])
-def mark_under_review(request, application_id):
-    """Mark application as under review."""
-    
-    application = get_object_or_404(KnowledgePartnerApplication, id=application_id)
-    
-    if application.status != 'pending':
-        return Response({
-            'success': False,
-            'message': f'Application is not pending. Current status: {application.get_status_display()}'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    application.mark_under_review(request.user)
-    
-    return Response({
-        'success': True,
-        'message': f'Application for {application.organization_name} marked as under review.',
-        'application_id': application.id,
-    }, status=status.HTTP_200_OK)
-
-
 def send_welcome_email(admin_user, knowledge_partner, temp_password):
     """Send welcome email with login credentials to new Knowledge Partner Admin."""
     subject = f"Welcome to Knowledge Partner Platform - {knowledge_partner.name}"
@@ -321,7 +257,7 @@ LOGIN CREDENTIALS:
 📧 Email: {admin_user.email}
 🔑 Temporary Password: {temp_password}
 
-🔗 Login URL: {settings.FRONTEND_URL}/login
+🔗 Login URL: http://localhost:3000/login
 
 IMPORTANT NEXT STEPS:
 1. Login with the credentials above
@@ -389,48 +325,3 @@ Knowledge Partnership Team
         recipient_list=[application.organization_email],
         fail_silently=False,
     )
-
-
-# Stats endpoint for admin dashboard
-@api_view(['GET'])
-@permission_classes([permissions.IsAdminUser])
-def application_stats(request):
-    """Get application statistics for admin dashboard."""
-    
-    from django.db.models import Count
-    
-    # Basic counts
-    total_applications = KnowledgePartnerApplication.objects.count()
-    pending_count = KnowledgePartnerApplication.objects.filter(status='pending').count()
-    under_review_count = KnowledgePartnerApplication.objects.filter(status='under_review').count()
-    approved_count = KnowledgePartnerApplication.objects.filter(status='approved').count()
-    rejected_count = KnowledgePartnerApplication.objects.filter(status='rejected').count()
-    
-    # Applications by organization type
-    org_type_stats = KnowledgePartnerApplication.objects.values('organization_type').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Applications by course interest
-    course_interest_stats = KnowledgePartnerApplication.objects.values('courses_interested_in').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Recent applications (last 7 days)
-    from datetime import timedelta
-    recent_date = timezone.now() - timedelta(days=7)
-    recent_applications = KnowledgePartnerApplication.objects.filter(
-        created_at__gte=recent_date
-    ).count()
-    
-    return Response({
-        'total_applications': total_applications,
-        'pending_applications': pending_count,
-        'under_review_applications': under_review_count,
-        'approved_applications': approved_count,
-        'rejected_applications': rejected_count,
-        'recent_applications': recent_applications,
-        'organization_type_distribution': org_type_stats,
-        'course_interest_distribution': course_interest_stats,
-        'total_knowledge_partners': KnowledgePartner.objects.filter(is_active=True).count(),
-    }, status=status.HTTP_200_OK)

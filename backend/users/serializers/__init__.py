@@ -8,6 +8,12 @@ from .serializers import (
     InstructorProfileSerializer,
     AdminProfileSerializer
 )
+from .application_serializer import (
+    KnowledgePartnerApplicationCreateSerializer,
+    KnowledgePartnerApplicationListSerializer,
+    ApplicationApprovalSerializer,
+    ApplicationRejectionSerializer
+)
 
 __all__ = [
     'UserRegistrationSerializer',
@@ -17,5 +23,9 @@ __all__ = [
     'ProfileCompletionSerializer',
     'LearnerProfileSerializer',
     'InstructorProfileSerializer',
-    'AdminProfileSerializer'
+    'AdminProfileSerializer',
+    'KnowledgePartnerApplicationCreateSerializer',
+    'KnowledgePartnerApplicationListSerializer',
+    'ApplicationApprovalSerializer',
+    'ApplicationRejectionSerializer'
 ]

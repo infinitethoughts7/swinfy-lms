@@ -1,11 +1,9 @@
-# Create new file: backend/users/serializers/application_serializers.py
 
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
-from ..models import KnowledgePartnerApplication, KnowledgePartner, User
+from ..models import KnowledgePartnerApplication, User, KnowledgePartner
 import re
-
 
 class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating knowledge partner applications."""
@@ -34,7 +32,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
             'expected_tutors',
             'partner_message',
         ]
-        
+    
     def validate_organization_name(self, value):
         """Validate organization name."""
         if len(value.strip()) < 2:
@@ -47,7 +45,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         # Check for pending applications
         if KnowledgePartnerApplication.objects.filter(
             organization_name__iexact=value.strip(),
-            status__in=['pending', 'under_review']
+            status='pending'
         ).exists():
             raise serializers.ValidationError("An application for this organization is already pending review.")
         
@@ -68,7 +66,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         # Check for pending applications
         if KnowledgePartnerApplication.objects.filter(
             organization_email__iexact=value,
-            status__in=['pending', 'under_review']
+            status='pending'
         ).exists():
             raise serializers.ValidationError("An application from this email is already pending review.")
         
@@ -79,12 +77,11 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Website URL is required.")
         
-        # Basic URL validation
+        # Add protocol if missing
         if not re.match(r'^https?://', value):
-            # Add protocol if missing
             value = 'https://' + value.lstrip('/')
         
-        # Check if URL format is valid
+        # Basic URL validation
         url_pattern = re.compile(
             r'^https?://'  # http:// or https://
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
@@ -110,30 +107,17 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Phone number cannot contain more than 15 digits.")
         
         return value.strip()
-    
-    def validate(self, attrs):
-        """Cross-field validation."""
-        # Additional business logic validation can go here
-        return attrs
-    
-    def create(self, validated_data):
-        """Create application with additional processing."""
-        # You can add any pre-processing here
-        return KnowledgePartnerApplication.objects.create(**validated_data)
 
 
 class KnowledgePartnerApplicationListSerializer(serializers.ModelSerializer):
     """Serializer for listing knowledge partner applications (admin view)."""
     
-    courses_interested_display = serializers.ReadOnlyField()
-    experience_display = serializers.ReadOnlyField()
-    tutors_display = serializers.ReadOnlyField()
+    courses_interested_display = serializers.CharField(source='get_courses_interested_in_display', read_only=True)
+    experience_display = serializers.CharField(source='get_experience_years_display', read_only=True)
+    tutors_display = serializers.CharField(source='get_expected_tutors_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     organization_type_display = serializers.CharField(source='get_organization_type_display', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
-    can_be_approved = serializers.ReadOnlyField()
-    can_be_rejected = serializers.ReadOnlyField()
-    is_pending = serializers.ReadOnlyField()
     
     class Meta:
         model = KnowledgePartnerApplication
@@ -159,26 +143,7 @@ class KnowledgePartnerApplicationListSerializer(serializers.ModelSerializer):
             'reviewed_at',
             'created_at',
             'updated_at',
-            'can_be_approved',
-            'can_be_rejected',
-            'is_pending',
         ]
-
-
-class KnowledgePartnerApplicationDetailSerializer(serializers.ModelSerializer):
-    """Serializer for detailed view of knowledge partner application."""
-    
-    courses_interested_display = serializers.ReadOnlyField()
-    experience_display = serializers.ReadOnlyField()
-    tutors_display = serializers.ReadOnlyField()
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    organization_type_display = serializers.CharField(source='get_organization_type_display', read_only=True)
-    reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
-    created_knowledge_partner_name = serializers.CharField(source='created_knowledge_partner.name', read_only=True)
-    
-    class Meta:
-        model = KnowledgePartnerApplication
-        fields = '__all__'
 
 
 class ApplicationApprovalSerializer(serializers.Serializer):
@@ -190,11 +155,6 @@ class ApplicationApprovalSerializer(serializers.Serializer):
         max_length=1000,
         help_text="Optional notes about the approval"
     )
-    
-    def validate(self, attrs):
-        """Validate approval data."""
-        # You can add approval-specific validation here
-        return attrs
 
 
 class ApplicationRejectionSerializer(serializers.Serializer):
@@ -211,29 +171,3 @@ class ApplicationRejectionSerializer(serializers.Serializer):
         if len(value.strip()) < 10:
             raise serializers.ValidationError("Rejection reason must be at least 10 characters long.")
         return value.strip()
-
-
-class ApplicationUpdateNotesSerializer(serializers.ModelSerializer):
-    """Serializer for updating admin notes."""
-    
-    class Meta:
-        model = KnowledgePartnerApplication
-        fields = ['admin_notes']
-        
-    def validate_admin_notes(self, value):
-        """Validate admin notes."""
-        if value and len(value.strip()) > 2000:
-            raise serializers.ValidationError("Admin notes cannot exceed 2000 characters.")
-        return value
-
-
-# Response serializer for successful operations
-class ApplicationActionResponseSerializer(serializers.Serializer):
-    """Serializer for application action responses."""
-    
-    success = serializers.BooleanField()
-    message = serializers.CharField()
-    application_id = serializers.UUIDField()
-    knowledge_partner_id = serializers.UUIDField(required=False)
-    admin_email = serializers.EmailField(required=False)
-    temporary_password = serializers.CharField(required=False)
