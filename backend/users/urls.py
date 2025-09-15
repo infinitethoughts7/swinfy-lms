@@ -31,6 +31,10 @@ urlpatterns = [
     path('knowledge-partners/', views.get_knowledge_partners, name='knowledge_partners'),
     path('dashboard/', views.dashboard_stats, name='dashboard'),
     
+    # KP Instructor management (KP Admin only)
+    path('kp/instructors/', views.KPInstructorListCreateView.as_view(), name='kp_instructor_list_create'),
+    path('kp/instructors/<uuid:instructor_id>/', views.KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
+    
     # ==========================================
     # KNOWLEDGE PARTNER APPLICATION - SIMPLIFIED
     # ==========================================

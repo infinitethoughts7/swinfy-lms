@@ -62,7 +62,16 @@ const StaticNavbar = () => {
 
   const handleDashboardClick = () => {
     if (user?.role) {
-      router.push(`/dashboard/${user.role}`);
+      const roleToDashboard: Record<string, string> = {
+        'learner': 'student',
+        'knowledge_partner_instructor': 'instructor',
+        'knowledge_partner_admin': 'kp',
+        'student': 'student',
+        'tutor': 'tutor',
+        'admin': 'admin'
+      };
+      const dashboardPath = roleToDashboard[user.role] || user.role;
+      router.push(`/dashboard/${dashboardPath}`);
     }
   };
   

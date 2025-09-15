@@ -5,7 +5,12 @@ from .serializers import (
     KPProfileSerializer,
     ProfileCompletionSerializer,
     LearnerProfileSerializer,
-    InstructorProfileSerializer
+    InstructorProfileSerializer,
+    KPInstructorUserSerializer,
+    KPInstructorCreateSerializer,
+    KPInstructorListSerializer,
+    KPInstructorDetailSerializer,
+    KPInstructorUpdateSerializer
 )
 from .application_serializer import (
     KnowledgePartnerApplicationCreateSerializer,
@@ -22,6 +27,11 @@ __all__ = [
     'ProfileCompletionSerializer',
     'LearnerProfileSerializer',
     'InstructorProfileSerializer',
+    'KPInstructorUserSerializer',
+    'KPInstructorCreateSerializer',
+    'KPInstructorListSerializer',
+    'KPInstructorDetailSerializer',
+    'KPInstructorUpdateSerializer',
     'KnowledgePartnerApplicationCreateSerializer',
     'KnowledgePartnerApplicationListSerializer',
     'ApplicationApprovalSerializer',

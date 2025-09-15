@@ -59,14 +59,72 @@ export interface LoginResponse {
       name: string;
       type: string;
     };
-    can_create_courses: boolean;
-    can_manage_organization: boolean;
   };
 }
 
 export interface ApiError {
   error: string;
   details?: Record<string, unknown>;
+}
+
+// Instructor Management Interfaces
+export interface InstructorCreateData {
+  email: string;
+  full_name: string;
+  password: string;
+  confirm_password: string;
+}
+
+export interface InstructorUpdateData {
+  bio?: string;
+  title?: string;
+  highest_education?: 'bachelor' | 'master' | 'phd' | 'self_taught';
+  specializations?: string;
+  technologies?: string;
+  years_of_experience?: number;
+  certifications?: string;
+  languages_spoken?: string;
+  linkedin_url?: string;
+  is_available?: boolean;
+  availability_notes?: string;
+  user_email?: string;
+  user_full_name?: string;
+}
+
+export interface InstructorListItem {
+  id: string;
+  full_name: string;
+  email: string;
+  title: string;
+  specializations: string;
+  technologies: string;
+  years_of_experience: number;
+  is_available: boolean;
+  is_active: boolean;
+  is_approved: boolean;
+}
+
+export interface InstructorDetail {
+  id: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    is_active: boolean;
+    is_approved: boolean;
+  };
+  bio: string;
+  title: string;
+  highest_education: string;
+  specializations: string;
+  technologies: string;
+  years_of_experience: number;
+  certifications?: string;
+  languages_spoken: string;
+  linkedin_url?: string;
+  is_available: boolean;
+  availability_notes?: string;
+  created_at: string;
 }
 
 // Get auth token from localStorage
@@ -703,6 +761,109 @@ export const userApi = {
     }
     
     return response.json();
+  },
+
+  // KP Instructor Management
+  instructors: {
+    // List all instructors for KP admin
+    list: async (params?: { search?: string; available?: boolean }) => {
+      const token = getAuthToken();
+      const searchParams = new URLSearchParams();
+      if (params?.search) searchParams.append('search', params.search);
+      if (params?.available !== undefined) searchParams.append('available', params.available.toString());
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/?${searchParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch instructors');
+      }
+      
+      return response.json();
+    },
+
+    // Create new instructor
+    create: async (instructorData: InstructorCreateData) => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(instructorData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create instructor');
+      }
+      
+      return response.json();
+    },
+
+    // Get instructor details
+    get: async (instructorId: string) => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch instructor details');
+      }
+      
+      return response.json();
+    },
+
+    // Update instructor
+    update: async (instructorId: string, updateData: Partial<InstructorUpdateData>) => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update instructor');
+      }
+      
+      return response.json();
+    },
+
+    // Delete instructor
+    delete: async (instructorId: string) => {
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete instructor');
+      }
+      
+      return response.status === 204;
+    },
   },
 };
 

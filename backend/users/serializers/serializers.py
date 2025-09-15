@@ -267,3 +267,160 @@ class ProfileCompletionSerializer(serializers.Serializer):
         # Admin profile creation removed - KPAProfile model not available
         
         return {'profile_created': True, 'message': 'Profile completed successfully'}
+
+
+# =========================
+# KP Instructor CRUD (KP Admin)
+# =========================
+
+class KPInstructorUserSerializer(serializers.ModelSerializer):
+    """Basic user fields for KP Instructor."""
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'full_name', 'role', 'is_verified', 'is_approved', 'created_at']
+        read_only_fields = ['id', 'role', 'is_verified', 'is_approved', 'created_at']
+
+
+class KPInstructorCreateSerializer(serializers.Serializer):
+    """Create a new KP Instructor (user only, profile with defaults)."""
+
+    # User fields - only what KP admin should set
+    email = serializers.EmailField()
+    full_name = serializers.CharField(max_length=200)
+    password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate_email(self, value: str):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value.lower()
+
+    def validate_password(self, value: str):
+        """Validate password strength."""
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        try:
+            validate_password(value)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        return attrs
+
+    def create(self, validated_data):
+        # Remove confirm_password as it's not needed for user creation
+        validated_data.pop('confirm_password', None)
+
+        # Extract user fields
+        password = validated_data.pop('password')
+        email = validated_data.pop('email')
+        full_name = validated_data.pop('full_name')
+
+        # Create instructor user
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            full_name=full_name,
+            role='knowledge_partner_instructor',
+            is_verified=True,  # KP admin created users are pre-verified
+            is_approved=True,  # KP admin created users are pre-approved
+        )
+
+        # Create instructor profile with default values that instructor can update later
+        KPInstructorProfile.objects.create(
+            user=user,
+            bio='Professional instructor profile - to be updated by instructor.',
+            title='Instructor',
+            highest_education='bachelor',
+            specializations='To be updated by instructor',
+            technologies='To be updated by instructor',
+            years_of_experience=0,
+            languages_spoken='English',
+            is_available=True,  # Default to available
+            availability_notes='',
+        )
+
+        return user
+
+
+class KPInstructorListSerializer(serializers.ModelSerializer):
+    """List serializer combining user + quick profile fields."""
+
+    email = serializers.EmailField(source='user.email')
+    full_name = serializers.CharField(source='user.full_name')
+    is_active = serializers.BooleanField(source='user.is_active')
+    is_approved = serializers.BooleanField(source='user.is_approved')
+
+    class Meta:
+        model = KPInstructorProfile
+        fields = [
+            'id', 'email', 'full_name', 'title', 'specializations', 'technologies',
+            'years_of_experience', 'is_available', 'is_active', 'is_approved', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class KPInstructorDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer returning both user and profile data."""
+
+    user = KPInstructorUserSerializer(read_only=True)
+
+    class Meta:
+        model = KPInstructorProfile
+        fields = [
+            'id', 'user', 'bio', 'profile_picture', 'phone_number',
+            'title', 'years_of_experience', 'highest_education', 'certifications',
+            'specializations', 'technologies', 'languages_spoken', 'linkedin_url',
+            'is_available', 'availability_notes', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class KPInstructorUpdateSerializer(serializers.ModelSerializer):
+    """Update serializer for instructor profile. User fields update supported via separate keys."""
+
+    user_email = serializers.EmailField(required=False)
+    user_full_name = serializers.CharField(required=False, max_length=200)
+
+    class Meta:
+        model = KPInstructorProfile
+        fields = [
+            'bio', 'profile_picture', 'phone_number',
+            'title', 'years_of_experience', 'highest_education', 'certifications',
+            'specializations', 'technologies', 'languages_spoken', 'linkedin_url',
+            'is_available', 'availability_notes',
+            'user_email', 'user_full_name'
+        ]
+
+    def validate_user_email(self, value: str):
+        user = self.instance.user if self.instance else None
+        qs = User.objects.filter(email__iexact=value)
+        if user:
+            qs = qs.exclude(id=user.id)
+        if qs.exists():
+            raise serializers.ValidationError('Another user with this email already exists.')
+        return value.lower()
+
+    def update(self, instance: KPInstructorProfile, validated_data):
+        # Update related user fields if provided
+        user = instance.user
+        user_email = validated_data.pop('user_email', None)
+        user_full_name = validated_data.pop('user_full_name', None)
+
+        if user_email is not None:
+            user.email = user_email
+        if user_full_name is not None:
+            user.full_name = user_full_name
+        if user_email is not None or user_full_name is not None:
+            user.save()
+
+        # Update profile fields
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+
+        return instance

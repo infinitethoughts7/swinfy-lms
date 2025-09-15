@@ -28,10 +28,23 @@ export default function DashboardLayout({
       const currentUser = getCurrentUser();
       if (currentUser) {
         // Check if user is accessing the correct dashboard
-        const expectedRole = pathname.split('/')[2]; // Extract role from /dashboard/role/...
-        if (expectedRole && currentUser.role !== expectedRole) {
+        const pathSegment = pathname.split('/')[2]; // Extract role from /dashboard/role/...
+        
+        // Map roles to their dashboard paths
+        const roleToDashboard: Record<string, string> = {
+          'learner': 'student',
+          'knowledge_partner_instructor': 'instructor',
+          'knowledge_partner_admin': 'kp',
+          'student': 'student',
+          'tutor': 'tutor',
+          'admin': 'admin'
+        };
+        
+        const expectedDashboard = roleToDashboard[currentUser.role];
+        
+        if (pathSegment && expectedDashboard && pathSegment !== expectedDashboard) {
           // Redirect to correct dashboard
-          router.push(`/dashboard/${currentUser.role}`);
+          router.push(`/dashboard/${expectedDashboard}`);
           return;
         }
         setUser(currentUser);
@@ -70,7 +83,7 @@ export default function DashboardLayout({
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         <Sidebar
-          userRole={user.role}
+          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor'}
           isCollapsed={sidebarCollapsed}
           onToggle={toggleSidebar}
         />

@@ -7,7 +7,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from rest_framework import generics
-from ..models import User, KPProfile  
+from django.db.models import Q
+from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
+from ..permissions import IsKnowledgePartnerAdmin  
 
 from ..serializers import (
     UserRegistrationSerializer, 
@@ -16,7 +18,11 @@ from ..serializers import (
     KPProfileSerializer,
     ProfileCompletionSerializer,
     LearnerProfileSerializer,
-    InstructorProfileSerializer
+    InstructorProfileSerializer,
+    KPInstructorCreateSerializer,
+    KPInstructorListSerializer,
+    KPInstructorDetailSerializer,
+    KPInstructorUpdateSerializer
 )
 
 
@@ -127,13 +133,11 @@ class LoginView(TokenObtainPairView):
                 'full_name': user.full_name,
                 'role': user.role,
                 'is_verified': user.is_verified,
-                'organization': {
+                'knowledge_partner': {
                     'id': user.kp_profile.id,
                     'name': user.kp_profile.name,
                     'type': user.kp_profile.type,
                     } if hasattr(user, 'kp_profile') and user.kp_profile else None,
-                'can_create_courses': user.can_create_courses,
-                'can_manage_organization': user.can_manage_organization,
             }
         }, status=status.HTTP_200_OK)
 
@@ -531,3 +535,80 @@ class UserProfileDetailView(APIView):
             'success': True,
             'message': 'Profile updated successfully'
         })
+
+
+# =========================
+# KP Instructor CRUD (KP Admin only)
+# =========================
+
+class KPAdminOnlyMixin:
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _ensure_kp_admin(self, request):
+        user = request.user
+        if not user or user.role != 'knowledge_partner_admin':
+            return Response({'detail': 'KP admin permission required.'}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
+
+class KPInstructorListCreateView(APIView):
+    """List instructors and create new instructor (user + profile)."""
+    
+    permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
+
+    def get(self, request):
+        # Filters: search by name/email/title, availability
+        qs = KPInstructorProfile.objects.select_related('user').all().order_by('-created_at')
+
+        search = request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(user__full_name__icontains=search) |
+                Q(user__email__icontains=search) |
+                Q(title__icontains=search)
+            )
+
+        is_available = request.query_params.get('is_available')
+        if is_available in ['true', 'false']:
+            qs = qs.filter(is_available=(is_available == 'true'))
+
+        serializer = KPInstructorListSerializer(qs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = KPInstructorCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        profile = user.instructor_profile
+        detail = KPInstructorDetailSerializer(profile).data
+        return Response(detail, status=status.HTTP_201_CREATED)
+
+
+class KPInstructorDetailView(APIView):
+    """Retrieve, update, or delete an instructor."""
+    
+    permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
+
+    def get_object(self, pk):
+        from django.shortcuts import get_object_or_404
+        return get_object_or_404(KPInstructorProfile.objects.select_related('user'), pk=pk)
+
+    def get(self, request, instructor_id):
+        profile = self.get_object(instructor_id)
+        serializer = KPInstructorDetailSerializer(profile)
+        return Response(serializer.data)
+
+    def patch(self, request, instructor_id):
+        profile = self.get_object(instructor_id)
+        serializer = KPInstructorUpdateSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(KPInstructorDetailSerializer(profile).data)
+
+    def delete(self, request, instructor_id):
+        profile = self.get_object(instructor_id)
+        # Delete both profile and linked user
+        user = profile.user
+        profile.delete()
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

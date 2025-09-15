@@ -48,12 +48,10 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       setCurrentUser({
         id: data.user.id,
         email: data.user.email,
-        name: data.user.full_name,
+        full_name: data.user.full_name,
         role: data.user.role,
-        isVerified: data.user.is_verified,
-        organization: data.user.organization,
-        canCreateCourses: data.user.can_create_courses,
-        canManageOrganization: data.user.can_manage_organization,
+        is_verified: data.user.is_verified,
+        knowledge_partner: data.user.knowledge_partner,
       });
 
       // Close modal
@@ -67,7 +65,16 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
         onLoginSuccess();
       } else {
         // Default behavior: redirect based on role
-        router.push(`/dashboard/${data.user.role}`);
+        const roleToDashboard: Record<string, string> = {
+          'learner': 'student',
+          'knowledge_partner_instructor': 'instructor',
+          'knowledge_partner_admin': 'kp',
+          'student': 'student',
+          'tutor': 'tutor',
+          'admin': 'admin'
+        };
+        const dashboardPath = roleToDashboard[data.user.role] || data.user.role;
+        router.push(`/dashboard/${dashboardPath}`);
       }
     } catch (error: any) {
       console.error('Login error:', error);

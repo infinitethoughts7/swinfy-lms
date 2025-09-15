@@ -3,16 +3,14 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'student' | 'tutor' | 'admin';
-  isVerified: boolean;
-  organization?: {
+  full_name: string;
+  role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin' | 'student' | 'tutor' | 'admin';
+  is_verified: boolean;
+  knowledge_partner?: {
     id: string;
     name: string;
     type: string;
   };
-  canCreateCourses: boolean;
-  canManageOrganization: boolean;
 }
 
 // Get current user from localStorage
