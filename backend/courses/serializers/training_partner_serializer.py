@@ -1,13 +1,13 @@
 from rest_framework import serializers
-from users.models import KnowledgePartner
+from users.models import KPProfile
 
 
 class KnowledgePartnerSerializer(serializers.ModelSerializer):
-    """Serializer for KnowledgePartner model."""
+    """Serializer for KPProfile model."""
     courses_count = serializers.SerializerMethodField()
     
     class Meta:
-        model = KnowledgePartner
+        model = KPProfile
         fields = [
             'id', 'name', 'type', 'description', 'website', 'email', 'phone',
             'address', 'logo', 'is_active', 'created_at', 'courses_count'
@@ -23,5 +23,5 @@ class KnowledgePartnerListSerializer(serializers.ModelSerializer):
     """Simplified serializer for knowledge partner lists."""
     
     class Meta:
-        model = KnowledgePartner
+        model = KPProfile
         fields = ['id', 'name', 'type', 'logo', 'is_active']

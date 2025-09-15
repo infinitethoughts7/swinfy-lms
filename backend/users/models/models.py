@@ -1,120 +1,17 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.core.exceptions import ValidationError
 import uuid
-
-from django.contrib.auth import get_user_model
-from django.utils.crypto import get_random_string
 from django.utils import timezone
 
-class KnowledgePartner(models.Model):
-    """KnowledgePartner model for managing institutions and companies."""
-    
-    KP_TYPE_CHOICES = [
-        ('company', 'Company'),
-        ('organization', 'Organization'),
-        ('university', 'University'),
-        ('institute', 'Institute'),
-        ('bootcamp', 'Bootcamp'),
-        ('other', 'Other'),
-    ]
-    
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # Basic Information
-    name = models.CharField(max_length=200, unique=True)
-    type = models.CharField(max_length=50, choices=KP_TYPE_CHOICES)
-    description = models.TextField()
-    
-    # Contact Information
-    location = models.CharField(max_length=200)
-    website = models.URLField(blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)  # NEW: Official email
-    phone = models.CharField(max_length=20, blank=True, null=True)  # NEW: Contact phone
-    
-    # Branding & Social
-    logo = models.ImageField(
-        upload_to='training_partners/logos/',
-        blank=True,
-        null=True,
-        help_text="Organization logo"
-    )  # NEW: Logo field
-    linkedin_url = models.URLField(
-        blank=True,
-        null=True,
-        help_text="LinkedIn company page URL"
-    )  # NEW: LinkedIn URL
-    
-    
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_verified = models.BooleanField(
-        default=False,
-        help_text="Organization has been verified by admin"
-    )  # NEW: Verification status
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def clean(self):
-        """Custom validation for training partner."""
-        super().clean()
-        
-        # Validate LinkedIn URL format
-        if self.linkedin_url:
-            if not ('linkedin.com' in self.linkedin_url.lower()):
-                raise ValidationError({
-                    'linkedin_url': 'Please enter a valid LinkedIn URL.'
-                })
-    
-    @property
-    def total_courses(self):
-        """Get total number of courses."""
-        return self.courses.count()
-    
-    @property
-    def published_courses(self):
-        """Get number of published courses."""
-        return self.courses.filter(is_published=True).count()
-    
-    @property
-    def total_students(self):
-        """Get total number of enrolled students across all courses."""
-        from courses.models import Enrollment
-        return Enrollment.objects.filter(
-            course__training_partner=self,
-            status__in=['approved', 'active', 'completed']
-        ).values('student').distinct().count()
-    
-    @property
-    def admin_user(self):
-        """Get the admin user for this knowledge partner."""
-        return self.users.filter(role='knowledge_partner_admin').first()
-    
-    @property
-    def instructors_count(self):
-        """Get number of instructors."""
-        return self.users.filter(role='knowledge_partner_instructor').count()
-    
-    def __str__(self):
-        return f"{self.name} ({self.get_type_display()})"
-    
-    class Meta:
-        verbose_name = 'Knowledge Partner'
-        verbose_name_plural = 'Knowledge Partners'
-        ordering = ['name']
-        indexes = [
-            models.Index(fields=['is_active', 'is_verified']),
-            models.Index(fields=['type']),
-        ]
-
-
-
-
-# Add this BEFORE your User class in backend/users/models.py
-
-from django.contrib.auth.models import BaseUserManager
+KP_TYPE_CHOICES = [
+    ('company', 'Company'),
+    ('organization', 'Organization'),
+    ('university', 'University'),
+    ('institute', 'Institute'),
+    ('bootcamp', 'Bootcamp'),
+    ('other', 'Other'),
+]
 
 class UserManager(BaseUserManager):
     """Custom manager for User model with email as username."""
@@ -133,7 +30,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_verified', True)
         extra_fields.setdefault('is_approved', True)
-        extra_fields.setdefault('role', 'learner')  # Default role for superuser
+        extra_fields.setdefault('role', 'learner')
         
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -144,7 +41,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """Custom user model for authentication with flexible knowledge partner membership."""
+    """Simple User for authentication only."""
     
     username = None  # Remove username field completely
     
@@ -156,38 +53,13 @@ class User(AbstractUser):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # Basic authentication fields only
     email = models.EmailField(unique=True, verbose_name='Email Address')
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='learner')
     
-    # Knowledge Partner relationship - Controls private course access
-    knowledge_partner = models.ForeignKey(
-        'KnowledgePartner', 
-        on_delete=models.CASCADE, 
-        blank=True, 
-        null=True,
-        related_name='users',
-        help_text="Knowledge partner organization - gives access to private courses. Only KP Admin can add learners to their organization."
-    )
-    
     # User status
     is_verified = models.BooleanField(default=False, verbose_name='Email Verified')
-    is_approved = models.BooleanField(default=True, verbose_name='Admin Approved')  # For tutors
-    
-    # Access control for learners
-    is_added_by_kp_admin = models.BooleanField(
-        default=False,
-        help_text="True if this learner was added to knowledge partner by KP Admin (gives private course access)"
-    )
-    added_by_admin = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='added_learners',
-        help_text="KP Admin who added this learner to the organization"
-    )
+    is_approved = models.BooleanField(default=True, verbose_name='Admin Approved')
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -201,35 +73,6 @@ class User(AbstractUser):
     EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name', 'role']
     
-    def clean(self):
-        """Custom validation for user model."""
-        super().clean()
-        
-        # Instructors must have a knowledge partner
-        if self.role == 'knowledge_partner_instructor' and not self.knowledge_partner:
-            raise ValidationError({
-                'knowledge_partner': 'Instructors must belong to a knowledge partner.'
-            })
-        
-        # Only one admin per knowledge partner
-        if self.role == 'knowledge_partner_admin' and self.knowledge_partner:
-            existing_admin = User.objects.filter(
-                role='knowledge_partner_admin', 
-                knowledge_partner=self.knowledge_partner
-            ).exclude(pk=self.pk).first()
-            
-            if existing_admin:
-                raise ValidationError({
-                    'role': f'Knowledge Partner "{self.knowledge_partner.name}" already has an admin: {existing_admin.email}'
-                })
-        
-        # Learners can only be added to KP by KP Admin, not self-select
-        if self.role == 'learner' and self.knowledge_partner:
-            if not self.is_added_by_kp_admin or not self.added_by_admin:
-                raise ValidationError({
-                    'knowledge_partner': 'Learners can only be added to Knowledge Partner by KP Admin.'
-                })
-    
     def save(self, *args, **kwargs):
         """Override save to set first_name and last_name from full_name."""
         if self.full_name:
@@ -240,189 +83,79 @@ class User(AbstractUser):
         # Auto-approve learners and admins, instructors need approval
         if self.role in ['learner', 'knowledge_partner_admin']:
             self.is_approved = True
-        elif self.role == 'knowledge_partner_instructor' and not self.pk:  # New instructor
+        elif self.role == 'knowledge_partner_instructor' and not self.pk:
             self.is_approved = False
         
-        self.clean()
         super().save(*args, **kwargs)
     
-    @property
-    def can_create_courses(self):
-        """Check if user can create courses."""
-        return self.role in ['knowledge_partner_admin', 'knowledge_partner_instructor'] and self.is_approved and self.knowledge_partner
-    
-    @property
-    def can_manage_knowledge_partner(self):
-        """Check if user can manage knowledge partner."""
-        return self.role == 'knowledge_partner_admin' and self.is_approved and self.knowledge_partner
-    
-    @property
-    def can_access_private_courses(self):
-        """Check if user can access private courses from their knowledge partner."""
-        if self.role == 'learner':
-            # Learners can only access private courses if they were added by KP Admin
-            return self.knowledge_partner is not None and self.is_added_by_kp_admin
-        elif self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin']:
-            # Instructors and admins always have access to their organization's private courses
-            return self.knowledge_partner is not None
-        return False
-    
-    @property
-    def can_add_learners_to_kp(self):
-        """Check if user can add learners to their knowledge partner."""
-        return self.role == 'knowledge_partner_admin' and self.knowledge_partner
-    
-    @property
-    def knowledge_partner_name(self):
-        """Get knowledge partner name or 'Independent' for users without organization."""
-        return self.knowledge_partner.name if self.knowledge_partner else 'Independent'
-    
-    @property
-    def is_knowledge_partner_member(self):
-        """Check if user belongs to any knowledge partner."""
-        return self.knowledge_partner is not None
-    
-    def can_enroll_in_course(self, course):
-        """Check if user can enroll in a specific course."""
-        if self.role != 'learner':
-            return False
-        
-        # For private courses, must be added to the same knowledge partner by KP Admin
-        if course.is_private:
-            return (self.knowledge_partner == course.training_partner and 
-                    self.is_added_by_kp_admin)
-        
-        # For public courses, any learner can enroll
-        return True
-    
-    def get_accessible_courses(self):
-        """Get queryset of courses this user can access."""
-        from courses.models import Course
-        
-        if self.role == 'learner':
-            # All learners can see public courses
-            public_courses = Course.objects.filter(
-                is_published=True,
-                is_approved_by_training_partner=True,
-                is_private=False
-            )
-            
-            # Only learners added by KP Admin can see private courses from their KP
-            if self.can_access_private_courses:
-                private_courses = Course.objects.filter(
-                    is_published=True,
-                    is_approved_by_training_partner=True,
-                    is_private=True,
-                    training_partner=self.knowledge_partner
-                )
-                return public_courses.union(private_courses)
-            
-            return public_courses
-            
-        elif self.role in ['knowledge_partner_instructor', 'knowledge_partner_admin']:
-            # Instructors and admins see all courses from their knowledge partner
-            return Course.objects.filter(training_partner=self.knowledge_partner)
-        
-        return Course.objects.none()
-    
-    def add_learner_to_kp(self, learner_user):
-        """Allow KP Admin to add a learner to their knowledge partner."""
-        if not self.can_add_learners_to_kp:
-            raise ValidationError("Only Knowledge Partner Admins can add learners to their organization.")
-        
-        if learner_user.role != 'learner':
-            raise ValidationError("Only learners can be added to Knowledge Partner organizations.")
-        
-        if learner_user.knowledge_partner:
-            raise ValidationError(f"Learner is already part of {learner_user.knowledge_partner.name}")
-        
-        # Add learner to KP
-        learner_user.knowledge_partner = self.knowledge_partner
-        learner_user.is_added_by_kp_admin = True
-        learner_user.added_by_admin = self
-        learner_user.save()
-        
-        return True
-    
-    def remove_learner_from_kp(self, learner_user):
-        """Allow KP Admin to remove a learner from their knowledge partner."""
-        if not self.can_add_learners_to_kp:
-            raise ValidationError("Only Knowledge Partner Admins can remove learners from their organization.")
-        
-        if learner_user.knowledge_partner != self.knowledge_partner:
-            raise ValidationError("Learner is not part of your Knowledge Partner organization.")
-        
-        # Remove learner from KP
-        learner_user.knowledge_partner = None
-        learner_user.is_added_by_kp_admin = False
-        learner_user.added_by_admin = None
-        learner_user.save()
-        
-        return True
-    
     def __str__(self):
-        kp_info = f" - {self.knowledge_partner.name}" if self.knowledge_partner else " - Independent"
-        return f"{self.full_name} ({self.email}){kp_info}"
+        return f"{self.full_name} ({self.email}) - {self.get_role_display()}"
     
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['role', 'knowledge_partner']),
-            models.Index(fields=['knowledge_partner', 'is_approved']),
-            models.Index(fields=['is_added_by_kp_admin']),
-        ]
 
 
-class LearnerProfile(models.Model):
-    """Profile for learners with learning preferences and progress tracking."""
+class KPProfile(models.Model):
+    """Main organization profile with company details and admin contact info."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='kp_profile')
     
-    # Personal Information
-    bio = models.TextField(blank=True, null=True, help_text="Tell us about yourself")
-    profile_picture = models.ImageField(upload_to='profiles/students/', blank=True, null=True)
-    date_of_birth = models.DateField(blank=True, null=True)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    # Basic Information (Organization)
+    name = models.CharField(max_length=200, unique=True, help_text="Organization name")
+    type = models.CharField(max_length=50, choices=KP_TYPE_CHOICES)
+    description = models.TextField(help_text="About the organization")
+    location = models.CharField(max_length=200, help_text="Organization address/location")
+    website = models.URLField(blank=True, null=True, help_text="Organization website")
     
-    # Educational Background
-    education_level = models.CharField(max_length=50, choices=[
-        ('high_school', 'High School'),
-        ('bachelor', 'Bachelor\'s Degree'),
-        ('master', 'Master\'s Degree'),
-        ('phd', 'PhD'),
-        ('other', 'Other'),
-    ], blank=True, null=True)
-    field_of_study = models.CharField(max_length=100, blank=True, null=True)
-    current_institution = models.CharField(max_length=200, blank=True, null=True)
+    # Admin Personal Information
+    kp_admin_name = models.CharField(max_length=200, help_text="Admin contact name")
+    kp_admin_email = models.EmailField(help_text="Admin personal email")
+    kp_admin_phone = models.CharField(max_length=15, blank=True, null=True, help_text="Admin phone number")
     
-    # Learning Preferences
-    learning_goals = models.TextField(blank=True, null=True)
+    # Branding & Social
+    logo = models.ImageField(
+        upload_to='knowledge_partners/logos/',
+        blank=True,
+        null=True,
+        help_text="Organization logo"
+    )
+    linkedin_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="LinkedIn company page URL"
+    )
     
+    # Status
+    is_active = models.BooleanField(default=True, help_text="Organization is active")
+    is_verified = models.BooleanField(
+        default=False,
+        help_text="Organization has been verified by super admin"
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name}'s Learner Profile"
+        return f"{self.name} ({self.get_type_display()})"
     
     class Meta:
-        verbose_name = 'Learner Profile'
-        verbose_name_plural = 'Learner Profiles'
+        verbose_name = 'Knowledge Partner Profile'
+        verbose_name_plural = 'Knowledge Partner Profiles'
+        ordering = ['name']
 
 
-class KPIProfile(models.Model):
+class KPInstructorProfile(models.Model):
     """Profile for knowledge partner instructors with qualifications and expertise."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
-    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile') 
     # Personal Information
     bio = models.TextField(help_text="Professional bio for students to see")
-    profile_picture = models.ImageField(upload_to='profiles/tutors/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profiles/instructors/', blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     
     # Professional Information
@@ -445,12 +178,8 @@ class KPIProfile(models.Model):
     technologies = models.TextField(help_text="Technologies you can teach (comma-separated)")
     languages_spoken = models.TextField(default="English", help_text="Languages you can teach in")
     
- 
-    
-    
     # Social Links
     linkedin_url = models.URLField(blank=True, null=True)
-
     
     # Status
     is_available = models.BooleanField(default=True)
@@ -461,40 +190,46 @@ class KPIProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name}'s Instructor Profile"
+        return f"{self.user.full_name} - {self.knowledge_partner.name} Instructor"
     
     class Meta:
         verbose_name = 'Instructor Profile'
         verbose_name_plural = 'Instructor Profiles'
 
 
-class KPAProfile(models.Model):
-    """Profile for knowledge partner administrators."""
+class LearnerProfile(models.Model):
+    """Profile for learners with learning preferences and progress tracking."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
     
     # Personal Information
-    bio = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='profiles/admins/', blank=True, null=True)
+    bio = models.TextField(blank=True, null=True, help_text="Tell us about yourself")
+    profile_picture = models.ImageField(upload_to='profiles/learners/', blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     
-    # Professional Information
-    job_title = models.CharField(max_length=100, help_text="Your role in the organization")
-
+    # Educational Background
+    education_level = models.CharField(max_length=50, choices=[
+        ('high_school', 'High School'),
+        ('bachelor', 'Bachelor\'s Degree'),
+        ('master', 'Master\'s Degree'),
+        ('phd', 'PhD'),
+        ('other', 'Other'),
+    ], blank=True, null=True)
+    field_of_study = models.CharField(max_length=100, blank=True, null=True)
+    current_institution = models.CharField(max_length=200, blank=True, null=True)
     
-    # Contact Information
-    office_location = models.CharField(max_length=200, blank=True, null=True)
-
-    professional_email = models.EmailField(blank=True, null=True)
+    # Learning Preferences
+    learning_goals = models.TextField(blank=True, null=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name}'s Admin Profile"
+        return f"{self.user.full_name}'s Learner Profile"
     
     class Meta:
-        verbose_name = 'Admin Profile'
-        verbose_name_plural = 'Admin Profiles'
+        verbose_name = 'Learner Profile'
+        verbose_name_plural = 'Learner Profiles'

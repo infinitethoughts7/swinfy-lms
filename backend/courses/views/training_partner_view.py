@@ -2,20 +2,20 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from users.models import KnowledgePartner
+from users.models import KPProfile
 from ..serializers import KnowledgePartnerSerializer, KnowledgePartnerListSerializer
 
 
 class KnowledgePartnerListView(generics.ListAPIView):
     """List all active knowledge partners."""
-    queryset = KnowledgePartner.objects.filter(is_active=True)
+    queryset = KPProfile.objects.filter(is_active=True)
     serializer_class = KnowledgePartnerListSerializer
     permission_classes = [permissions.AllowAny]
 
 
 class KnowledgePartnerDetailView(generics.RetrieveAPIView):
     """Retrieve a specific knowledge partner."""
-    queryset = KnowledgePartner.objects.filter(is_active=True)
+    queryset = KPProfile.objects.filter(is_active=True)
     serializer_class = KnowledgePartnerSerializer
     permission_classes = [permissions.AllowAny]
 

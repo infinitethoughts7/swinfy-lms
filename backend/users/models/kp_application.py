@@ -3,7 +3,7 @@
 from django.db import models
 import uuid
 # Remove these imports since they're in the same file:      
-from .models import KnowledgePartner, User, KPAProfile
+from .models import KPProfile, User
 from django.core.exceptions import ValidationError
 
 class KnowledgePartnerApplication(models.Model):
@@ -56,7 +56,14 @@ class KnowledgePartnerApplication(models.Model):
     knowledge_partner_name = models.CharField(max_length=200)
     knowledge_partner_type = models.CharField(
         max_length=50, 
-        choices=KnowledgePartner.KP_TYPE_CHOICES  # Fixed: use ORG_TYPE_CHOICES instead of KP_TYPE_CHOICES
+        choices=[
+            ('company', 'Company'),
+            ('organization', 'Organization'),
+            ('university', 'University'),
+            ('institute', 'Institute'),
+            ('bootcamp', 'Bootcamp'),
+            ('other', 'Other'),
+        ]
     )
     website_url = models.URLField()
     knowledge_partner_email = models.EmailField()
@@ -82,7 +89,7 @@ class KnowledgePartnerApplication(models.Model):
     
     # Created entities (if approved)
     created_knowledge_partner = models.ForeignKey(
-        'KnowledgePartner',  # Use string reference
+        'KPProfile',  # Use string reference
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
@@ -131,7 +138,7 @@ class KnowledgePartnerApplication(models.Model):
         from django.utils import timezone
         
         # Create Knowledge Partner
-        knowledge_partner = KnowledgePartner.objects.create(
+        knowledge_partner = KPProfile.objects.create(
             name=self.knowledge_partner_name,
             type=self.knowledge_partner_type,
             description=f"Knowledge Partner specializing in {self.get_courses_interested_in_display()}.",
@@ -157,10 +164,14 @@ class KnowledgePartnerApplication(models.Model):
         )
         
         # Create Admin Profile
-        KPAProfile.objects.create(
+        KPProfile.objects.create(
             user=admin_user_obj,
-            job_title="Knowledge Partner Administrator",
-            professional_email=self.knowledge_partner_email,
+            name=self.knowledge_partner_name,
+            type=self.knowledge_partner_type,
+            description=f"Administrator for {self.knowledge_partner_name}",
+            kp_admin_name=f"{self.knowledge_partner_name} Admin",
+            kp_admin_email=self.knowledge_partner_email,
+            is_active=True,
         )
         
         # Update application

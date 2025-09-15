@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
-from ..models import KnowledgePartnerApplication, User, KnowledgePartner
+from ..models import KnowledgePartnerApplication, User, KPProfile
 import re
 
 class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):

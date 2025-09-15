@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from ..models import Course
-from users.serializers import KnowledgePartnerSerializer, UserProfileSerializer, InstructorProfileSerializer
+from users.serializers import KPProfileSerializer, UserProfileSerializer, InstructorProfileSerializer
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ class InstructorWithProfileSerializer(serializers.ModelSerializer):
 
 class CourseListSerializer(serializers.ModelSerializer):
     """Serializer for course list views with minimal data."""
-    training_partner = KnowledgePartnerSerializer(read_only=True)
+    training_partner = KPProfileSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
@@ -81,7 +81,7 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     """Full serializer for course detail views."""
-    training_partner = KnowledgePartnerSerializer(read_only=True)
+    training_partner = KPProfileSerializer(read_only=True)
     tutor = InstructorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
@@ -139,7 +139,7 @@ class CourseApprovalSerializer(serializers.ModelSerializer):
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     """Serializer for course detail page with comprehensive information."""
-    training_partner = KnowledgePartnerSerializer(read_only=True)
+    training_partner = KPProfileSerializer(read_only=True)
     tutor = InstructorWithProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
@@ -202,7 +202,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
 class CourseAdminSerializer(serializers.ModelSerializer):
     """Serializer for Admin course management with full control."""
-    training_partner = KnowledgePartnerSerializer(read_only=True)
+    training_partner = KPProfileSerializer(read_only=True)
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)

@@ -2,11 +2,10 @@ from .serializers import (
     UserRegistrationSerializer,
     UserProfileSerializer,
     ChangePasswordSerializer,
-    KnowledgePartnerSerializer,
+    KPProfileSerializer,
     ProfileCompletionSerializer,
     LearnerProfileSerializer,
-    InstructorProfileSerializer,
-    AdminProfileSerializer
+    InstructorProfileSerializer
 )
 from .application_serializer import (
     KnowledgePartnerApplicationCreateSerializer,
@@ -19,11 +18,10 @@ __all__ = [
     'UserRegistrationSerializer',
     'UserProfileSerializer', 
     'ChangePasswordSerializer',
-    'KnowledgePartnerSerializer',
+    'KPProfileSerializer',
     'ProfileCompletionSerializer',
     'LearnerProfileSerializer',
     'InstructorProfileSerializer',
-    'AdminProfileSerializer',
     'KnowledgePartnerApplicationCreateSerializer',
     'KnowledgePartnerApplicationListSerializer',
     'ApplicationApprovalSerializer',

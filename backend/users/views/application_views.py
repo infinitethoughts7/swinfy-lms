@@ -185,7 +185,7 @@ def approve_application(request, application_id):
                 return Response({'success': False, 'message': 'Only superusers can approve applications.'}, status=status.HTTP_403_FORBIDDEN)
 
             # Create Knowledge Partner only (no admin user creation)
-            knowledge_partner = KnowledgePartner.objects.create(
+            knowledge_partner = KPProfile.objects.create(
                 name=application.knowledge_partner_name,
                 type=application.knowledge_partner_type,
                 description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",

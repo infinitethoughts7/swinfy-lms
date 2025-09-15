@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
-from users.models import User, KnowledgePartner
+from users.models import User, KPProfile
 
 
 class Course(models.Model):
@@ -98,7 +98,7 @@ class Course(models.Model):
         help_text="Tutor or Admin who created this course"
     )
     training_partner = models.ForeignKey(
-        KnowledgePartner,
+        KPProfile,
         on_delete=models.CASCADE,
         related_name='courses',
         null=True,

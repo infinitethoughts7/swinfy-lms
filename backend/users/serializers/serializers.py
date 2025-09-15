@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from ..models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile
+from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
 
 
-class KnowledgePartnerSerializer(serializers.ModelSerializer):
-    """Serializer for KnowledgePartner model."""
+class KPProfileSerializer(serializers.ModelSerializer):
+    """Serializer for KPProfile model."""
     
     class Meta:
-        model = KnowledgePartner
+        model = KPProfile
         fields = ['id', 'name', 'type', 'location', 'website', 'description', 'is_active', 'created_at']
         read_only_fields = ['id', 'created_at']
 
@@ -50,8 +50,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         organization_id = attrs.get('organization_id')
         if organization_id:
             try:
-                KnowledgePartner.objects.get(id=organization_id, is_active=True)
-            except KnowledgePartner.DoesNotExist:
+                KPProfile.objects.get(id=organization_id, is_active=True)
+            except KPProfile.DoesNotExist:
                 raise serializers.ValidationError({
                     'organization_id': 'Selected organization does not exist or is not active.'
                 })
@@ -72,7 +72,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         
         # Handle organization assignment for learners
         if organization_id:
-            validated_data['organization'] = KnowledgePartner.objects.get(id=organization_id)
+            validated_data['kp_profile'] = KPProfile.objects.get(id=organization_id)
         
         # Create user
         user = User.objects.create_user(
@@ -162,10 +162,10 @@ class LearnerProfileSerializer(serializers.ModelSerializer):
 
 
 class InstructorProfileSerializer(serializers.ModelSerializer):
-    """Serializer for KPIProfile with optional fields for completion flow."""
+    """Serializer for KPInstructorProfile with optional fields for completion flow."""
     
     class Meta:
-        model = KPIProfile
+        model = KPInstructorProfile
         fields = [
             'bio', 'profile_picture', 'date_of_birth', 'phone_number',
             'title', 'years_of_experience', 'hourly_rate',
@@ -197,30 +197,7 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
         }
 
 
-class AdminProfileSerializer(serializers.ModelSerializer):
-    """Serializer for KPAProfile with optional fields for completion flow."""
-    
-    class Meta:
-        model = KPAProfile
-        fields = [
-            'bio', 'profile_picture', 'phone_number',
-            'job_title', 'department',
-            'office_location', 'office_phone', 'emergency_contact',
-            'linkedin_url', 'professional_email'
-        ]
-        extra_kwargs = {
-            'job_title': {'required': True},  # Job title required for admins
-            # All other fields optional for completion flow
-            'bio': {'required': False},
-            'profile_picture': {'required': False},
-            'phone_number': {'required': False},
-            'department': {'required': False},
-            'office_location': {'required': False},
-            'office_phone': {'required': False},
-            'emergency_contact': {'required': False},
-            'linkedin_url': {'required': False},
-            'professional_email': {'required': False},
-        }
+# AdminProfileSerializer removed - KPAProfile model not available in current models.py
 
 
 class ProfileCompletionSerializer(serializers.Serializer):
@@ -229,7 +206,6 @@ class ProfileCompletionSerializer(serializers.Serializer):
     skip_profile = serializers.BooleanField(default=False, required=False)
     learner_profile = LearnerProfileSerializer(required=False)
     instructor_profile = InstructorProfileSerializer(required=False)
-    admin_profile = AdminProfileSerializer(required=False)
     
     def validate(self, attrs):
         """Validate profile completion data based on user role."""
@@ -251,11 +227,7 @@ class ProfileCompletionSerializer(serializers.Serializer):
                 raise serializers.ValidationError({
                     'instructor_profile': 'Instructor profile data is required.'
                 })
-        elif user.role == 'knowledge_partner_admin':
-            if 'admin_profile' not in attrs:
-                raise serializers.ValidationError({
-                    'admin_profile': 'Admin profile data is required.'
-                })
+        # Admin profile validation removed - KPAProfile model not available
         
         return attrs
     
@@ -282,7 +254,7 @@ class ProfileCompletionSerializer(serializers.Serializer):
             
         elif user.role == 'knowledge_partner_instructor' and 'instructor_profile' in validated_data:
             profile_data = validated_data['instructor_profile']
-            profile, created = KPIProfile.objects.get_or_create(
+            profile, created = KPInstructorProfile.objects.get_or_create(
                 user=user,
                 defaults=profile_data
             )
@@ -292,16 +264,6 @@ class ProfileCompletionSerializer(serializers.Serializer):
                     setattr(profile, key, value)
                 profile.save()
             
-        elif user.role == 'knowledge_partner_admin' and 'admin_profile' in validated_data:
-            profile_data = validated_data['admin_profile']
-            profile, created = KPAProfile.objects.get_or_create(
-                user=user,
-                defaults=profile_data
-            )
-            if not created:
-                # Update existing profile
-                for key, value in profile_data.items():
-                    setattr(profile, key, value)
-                profile.save()
+        # Admin profile creation removed - KPAProfile model not available
         
         return {'profile_created': True, 'message': 'Profile completed successfully'}
