@@ -29,7 +29,6 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = Csv()(config('ALLOWED_HOSTS', default='localhost,127.0.0.1,ff345cd4245a.ngrok-free.app,.ngrok.io,.ngrok-free.app'))
 
-
 # Application definition
 
 INSTALLED_APPS = [

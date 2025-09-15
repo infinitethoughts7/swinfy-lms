@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.contrib import messages
 from django.contrib.auth.admin import UserAdmin
-from .models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile
+from django.db import transaction
+from .models import User, KnowledgePartner, LearnerProfile, KPIProfile, KPAProfile, KnowledgePartnerApplication
 
 
 @admin.register(KnowledgePartner)
@@ -59,7 +61,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('email', 'password1', 'password2')
         }),
         ('Personal Info', {
-            'fields': ('full_name', 'role', 'organization')
+            'fields': ('full_name', 'role', 'knowledge_partner')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser'),
@@ -165,3 +167,118 @@ class AdminProfileAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(KnowledgePartnerApplication)
+class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
+    list_display = [
+        'knowledge_partner_name',
+        'knowledge_partner_type',
+        'status',
+        'created_knowledge_partner',
+        'created_admin_user',
+        'reviewed_by',
+        'created_at',
+    ]
+    list_filter = ['status', 'knowledge_partner_type', 'created_at']
+    search_fields = ['knowledge_partner_name', 'knowledge_partner_email', 'contact_number']
+    readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
+
+    fieldsets = (
+        ('Knowledge Partner Details', {
+            'fields': (
+                'knowledge_partner_name',
+                'knowledge_partner_type',
+                'knowledge_partner_email',
+                'contact_number',
+                'website_url',
+            )
+        }),
+        ('Application Details', {
+            'fields': (
+                'courses_interested_in',
+                'experience_years',
+                'expected_tutors',
+                'partner_message',
+            )
+        }),
+        ('Review', {
+            'fields': (
+                'status',
+                'admin_notes',
+                'reviewed_by',
+                'reviewed_at',
+            )
+        }),
+        ('Created Entities', {
+            'fields': (
+                'created_knowledge_partner',
+                'created_admin_user',
+            )
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    actions = ['approve_applications', 'reject_applications']
+
+    def approve_applications(self, request, queryset):
+        """Admin action: approve selected pending applications and create KP + Admin user."""
+        approved_count = 0
+        skipped = 0
+        errors = 0
+
+        for application in queryset:
+            if application.status != 'pending':
+                skipped += 1
+                continue
+            try:
+                with transaction.atomic():
+                    application.approve_and_create_kp(admin_user=request.user)
+                    approved_count += 1
+            except Exception as exc:  # noqa: BLE001
+                errors += 1
+                self.message_user(
+                    request,
+                    f"Failed to approve application {application.organization_name}: {exc}",
+                    level=messages.ERROR,
+                )
+
+        if approved_count:
+            self.message_user(request, f"Approved {approved_count} application(s).", level=messages.SUCCESS)
+        if skipped:
+            self.message_user(request, f"Skipped {skipped} non-pending application(s).", level=messages.WARNING)
+        if errors and not approved_count:
+            self.message_user(request, "No applications approved due to errors.", level=messages.ERROR)
+
+    approve_applications.short_description = "Approve selected applications"
+
+    def reject_applications(self, request, queryset):
+        """Admin action: reject selected pending applications with a default reason."""
+        rejected = 0
+        skipped = 0
+        for application in queryset:
+            if application.status != 'pending':
+                skipped += 1
+                continue
+            try:
+                application.reject_application(
+                    admin_user=request.user,
+                    rejection_reason='Rejected by admin via Django admin action.',
+                )
+                rejected += 1
+            except Exception as exc:  # noqa: BLE001
+                self.message_user(
+                    request,
+                    f"Failed to reject application {application.organization_name}: {exc}",
+                    level=messages.ERROR,
+                )
+
+        if rejected:
+            self.message_user(request, f"Rejected {rejected} application(s).", level=messages.SUCCESS)
+        if skipped:
+            self.message_user(request, f"Skipped {skipped} non-pending application(s).", level=messages.WARNING)
+
+    reject_applications.short_description = "Reject selected applications"

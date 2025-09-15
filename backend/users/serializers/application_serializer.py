@@ -22,9 +22,9 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = KnowledgePartnerApplication
         fields = [
-            'organization_name',
-            'organization_type', 
-            'organization_email',
+            'knowledge_partner_name',
+            'knowledge_partner_type', 
+            'knowledge_partner_email',
             'contact_number',
             'website_url',
             'courses_interested_in',
@@ -33,7 +33,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
             'partner_message',
         ]
     
-    def validate_organization_name(self, value):
+    def validate_knowledge_partner_name(self, value):
         """Validate organization name."""
         if len(value.strip()) < 2:
             raise serializers.ValidationError("Organization name must be at least 2 characters long.")
@@ -44,14 +44,14 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         
         # Check for pending applications
         if KnowledgePartnerApplication.objects.filter(
-            organization_name__iexact=value.strip(),
+            knowledge_partner_name__iexact=value.strip(),
             status='pending'
         ).exists():
             raise serializers.ValidationError("An application for this organization is already pending review.")
         
         return value.strip()
     
-    def validate_organization_email(self, value):
+    def validate_knowledge_partner_email(self, value):
         """Validate organization email."""
         value = value.lower().strip()
         
@@ -65,7 +65,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         
         # Check for pending applications
         if KnowledgePartnerApplication.objects.filter(
-            organization_email__iexact=value,
+            knowledge_partner_email__iexact=value,
             status='pending'
         ).exists():
             raise serializers.ValidationError("An application from this email is already pending review.")

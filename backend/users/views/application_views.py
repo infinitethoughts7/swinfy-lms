@@ -55,20 +55,20 @@ class KnowledgePartnerApplicationCreateView(generics.CreateAPIView):
             'success': True,
             'message': 'Application submitted successfully! We will call you within 24-48 hours.',
             'application_id': application.id,
-            'organization_name': application.organization_name,
+            'knowledge_partner_name': application.knowledge_partner_name,
         }, status=status.HTTP_201_CREATED)
     
     def send_application_confirmation_email(self, application):
         """Send confirmation email to applicant."""
-        subject = f"Knowledge Partner Application Received - {application.organization_name}"
+        subject = f"Knowledge Partner Application Received - {application.knowledge_partner_name}"
         message = f"""
-Dear {application.organization_name} Team,
+Dear {application.knowledge_partner_name} Team,
 
 Thank you for applying to become a Knowledge Partner with our platform!
 
 We have received your application with the following details:
-- Organization: {application.organization_name}
-- Type: {application.get_organization_type_display()}
+- Knowledge Partner: {application.knowledge_partner_name}
+- Type: {application.get_knowledge_partner_type_display()}
 - Website: {application.website_url}
 - Contact: {application.contact_number}
 
@@ -89,21 +89,21 @@ Knowledge Partnership Team
             subject=subject,
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[application.organization_email],
+            recipient_list=[application.knowledge_partner_email],
             fail_silently=False,
         )
     
     def send_admin_notification_email(self, application):
         """Send notification email to admin."""
-        subject = f"New Knowledge Partner Application: {application.organization_name}"
+        subject = f"New Knowledge Partner Application: {application.knowledge_partner_name}"
         message = f"""
 New Knowledge Partner Application Received!
 
 Organization Details:
-- Name: {application.organization_name}
-- Type: {application.get_organization_type_display()}
+- Name: {application.knowledge_partner_name}
+- Type: {application.get_knowledge_partner_type_display()}
 - Website: {application.website_url}
-- Email: {application.organization_email}
+- Email: {application.knowledge_partner_email}
 - Phone: {application.contact_number}
 
 Course Interest: {application.get_courses_interested_in_display()}
@@ -192,7 +192,7 @@ def approve_application(request, application_id):
                 'application_id': application.id,
                 'knowledge_partner_id': knowledge_partner.id,
                 'admin_email': admin_user.email,
-                'organization_name': knowledge_partner.name,
+                'knowledge_partner_name': knowledge_partner.name,
                 'temporary_password': temp_password,
             }, status=status.HTTP_200_OK)
             
@@ -232,7 +232,7 @@ def reject_application(request, application_id):
         
         return Response({
             'success': True,
-            'message': f'Application for {application.organization_name} has been rejected.',
+            'message': f'Application for {application.knowledge_partner_name} has been rejected.',
             'application_id': application.id,
         }, status=status.HTTP_200_OK)
         
@@ -292,9 +292,9 @@ Knowledge Partnership Team
 
 def send_rejection_email(application):
     """Send rejection email to applicant."""
-    subject = f"Knowledge Partner Application Update - {application.organization_name}"
+    subject = f"Knowledge Partner Application Update - {application.knowledge_partner_name}"
     message = f"""
-Dear {application.organization_name} Team,
+Dear {application.knowledge_partner_name} Team,
 
 Thank you for your interest in becoming a Knowledge Partner with our platform.
 

@@ -1,12 +1,12 @@
 // File: components/shared/ContactForm.tsx (Client Component)
 "use client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Send, Building2, Clock } from 'lucide-react';
 
 interface FormData {
-  organization_name: string;
-  organization_type: string;
-  organization_email: string;
+  knowledge_partner_name: string;
+  knowledge_partner_type: string;
+  knowledge_partner_email: string;
   contact_number: string;
   website_url: string;
   courses_interested_in: string;
@@ -21,9 +21,9 @@ interface ApiError {
 
 const ContactForm = () => {
   const [formData, setFormData] = useState<FormData>({
-    organization_name: '',
-    organization_type: '',
-    organization_email: '',
+    knowledge_partner_name: '',
+    knowledge_partner_type: '',
+    knowledge_partner_email: '',
     contact_number: '',
     website_url: '',
     courses_interested_in: '',
@@ -35,6 +35,22 @@ const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ApiError>({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Load previously saved details for auto-fill (dev UX)
+  useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('kpApplicationForm') : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Basic shape guard
+        if (parsed && typeof parsed === 'object') {
+          setFormData((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, []);
 
   const KP_TYPE_CHOICES = [
     { value: 'company', label: 'Company' },
@@ -58,10 +74,16 @@ const ContactForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const next = { ...formData, [name]: value };
+    setFormData(next);
+    // Persist as-you-type to enable auto-fill next time
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kpApplicationForm', JSON.stringify(next));
+      }
+    } catch (_) {
+      // ignore storage errors
+    }
     
     // Clear error for this field when user starts typing
     if (errors[name]) {
@@ -78,7 +100,7 @@ const ContactForm = () => {
     setErrors({});
     
     try {
-      const response = await fetch('http://localhost:8000/api/users/knowledge-partner/apply/', {
+      const response = await fetch('http://localhost:8000/api/auth/knowledge-partner/apply/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,18 +112,9 @@ const ContactForm = () => {
       
       if (response.ok && data.success) {
         setSubmitSuccess(true);
-        // Reset form
-        setFormData({
-          organization_name: '',
-          organization_type: '',
-          organization_email: '',
-          contact_number: '',
-          website_url: '',
-          courses_interested_in: '',
-          experience_years: '',
-          expected_tutors: '',
-          partner_message: ''
-        });
+        // Keep localStorage so subsequent visits can be auto-filled.
+        // Optionally clear in-memory form for a clean confirmation screen.
+        setFormData(prev => ({ ...prev }));
         
         // Show success message for 5 seconds
         setTimeout(() => setSubmitSuccess(false), 5000);
@@ -177,50 +190,51 @@ const ContactForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Organization Info */}
+        {/* Knowledge Partner Info */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h5 className="text-white font-medium text-sm border-b border-white/20 pb-2">
-              Organization Details
+              Knowledge Partner Details
             </h5>
             
             <div>
               <input
                 type="text"
-                name="organization_name"
-                placeholder="Organization Name *"
-                value={formData.organization_name}
+                name="knowledge_partner_name"
+                placeholder="Knowledge Partner Name *"
+                value={formData.knowledge_partner_name}
+                autoComplete="organization"
                 onChange={handleChange}
                 required
                 className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.organization_name ? 'border-red-500' : 'border-white/30'
+                  errors.knowledge_partner_name ? 'border-red-500' : 'border-white/30'
                 }`}
               />
-              {errors.organization_name && (
-                <p className="mt-1 text-sm text-red-400">{errors.organization_name[0]}</p>
+              {errors.knowledge_partner_name && (
+                <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_name[0]}</p>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <select 
-                  name="organization_type"
-                  value={formData.organization_type}
+                  name="knowledge_partner_type"
+                  value={formData.knowledge_partner_type}
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                    errors.organization_type ? 'border-red-500' : 'border-white/30'
+                    errors.knowledge_partner_type ? 'border-red-500' : 'border-white/30'
                   }`}
                 >
-                  <option value="" className="bg-blue-800 text-white">Organization Type *</option>
+                  <option value="" className="bg-blue-800 text-white">Knowledge Partner Type *</option>
                   {KP_TYPE_CHOICES.map((type) => (
                     <option key={type.value} value={type.value} className="bg-blue-800 text-white">
                       {type.label}
                     </option>
                   ))}
                 </select>
-                {errors.organization_type && (
-                  <p className="mt-1 text-sm text-red-400">{errors.organization_type[0]}</p>
+                {errors.knowledge_partner_type && (
+                  <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_type[0]}</p>
                 )}
               </div>
 
@@ -230,6 +244,7 @@ const ContactForm = () => {
                   name="website_url"
                   placeholder="Website URL *"
                   value={formData.website_url}
+                  autoComplete="url"
                   onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
@@ -251,17 +266,18 @@ const ContactForm = () => {
             <div>
               <input
                 type="email"
-                name="organization_email"
+                name="knowledge_partner_email"
                 placeholder="Official Email Address *"
-                value={formData.organization_email}
+                value={formData.knowledge_partner_email}
+                autoComplete="email"
                 onChange={handleChange}
                 required
                 className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.organization_email ? 'border-red-500' : 'border-white/30'
+                  errors.knowledge_partner_email ? 'border-red-500' : 'border-white/30'
                 }`}
               />
-              {errors.organization_email && (
-                <p className="mt-1 text-sm text-red-400">{errors.organization_email[0]}</p>
+              {errors.knowledge_partner_email && (
+                <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_email[0]}</p>
               )}
             </div>
 
@@ -271,6 +287,7 @@ const ContactForm = () => {
                 name="contact_number"
                 placeholder="Contact Number (for callback) *"
                 value={formData.contact_number}
+                autoComplete="tel"
                 onChange={handleChange}
                 required
                 className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${

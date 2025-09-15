@@ -43,14 +43,14 @@ class KnowledgePartnerApplication(models.Model):
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
-    # Organization Details
-    organization_name = models.CharField(max_length=200)
-    organization_type = models.CharField(
+    # Knowledge Partner Details
+    knowledge_partner_name = models.CharField(max_length=200)
+    knowledge_partner_type = models.CharField(
         max_length=50, 
         choices=KnowledgePartner.KP_TYPE_CHOICES  # Fixed: use ORG_TYPE_CHOICES instead of KP_TYPE_CHOICES
     )
     website_url = models.URLField()
-    organization_email = models.EmailField()
+    knowledge_partner_email = models.EmailField()
     contact_number = models.CharField(max_length=20)
     
     # Quick Questions
@@ -97,7 +97,7 @@ class KnowledgePartnerApplication(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['organization_email']),
+            models.Index(fields=['knowledge_partner_email']),
         ]
     
     def clean(self):
@@ -105,15 +105,15 @@ class KnowledgePartnerApplication(models.Model):
         super().clean()
         
         # Check for duplicate applications from same email
-        if self.organization_email:
+        if self.knowledge_partner_email:
             existing = KnowledgePartnerApplication.objects.filter(
-                organization_email=self.organization_email,
+                knowledge_partner_email=self.knowledge_partner_email,
                 status='pending'
             ).exclude(pk=self.pk)
             
             if existing.exists():
                 raise ValidationError({
-                    'organization_email': 'An application from this email is already pending review.'
+                    'knowledge_partner_email': 'An application from this email is already pending review.'
                 })
     
     def approve_and_create_kp(self, admin_user):
@@ -123,12 +123,12 @@ class KnowledgePartnerApplication(models.Model):
         
         # Create Knowledge Partner
         knowledge_partner = KnowledgePartner.objects.create(
-            name=self.organization_name,
-            type=self.organization_type,
+            name=self.knowledge_partner_name,
+            type=self.knowledge_partner_type,
             description=f"Knowledge Partner specializing in {self.get_courses_interested_in_display()}.",
             location="To be updated",
             website=self.website_url,
-            email=self.organization_email,
+            email=self.knowledge_partner_email,
             phone=self.contact_number,
             is_verified=True,
         )
@@ -136,11 +136,11 @@ class KnowledgePartnerApplication(models.Model):
         # Generate temporary password
         temp_password = get_random_string(12)
         
-        # Create Admin User - Fixed: use knowledge_partner instead of organization
+        # Create Admin User - Fixed: use knowledge_partner instead of knowledge_partner
         admin_user_obj = User.objects.create_user(
-            email=self.organization_email,
+            email=self.knowledge_partner_email,
             password=temp_password,
-            full_name=f"{self.organization_name} Admin",
+            full_name=f"{self.knowledge_partner_name} Admin",
             role='knowledge_partner_admin',
             knowledge_partner=knowledge_partner,  # Fixed: use knowledge_partner
             is_verified=True,
@@ -151,7 +151,7 @@ class KnowledgePartnerApplication(models.Model):
         KPAProfile.objects.create(
             user=admin_user_obj,
             job_title="Knowledge Partner Administrator",
-            professional_email=self.organization_email,
+            professional_email=self.knowledge_partner_email,
         )
         
         # Update application
@@ -175,4 +175,4 @@ class KnowledgePartnerApplication(models.Model):
         self.save()
     
     def __str__(self):
-        return f"{self.organization_name} - {self.get_status_display()}"
+        return f"{self.knowledge_partner_name} - {self.get_status_display()}"
