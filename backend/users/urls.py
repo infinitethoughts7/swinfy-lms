@@ -22,6 +22,14 @@ from .views.course_review_views import (
     course_review_stats,
 )
 
+# Import profile views
+from .views.profile_views import (
+    KPProfileView,
+    upload_logo,
+    remove_logo,
+    profile_stats,
+)
+
 app_name = 'users'
 
 urlpatterns = [
@@ -79,4 +87,10 @@ urlpatterns = [
     
     # Approved Courses endpoints (KP Admin only)
     path('admin/courses/', ApprovedCoursesListView.as_view(), name='approved_courses_list'),
+    
+    # Profile Management endpoints (KP Admin only)
+    path('admin/profile/', KPProfileView.as_view(), name='kp_profile'),
+    path('admin/profile/upload-logo/', upload_logo, name='upload_logo'),
+    path('admin/profile/remove-logo/', remove_logo, name='remove_logo'),
+    path('admin/profile/stats/', profile_stats, name='profile_stats'),
 ]
