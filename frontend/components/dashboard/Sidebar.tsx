@@ -325,7 +325,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           if (pathname === item.href) {
             // Exact match
             isActive = true;
-          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin') {
+          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor') {
             // For non-dashboard root pages, check if current path starts with the item href
             isActive = pathname.startsWith(item.href + '/');
           }
