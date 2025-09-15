@@ -176,6 +176,20 @@ class InstructorLessonCreateSerializer(serializers.ModelSerializer):
         """Create lesson for the specified module."""
         module = self.context['module']
         validated_data['module'] = module
+        
+        # Auto-assign order if not provided or if it would cause a conflict
+        if 'order' not in validated_data or validated_data['order'] is None:
+            # Get the next available order number for this module
+            last_lesson = Lesson.objects.filter(module=module).order_by('-order').first()
+            validated_data['order'] = (last_lesson.order + 1) if last_lesson else 0
+        else:
+            # Check if the order already exists and adjust if necessary
+            existing_lesson = Lesson.objects.filter(module=module, order=validated_data['order']).first()
+            if existing_lesson:
+                # Find the next available order
+                last_lesson = Lesson.objects.filter(module=module).order_by('-order').first()
+                validated_data['order'] = (last_lesson.order + 1) if last_lesson else 0
+        
         return super().create(validated_data)
 
 

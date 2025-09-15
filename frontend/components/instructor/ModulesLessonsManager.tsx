@@ -103,33 +103,39 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Course Content</h2>
-          <p className="text-gray-600">Organize your course into modules and lessons</p>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Course Content</h2>
+            <p className="text-gray-600 mt-1">Organize your course into modules and lessons</p>
+          </div>
+          <button
+            onClick={() => setShowAddModule(true)}
+            className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add Module
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddModule(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Module
-        </button>
       </div>
 
       {/* Modules List */}
       {modules.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No modules yet</h3>
-          <p className="text-gray-600 mb-6">Start building your course by adding your first module</p>
-          <button
-            onClick={() => setShowAddModule(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create First Module
-          </button>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="text-center py-16 px-6">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Video className="h-12 w-12 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No modules yet</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">Start building your course by adding your first module. Organize your content into logical sections to help students learn effectively.</p>
+            <button
+              onClick={() => setShowAddModule(true)}
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+            >
+              <Plus className="h-5 w-5 mr-3" />
+              Create First Module
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -159,7 +165,6 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
             setShowAddModule(false);
             fetchModules();
           }}
-          moduleCount={modules.length}
         />
       )}
     </div>
@@ -204,94 +209,106 @@ const ModuleCard = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
       {/* Module Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <div className="flex items-center">
-              <GripVertical className="h-4 w-4 text-gray-400 mr-2" />
-              <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <GripVertical className="h-5 w-5 text-gray-400 mr-3 cursor-move" />
+              <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                 Module {moduleIndex + 1}
               </span>
             </div>
             <button
               onClick={onToggleExpansion}
-              className="flex items-center space-x-2 text-left"
+              className="flex items-center space-x-3 text-left hover:bg-white hover:bg-opacity-50 rounded-lg p-2 -ml-2 transition-colors"
             >
               {module.isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-5 w-5 text-gray-500" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+                <ChevronRight className="h-5 w-5 text-gray-500" />
               )}
-              <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
+              <h3 className="text-xl font-bold text-gray-900">{module.title}</h3>
             </button>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500">
-              {module.lessons.length} lesson{module.lessons.length !== 1 ? 's' : ''}
-            </span>
-            <span className="text-sm text-gray-500">•</span>
-            <span className="text-sm text-gray-500">
-              {Math.round((module.total_duration_minutes || 0) / 60)}h {(module.total_duration_minutes || 0) % 60}m
-            </span>
-            <button
-              onClick={() => setEditingModule(module.id)}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <Edit className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleDeleteModule}
-              className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 text-sm text-gray-600">
+              <div className="flex items-center space-x-1">
+                <Video className="h-4 w-4" />
+                <span className="font-medium">{module.lessons.length} lesson{module.lessons.length !== 1 ? 's' : ''}</span>
+              </div>
+              <span className="text-gray-300">•</span>
+              <div className="flex items-center space-x-1">
+                <Clock className="h-4 w-4" />
+                <span className="font-medium">
+                  {Math.round((module.total_duration_minutes || 0) / 60)}h {(module.total_duration_minutes || 0) % 60}m
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setEditingModule(module.id)}
+                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <Edit className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleDeleteModule}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Module Content */}
       {module.isExpanded && (
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6 bg-gray-50">
           {/* Lessons */}
           {module.lessons.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600 mb-4">No lessons in this module yet</p>
+            <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Video className="h-8 w-8 text-blue-600" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">No lessons yet</h4>
+              <p className="text-gray-600 mb-6">Add your first lesson to start building this module</p>
               <button
                 onClick={() => setShowAddLesson(true)}
-                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-5 w-5 mr-2" />
                 Add First Lesson
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {module.lessons.map((lesson, lessonIndex) => (
-                <LessonCard
-                  key={lesson.id}
-                  lesson={lesson}
-                  lessonIndex={lessonIndex}
-                  courseSlug={courseSlug}
-                  moduleId={module.id}
-                  onUpdate={onUpdate}
-                  isEditing={editingLesson === lesson.id}
-                  setEditing={setEditingLesson}
-                />
+                <div key={lesson.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <LessonCard
+                    lesson={lesson}
+                    lessonIndex={lessonIndex}
+                    courseSlug={courseSlug}
+                    moduleId={module.id}
+                    onUpdate={onUpdate}
+                    isEditing={editingLesson === lesson.id}
+                    setEditing={setEditingLesson}
+                  />
+                </div>
               ))}
             </div>
           )}
 
           {/* Add Lesson Button */}
-          <div className="flex justify-center pt-4 border-t border-gray-100">
+          <div className="flex justify-center pt-6 border-t border-gray-200">
             <button
               onClick={() => setShowAddLesson(true)}
-              className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+              className="flex items-center px-6 py-3 text-blue-600 bg-white border-2 border-blue-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-5 w-5 mr-2" />
               Add Lesson
             </button>
           </div>
@@ -306,7 +323,6 @@ const ModuleCard = ({
                 setShowAddLesson(false);
                 onUpdate();
               }}
-              lessonCount={module.lessons.length}
             />
           )}
         </div>
@@ -394,11 +410,10 @@ const LessonCard = ({
 };
 
 // Modal Components (simplified for now)
-const AddModuleModal = ({ courseSlug, onClose, onSuccess, moduleCount }: {
+const AddModuleModal = ({ courseSlug, onClose, onSuccess }: {
   courseSlug: string;
   onClose: () => void;
   onSuccess: () => void;
-  moduleCount: number;
 }) => {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -411,7 +426,7 @@ const AddModuleModal = ({ courseSlug, onClose, onSuccess, moduleCount }: {
       setLoading(true);
       await instructorApi.modules.create(courseSlug, {
         title: title.trim(),
-        order: moduleCount, // Use the current module count as the order
+        order: 0,
         is_published: false
       });
       onSuccess();
@@ -424,37 +439,53 @@ const AddModuleModal = ({ courseSlug, onClose, onSuccess, moduleCount }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Module</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Plus className="h-8 w-8 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Add New Module</h3>
+          <p className="text-gray-600">Create a new module to organize your course content</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               Module Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter module title..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
+              placeholder="e.g., Introduction to JavaScript"
               required
+              autoFocus
             />
           </div>
-          <div className="flex justify-end space-x-3">
+          
+          <div className="flex justify-end space-x-4 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !title.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl"
             >
-              {loading ? 'Creating...' : 'Create Module'}
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </div>
+              ) : (
+                'Create Module'
+              )}
             </button>
           </div>
         </form>
@@ -463,17 +494,16 @@ const AddModuleModal = ({ courseSlug, onClose, onSuccess, moduleCount }: {
   );
 };
 
-const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess, lessonCount }: {
+const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
   courseSlug: string;
   moduleId: string;
   onClose: () => void;
   onSuccess: () => void;
-  lessonCount: number;
 }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    lesson_type: 'video' as 'video' | 'text' | 'assignment' | 'image_gallery' | 'mixed',
+    lesson_type: 'video' as 'video' | 'text' | 'quiz',
     content: '',
     is_preview: false,
     is_mandatory: true
@@ -489,7 +519,6 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess, lessonCount 
       setLoading(true);
       await instructorApi.lessons.create(courseSlug, moduleId, {
         ...formData,
-        order: lessonCount, // Use the current lesson count as the order
         is_published: false,
         video_file: videoFile
       });
@@ -503,103 +532,121 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess, lessonCount 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Lesson</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lesson Title
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter lesson title..."
-              required
-            />
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Video className="h-8 w-8 text-white" />
           </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Add New Lesson</h3>
+          <p className="text-gray-600">Create engaging content for your students</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Lesson Title
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="e.g., Variables and Data Types"
+                required
+                autoFocus
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lesson Type
-            </label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Lesson Type
+              </label>
               <select
                 value={formData.lesson_type}
                 onChange={(e) => setFormData(prev => ({ ...prev, lesson_type: e.target.value as any }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               >
-                <option value="video">Video Lesson</option>
-                <option value="text">Text Lesson</option>
-                <option value="assignment">Assignment</option>
-                <option value="image_gallery">Image Gallery</option>
-                <option value="mixed">Mixed Content</option>
+                <option value="video">📹 Video Lesson</option>
+                <option value="text">📝 Text Lesson</option>
+                <option value="quiz">❓ Quiz</option>
               </select>
+            </div>
           </div>
 
           {formData.lesson_type === 'video' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Video File
               </label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                />
+                <p className="text-sm text-gray-500 mt-2">Upload MP4, MOV, or AVI files</p>
+              </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="Describe what students will learn in this lesson..."
             />
           </div>
 
-          <div className="flex items-center space-x-6">
-            <label className="flex items-center">
+          <div className="flex items-center justify-center space-x-8 bg-gray-50 rounded-xl p-4">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_preview}
                 onChange={(e) => setFormData(prev => ({ ...prev, is_preview: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-5 h-5"
               />
-              <span className="ml-2 text-sm text-gray-700">Free Preview</span>
+              <span className="ml-3 text-sm font-semibold text-gray-700">🆓 Free Preview</span>
             </label>
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.is_mandatory}
                 onChange={(e) => setFormData(prev => ({ ...prev, is_mandatory: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-5 h-5"
               />
-              <span className="ml-2 text-sm text-gray-700">Mandatory</span>
+              <span className="ml-3 text-sm font-semibold text-gray-700">⭐ Mandatory</span>
             </label>
           </div>
 
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.title.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 font-semibold shadow-lg hover:shadow-xl"
             >
-              {loading ? 'Creating...' : 'Create Lesson'}
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </div>
+              ) : (
+                '✨ Create Lesson'
+              )}
             </button>
           </div>
         </form>

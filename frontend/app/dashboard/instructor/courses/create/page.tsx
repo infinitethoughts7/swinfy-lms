@@ -132,19 +132,26 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/dashboard/instructor/courses"
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New Course</h1>
-            <p className="text-gray-600 mt-1">Build an engaging learning experience for your students</p>
+      <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <Link
+              href="/dashboard/instructor/courses"
+              className="p-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <BookOpen className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Create New Course</h1>
+                <p className="text-gray-600 mt-2 text-lg">Build an engaging learning experience for your students</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

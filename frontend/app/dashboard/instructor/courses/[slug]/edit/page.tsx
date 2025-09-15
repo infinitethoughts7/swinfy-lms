@@ -489,10 +489,24 @@ export default function EditCoursePage() {
                     onClick={async () => {
                       if (confirm('Submit this course for approval? Once submitted, you cannot edit until it is reviewed.')) {
                         try {
-                          // This would call the submit for approval API
-                          // await instructorApi.courses.submitForApproval(courseSlug);
-                          alert('Course submitted for approval successfully!');
+                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/courses/${courseSlug}/submit-approval/`, {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({})
+                          });
+                          
+                          if (response.ok) {
+                            alert('Course submitted for approval successfully!');
+                            fetchCourse(); // Refresh course data
+                          } else {
+                            const errorData = await response.json();
+                            alert(errorData.detail || 'Failed to submit course for approval');
+                          }
                         } catch (err) {
+                          console.error('Submit for approval error:', err);
                           alert('Failed to submit course for approval');
                         }
                       }

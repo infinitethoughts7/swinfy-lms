@@ -51,7 +51,7 @@ const CourseDetailTabs = ({ activeTab, setActiveTab }: TabProps) => {
   );
 };
 
-const CourseOverview = ({ course }: { course: Course }) => (
+const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => void }) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {/* Course Info */}
     <div className="lg:col-span-2 space-y-6">
@@ -174,12 +174,45 @@ const CourseOverview = ({ course }: { course: Course }) => (
             <Eye className="h-4 w-4 mr-2" />
             Preview Course
           </button>
-          {course.approval_status === 'draft' && (
-            <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
-              <Award className="h-4 w-4 mr-2" />
-              Submit for Approval
-            </button>
-          )}
+            {course.approval_status === 'draft' && course.lessons_count > 0 && (
+              <button 
+                onClick={async () => {
+                  if (confirm('Submit this course for approval? Once submitted, you cannot edit until it is reviewed.')) {
+                    try {
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/courses/${course.slug}/submit-approval/`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                      });
+                      
+                      if (response.ok) {
+                        alert('Course submitted for approval successfully!');
+                        onUpdate(); // Refresh course data
+                      } else {
+                        const errorData = await response.json();
+                        alert(errorData.detail || errorData.error || 'Failed to submit course for approval');
+                      }
+                    } catch (err) {
+                      console.error('Submit for approval error:', err);
+                      alert('Failed to submit course for approval');
+                    }
+                  }
+                }}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+              >
+                <Award className="h-4 w-4 mr-2" />
+                Submit for Approval
+              </button>
+            )}
+            {course.approval_status === 'draft' && course.lessons_count === 0 && (
+              <div className="w-full px-4 py-2 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center cursor-not-allowed">
+                <Award className="h-4 w-4 mr-2" />
+                Add lessons to submit
+              </div>
+            )}
         </div>
       </div>
     </div>
@@ -240,9 +273,9 @@ export default function CourseDetailPage() {
   }
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return <CourseOverview course={course} />;
+      switch (activeTab) {
+        case 'overview':
+          return <CourseOverview course={course} onUpdate={fetchCourse} />;
       case 'modules':
         return <ModulesLessonsTab course={course} onUpdate={fetchCourse} />;
       case 'resources':
