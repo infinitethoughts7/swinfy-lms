@@ -29,6 +29,23 @@ class CourseReviewListView(generics.ListAPIView):
         ).order_by('-created_at')
 
 
+class ApprovedCoursesListView(generics.ListAPIView):
+    """List approved courses for KP admins."""
+    
+    permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
+    serializer_class = InstructorCourseListSerializer
+    
+    def get_queryset(self):
+        """Return approved courses for the KP admin."""
+        return Course.objects.filter(
+            approval_status='approved'
+        ).select_related('tutor', 'training_partner').prefetch_related(
+            Prefetch('modules', queryset=CourseModule.objects.all()),
+            Prefetch('modules__lessons', queryset=Lesson.objects.all()),
+            Prefetch('modules__lessons__materials', queryset=LessonMaterial.objects.all())
+        ).order_by('-created_at')
+
+
 class CourseReviewDetailView(generics.RetrieveAPIView):
     """Get detailed course information for review."""
     

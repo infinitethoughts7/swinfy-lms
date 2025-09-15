@@ -55,34 +55,53 @@ export default function KPDashboard() {
       setLoading(true);
       setError(null);
       
-      // Fetch instructor list from API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Fetch instructor list and approved courses in parallel
+      const [instructorsResponse, coursesResponse] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            'Content-Type': 'application/json',
+          },
+        })
+      ]);
 
-      if (!response.ok) {
+      if (!instructorsResponse.ok) {
         throw new Error('Failed to fetch instructor data');
       }
 
-      const instructors = await response.json();
+      const instructors = await instructorsResponse.json();
       
       // Calculate stats from instructor data
       const total_instructors = instructors.length;
       const active_instructors = instructors.filter((instructor: Instructor) => instructor.is_available).length;
       const available_instructors = instructors.filter((instructor: Instructor) => instructor.is_available).length;
       
-      // Mock data for other stats since we don't have those APIs yet
+      // Calculate course stats
+      let total_courses = 0;
+      let active_courses = 0;
+      
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json();
+        const courses = coursesData.results || coursesData;
+        total_courses = courses.length;
+        active_courses = courses.filter((course: { is_published: boolean; is_active: boolean }) => course.is_published && course.is_active).length;
+      }
+      
       const data = {
         total_instructors,
         active_instructors,
         available_instructors,
-        total_courses: 25, // Mock data
-        active_courses: 20, // Mock data
-        total_students: 156, // Mock data
+        total_courses,
+        active_courses,
+        total_students: 156, // Mock data - will need student API later
         recent_activity: [
           { id: '1', type: 'instructor', message: 'New instructor joined', timestamp: '2 hours ago' },
           { id: '2', type: 'course', message: 'Course "React Basics" published', timestamp: '4 hours ago' },
