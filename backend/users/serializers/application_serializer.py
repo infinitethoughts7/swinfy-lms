@@ -39,7 +39,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Organization name must be at least 2 characters long.")
         
         # Check if organization already exists
-        if KnowledgePartner.objects.filter(name__iexact=value.strip()).exists():
+        if KPProfile.objects.filter(name__iexact=value.strip()).exists():
             raise serializers.ValidationError("An organization with this name already exists.")
         
         # Check for pending applications
@@ -56,7 +56,7 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         value = value.lower().strip()
         
         # Check if email is already in use by existing KP
-        if KnowledgePartner.objects.filter(email__iexact=value).exists():
+        if KPProfile.objects.filter(kp_admin_email__iexact=value).exists():
             raise serializers.ValidationError("This email is already associated with an existing Knowledge Partner.")
         
         # Check if email is already in use by a user

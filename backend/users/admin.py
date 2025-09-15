@@ -17,11 +17,17 @@ class KPProfileAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     
     fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'type', 'location', 'website')
+        ('Organization Information', {
+            'fields': ('user', 'name', 'type', 'description', 'location', 'website')
         }),
-        ('Details', {
-            'fields': ('description', 'is_active')
+        ('Admin Contact', {
+            'fields': ('kp_admin_name', 'kp_admin_email', 'kp_admin_phone')
+        }),
+        ('Branding', {
+            'fields': ('logo', 'linkedin_url')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'is_verified')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -33,15 +39,11 @@ class KPProfileAdmin(admin.ModelAdmin):
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ['email', 'full_name', 'role', 'knowledge_partner_name', 'is_verified', 'is_approved', 'is_staff', 'created_at']
+    list_display = ['email', 'full_name', 'role', 'is_verified', 'is_approved', 'is_staff', 'created_at']
     list_filter = ['role', 'is_verified', 'is_approved', 'is_staff', 'is_superuser', 'is_active', 'created_at']
     search_fields = ['email', 'full_name', 'first_name', 'last_name']
     ordering = ['-created_at']
     readonly_fields = ['created_at', 'updated_at', 'last_login', 'date_joined']
-    
-    def knowledge_partner_name(self, obj):
-        return obj.knowledge_partner.name if obj.knowledge_partner else '-'
-    knowledge_partner_name.short_description = 'Knowledge Partner'
     
     # Custom field label method
     def formfield_for_dbfield(self, db_field, request, **kwargs):
@@ -56,8 +58,8 @@ class CustomUserAdmin(UserAdmin):
         ('Personal Info', {
             'fields': ('full_name', 'first_name', 'last_name')
         }),
-        ('Role & Knowledge Partner', {
-            'fields': ('role', 'knowledge_partner', 'is_verified', 'is_approved')
+        ('Role & Status', {
+            'fields': ('role', 'is_verified', 'is_approved')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
@@ -74,7 +76,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('email', 'password1', 'password2')
         }),
         ('Personal Info', {
-            'fields': ('full_name', 'role', 'knowledge_partner')
+            'fields': ('full_name', 'role')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser'),
@@ -151,9 +153,6 @@ class KPInstructorProfileAdmin(admin.ModelAdmin):
     )
 
 
-# KPAProfile admin removed - model not available in current models.py
-
-
 @admin.register(KnowledgePartnerApplication)
 class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
     list_display = [
@@ -222,8 +221,7 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
 
     def approve_and_create_kp_admin(self, request, queryset):
         """
-        Approve Knowledge Partner Applications and Create KP Admin User
-        Creates: KnowledgePartner entity + KP Admin User with password 'olla@07'
+        Approve Knowledge Partner Applications and Create KP Admin User + KPProfile
         """
         approved_count = 0
         skipped = 0
@@ -248,39 +246,32 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
                     if KPProfile.objects.filter(name=application.knowledge_partner_name).exists():
                         raise Exception(f'Knowledge Partner with name "{application.knowledge_partner_name}" already exists')
 
-                    # Step 1: Create KPProfile Entity
-                    knowledge_partner = KPProfile.objects.create(
-                        name=application.knowledge_partner_name,
-                        type=application.knowledge_partner_type,
-                        location='',  # Can be updated later by KP Admin
-                        website=application.website_url or '',
-                        description=application.partner_message or f'{application.knowledge_partner_name} - Knowledge Partner',
-                        is_active=True,
-                    )
-
-                    # Step 2: Create KP Admin User Account
+                    # Step 1: Create KP Admin User Account
                     kp_admin_user = User.objects.create_user(
                         email=application.knowledge_partner_email,
                         password='olla@07',  # Fixed password as requested
                         full_name=f"{application.knowledge_partner_name} Admin",
                         role='knowledge_partner_admin',
-                        knowledge_partner=knowledge_partner,  # Link to the KP
                         is_verified=True,
                         is_approved=True,
                     )
 
-                    # Step 3: Create KP Profile for the admin user
+                    # Step 2: Create KPProfile linked to the user
                     KPProfile.objects.create(
                         user=kp_admin_user,
                         name=application.knowledge_partner_name,
                         type=application.knowledge_partner_type,
-                        description=f'Administrator for {application.knowledge_partner_name}',
+                        description=application.partner_message or f'{application.knowledge_partner_name} - Knowledge Partner',
+                        location='',  # Can be updated later by KP Admin
+                        website=application.website_url or '',
                         kp_admin_name=f"{application.knowledge_partner_name} Admin",
                         kp_admin_email=application.knowledge_partner_email,
+                        kp_admin_phone='',  # Can be updated later
                         is_active=True,
+                        is_verified=False,  # Will be verified by super admin later
                     )
 
-                    # Step 4: Update Application Status
+                    # Step 3: Update Application Status
                     application.status = 'approved'
                     application.reviewed_by = request.user
                     application.reviewed_at = timezone.now()
@@ -301,7 +292,7 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
             self.message_user(
                 request, 
                 f"Successfully approved {approved_count} Knowledge Partner application(s). "
-                f"Knowledge Partner entities created and KP Admin accounts created with email/password credentials. "
+                f"KP Admin accounts created with email/password credentials. "
                 f"Default password: 'olla@07'",
                 level=messages.SUCCESS
             )
