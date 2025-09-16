@@ -394,13 +394,7 @@ export default function KPProfilePage() {
           <p className="text-red-700 mt-2">{error}</p>
           {error.includes('Access denied') && (
             <div className="mt-3 text-sm text-red-600">
-              <strong>Available KP Admin accounts:</strong>
-              <ul className="list-disc list-inside mt-1 space-y-1">
-                <li>adfdfm@gmail.com (hanuman organization)</li>
-                <li>rakeshganji99@gmail.com (Ganji Rocky's Organization)</li>
-                <li>amaz@gmail.com (Empty Fields Test 2)</li>
-              </ul>
-              <p className="mt-2">Password for all accounts: <code className="bg-red-100 px-1 rounded">rockyg07</code></p>
+              <p>Please contact your system administrator for access credentials.</p>
             </div>
           )}
         </div>

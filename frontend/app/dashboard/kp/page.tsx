@@ -536,7 +536,7 @@ export default function KPDashboard() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     placeholder="Default password"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Default password: rockyg07</p>
+                  <p className="text-xs text-gray-500 mt-1">A secure password will be generated automatically</p>
                 </div>
               </div>
 
