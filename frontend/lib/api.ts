@@ -220,6 +220,8 @@ export const authApi = {
 
   // Logout (invalidate tokens on backend if needed)
   logout: async (): Promise<void> => {
+    if (typeof window === 'undefined') return;
+    
     const refreshToken = localStorage.getItem('refresh_token');
     
     if (refreshToken) {

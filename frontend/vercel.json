@@ -1,0 +1,15 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": ".next",
+    "framework": "nextjs",
+    "installCommand": "npm install",
+    "rewrites": [
+      {
+        "source": "/api/:path*",
+        "destination": "https://urchin-app-3xb5n.ondigitalocean.app/api/:path*"
+      }
+    ],
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://urchin-app-3xb5n.ondigitalocean.app"
+    }
+  }

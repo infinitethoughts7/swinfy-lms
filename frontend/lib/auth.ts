@@ -12,9 +12,11 @@ export interface User {
   role: string;
 }
 
-// Get tokens from localStorage
+// Get tokens from localStorage (SSR safe)
 export const getTokens = (): AuthTokens | null => {
   try {
+    if (typeof window === 'undefined') return null;
+    
     const access = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
     
@@ -162,9 +164,11 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
   }
 };
 
-// Get current user from localStorage
+// Get current user from localStorage (SSR safe)
 export const getCurrentUser = (): User | null => {
   try {
+    if (typeof window === 'undefined') return null;
+    
     const userStr = localStorage.getItem('user');
     if (userStr) {
       return JSON.parse(userStr);
