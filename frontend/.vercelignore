@@ -1,0 +1,19 @@
+# Don't ignore public assets
+!public/**
+
+# Ignore dev files
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# Ignore build files that Vercel will rebuild
+.next/
+node_modules/
+
+# But ensure all public assets are included
+!public/assets/**
+!public/manifest.json
+!public/*.svg
+!public/*.ico
+!public/*.png

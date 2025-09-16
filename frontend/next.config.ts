@@ -20,7 +20,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     domains: ['localhost', 'urchin-app-3xb5n.ondigitalocean.app'],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
   },
+  // Ensure static assets are properly handled
+  trailingSlash: false,
 };
 
 export default nextConfig;

@@ -1,15 +1,31 @@
 {
-    "buildCommand": "npm run build",
-    "outputDirectory": ".next",
-    "framework": "nextjs",
-    "installCommand": "npm install",
-    "rewrites": [
-      {
-        "source": "/api/:path*",
-        "destination": "https://urchin-app-3xb5n.ondigitalocean.app/api/:path*"
-      }
-    ],
-    "env": {
-      "NEXT_PUBLIC_API_URL": "https://urchin-app-3xb5n.ondigitalocean.app"
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://urchin-app-3xb5n.ondigitalocean.app/api/:path*"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://urchin-app-3xb5n.ondigitalocean.app"
+  },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "app/**/*": {
+      "maxDuration": 30
     }
   }
+}
