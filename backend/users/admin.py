@@ -39,8 +39,8 @@ class KPProfileAdmin(admin.ModelAdmin):
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ['email', 'full_name', 'role', 'is_verified', 'is_approved', 'is_staff', 'created_at']
-    list_filter = ['role', 'is_verified', 'is_approved', 'is_staff', 'is_superuser', 'is_active', 'created_at']
+    list_display = ['email', 'full_name', 'role', 'knowledge_partner', 'kp_approval_status', 'is_verified', 'is_approved', 'is_staff', 'created_at']
+    list_filter = ['role', 'kp_approval_status', 'is_verified', 'is_approved', 'is_staff', 'is_superuser', 'is_active', 'created_at']
     search_fields = ['email', 'full_name', 'first_name', 'last_name']
     ordering = ['-created_at']
     readonly_fields = ['created_at', 'updated_at', 'last_login', 'date_joined']
@@ -60,6 +60,9 @@ class CustomUserAdmin(UserAdmin):
         }),
         ('Role & Status', {
             'fields': ('role', 'is_verified', 'is_approved')
+        }),
+        ('Knowledge Partner Association', {
+            'fields': ('knowledge_partner', 'kp_approval_status')
         }),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
@@ -92,9 +95,9 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(LearnerProfile)
 class LearnerProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'education_level', 'field_of_study', 'created_at']
-    list_filter = ['education_level', 'created_at']
-    search_fields = ['user__full_name', 'user__email', 'field_of_study']
+    list_display = ['user', 'phone_number', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__full_name', 'user__email', 'interests']
     readonly_fields = ['created_at', 'updated_at']
     
     fieldsets = (
@@ -102,13 +105,10 @@ class LearnerProfileAdmin(admin.ModelAdmin):
             'fields': ('user',)
         }),
         ('Personal Information', {
-            'fields': ('bio', 'profile_picture', 'date_of_birth', 'phone_number')
-        }),
-        ('Educational Background', {
-            'fields': ('education_level', 'field_of_study', 'current_institution')
+            'fields': ('bio', 'profile_picture', 'phone_number')
         }),
         ('Learning Preferences', {
-            'fields': ('learning_goals',)
+            'fields': ('learning_goals', 'interests')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -144,7 +144,7 @@ class KPInstructorProfileAdmin(admin.ModelAdmin):
             'fields': ('linkedin_url',)
         }),
         ('Status', {
-            'fields': ('is_available', 'availability_notes')
+            'fields': ('is_available',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

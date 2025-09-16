@@ -12,19 +12,8 @@ export interface RegistrationData {
   full_name: string;
   password: string;
   confirm_password: string;
-  role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
-  organization_id?: string; // Backend field name
-  organization_details?: { // Backend field name
-    name: string;
-    type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
-    location: string;
-    website?: string;
-    description: string;
-    address?: string;
-    contact_email?: string;
-    contact_phone?: string;
-    linkedin_url?: string;
-  };
+  role: 'learner';
+  knowledge_partner_id?: string; // For learner KP association
 }
 
 export interface RegistrationResponse {
@@ -33,7 +22,7 @@ export interface RegistrationResponse {
     id: string;
     email: string;
     full_name: string;
-    role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
+    role: 'learner';
     is_verified: boolean;
     is_approved: boolean;
   };
@@ -52,7 +41,7 @@ export interface LoginResponse {
     id: string;
     email: string;
     full_name: string;
-    role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
+    role: 'learner';
     is_verified: boolean;
     knowledge_partner?: {
       id: string;

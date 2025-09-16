@@ -58,6 +58,27 @@ class User(AbstractUser):
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='learner')
     
+    # Knowledge Partner Association (for learners who want to be part of an organization)
+    knowledge_partner = models.ForeignKey(
+        'KPProfile', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='learners',
+        help_text="Knowledge Partner organization this learner belongs to"
+    )
+    kp_approval_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('none', 'No Association'),
+            ('pending', 'Pending Approval'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        default='none',
+        help_text="Status of learner's association with Knowledge Partner"
+    )
+    
     # User status
     is_verified = models.BooleanField(default=False, verbose_name='Email Verified')
     is_approved = models.BooleanField(default=True, verbose_name='Admin Approved')
@@ -81,8 +102,14 @@ class User(AbstractUser):
             self.first_name = name_parts[0]
             self.last_name = name_parts[1] if len(name_parts) > 1 else ''
         
-        # Auto-approve learners and admins, instructors need approval
-        if self.role in ['learner', 'knowledge_partner_admin']:
+        # Handle approval logic based on role and KP association
+        if self.role == 'learner':
+            # Learners are always approved for platform access
+            self.is_approved = True
+            # But KP association needs separate approval
+            if self.knowledge_partner and self.kp_approval_status == 'none':
+                self.kp_approval_status = 'pending'
+        elif self.role in ['knowledge_partner_admin']:
             self.is_approved = True
         elif self.role == 'knowledge_partner_instructor' and not self.pk:
             self.is_approved = False
@@ -198,7 +225,7 @@ class KPInstructorProfile(models.Model):
 
 
 class LearnerProfile(models.Model):
-    """Profile for learners with learning preferences and progress tracking."""
+    """Simplified profile for learners."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='learner_profile')
@@ -206,22 +233,11 @@ class LearnerProfile(models.Model):
     # Personal Information
     bio = models.TextField(blank=True, null=True, help_text="Tell us about yourself")
     profile_picture = models.ImageField(upload_to='profiles/learners/', blank=True, null=True)
-    date_of_birth = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     
-    # Educational Background
-    education_level = models.CharField(max_length=50, choices=[
-        ('high_school', 'High School'),
-        ('bachelor', 'Bachelor\'s Degree'),
-        ('master', 'Master\'s Degree'),
-        ('phd', 'PhD'),
-        ('other', 'Other'),
-    ], blank=True, null=True)
-    field_of_study = models.CharField(max_length=100, blank=True, null=True)
-    current_institution = models.CharField(max_length=200, blank=True, null=True)
-    
     # Learning Preferences
-    learning_goals = models.TextField(blank=True, null=True)
+    learning_goals = models.TextField(blank=True, null=True, help_text="What do you want to learn?")
+    interests = models.TextField(blank=True, null=True, help_text="Areas of interest (comma-separated)")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -12,8 +12,7 @@ import {
 import RegistrationForm from './RegistrationForm';
 import OTPVerification from './OTPVerification';
 import RegistrationSuccess from './RegistrationSuccess';
-import KnowledgePartnerDetailsStep from './KnowledgePartnerDetailsStep';
-import AdminDetailsStep from './AdminDetailsStep';
+import PendingApprovalScreen from './PendingApprovalScreen';
 import Logo from '@/components/shared/Logo';
 
 interface RegistrationModalProps {
@@ -22,82 +21,29 @@ interface RegistrationModalProps {
   onSwitchToLogin?: () => void;
 }
 
-interface KnowledgePartnerDetails {
-  name: string;
-  type: 'company' | 'organization' | 'university' | 'institute' | 'bootcamp';
-  location: string;
-  website?: string;
-  description: string;
-  address?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  linkedin_url?: string;
-}
-
-interface AdminDetails {
-  bio: string;
-  profile_picture?: File | null;
-  phone_number: string;
-  job_title: string;
-  office_location: string;
-  professional_email: string;
-}
 
 
 export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin }: RegistrationModalProps) {
-  const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'knowledge-partner-details' | 'admin-details' | 'success'>('registration');
+  const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'success' | 'pending-approval'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
-  const [userRole, setUserRole] = useState<'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin'>('learner');
-  const [knowledgePartnerDetails, setKnowledgePartnerDetails] = useState<KnowledgePartnerDetails>({
-    name: '',
-    type: 'university',
-    location: '',
-    website: '',
-    description: '',
-    address: '',
-    contact_email: '',
-    contact_phone: '',
-    linkedin_url: ''
-  });
-  const [adminDetails, setAdminDetails] = useState<AdminDetails>({
-    bio: '',
-    profile_picture: null,
-    phone_number: '',
-    job_title: '',
-    office_location: '',
-    professional_email: ''
-  });
+  const [hasOrganization, setHasOrganization] = useState(false);
+  const [organizationName, setOrganizationName] = useState<string | undefined>();
 
-  const handleRegistrationSuccess = (email: string, role: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin') => {
+  const handleRegistrationSuccess = (email: string, hasOrg: boolean, orgName?: string) => {
     setRegistrationEmail(email);
-    setUserRole(role);
+    setHasOrganization(hasOrg);
+    setOrganizationName(orgName);
     setCurrentStep('otp-verification');
   };
 
   const handleOTPVerificationSuccess = () => {
-    // Determine next step based on user role
-    if (userRole === 'knowledge_partner_admin') {
-      setCurrentStep('knowledge-partner-details');
+    // If user selected an organization, show pending approval screen
+    // Otherwise show regular success screen
+    if (hasOrganization) {
+      setCurrentStep('pending-approval');
     } else {
       setCurrentStep('success');
     }
-  };
-
-  const handleKnowledgePartnerDetailsNext = () => {
-    // For knowledge partner admins, go to admin details step
-    if (userRole === 'knowledge_partner_admin') {
-      setCurrentStep('admin-details');
-    } else {
-      setCurrentStep('success');
-    }
-  };
-
-  const handleAdminDetailsNext = () => {
-    setCurrentStep('success');
-  };
-
-  const handleBackToKnowledgePartnerDetails = () => {
-    setCurrentStep('knowledge-partner-details');
   };
 
 
@@ -107,26 +53,8 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     setTimeout(() => {
       setCurrentStep('registration');
       setRegistrationEmail('');
-      setUserRole('learner');
-      setKnowledgePartnerDetails({
-        name: '',
-        type: 'university',
-        location: '',
-        website: '',
-        description: '',
-        address: '',
-        contact_email: '',
-        contact_phone: '',
-        linkedin_url: ''
-      });
-      setAdminDetails({
-        bio: '',
-        profile_picture: null,
-        phone_number: '',
-        job_title: '',
-        office_location: '',
-        professional_email: ''
-      });
+      setHasOrganization(false);
+      setOrganizationName(undefined);
     }, 300);
   };
 
@@ -134,41 +62,35 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     setCurrentStep('registration');
   };
 
-  const handleBackToOTP = () => {
-    setCurrentStep('otp-verification');
-  };
 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl">
-        <DialogHeader className="text-center space-y-3">
+      <DialogContent className="sm:max-w-2xl max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
+        <div className="p-8">
+          <DialogHeader className="text-center space-y-3 mb-6">
           {/* Logo - Same as navbar (hidden on success screen) */}
-          {currentStep !== 'success' && (
+          {currentStep !== 'success' && currentStep !== 'pending-approval' && (
             <div className="flex justify-center items-center">
               <Logo size="md" showText={true} href="" />
             </div>
           )}
           
-          {currentStep !== 'success' && (
+          {(currentStep === 'registration' || currentStep === 'otp-verification') && (
             <>
                         <DialogTitle className="text-2xl font-bold text-gray-900">
-                          {currentStep === 'registration' && 'Create Your Account'}
+                          {currentStep === 'registration' && 'Create Your Learner Account'}
                           {currentStep === 'otp-verification' && 'Email Verification'}
-                          {currentStep === 'knowledge-partner-details' && 'Knowledge Partner Details'}
-                          {currentStep === 'admin-details' && 'Admin Profile Details'}
                         </DialogTitle>
                         <DialogDescription className="text-gray-600">
                           {currentStep === 'registration' && 'Join thousands of learners and start your personalized learning journey'}
                           {currentStep === 'otp-verification' && 'We need to verify your email address to complete registration'}
-                          {currentStep === 'knowledge-partner-details' && 'Please provide details about your knowledge partner organization'}
-                          {currentStep === 'admin-details' && 'Complete your admin profile information'}
                         </DialogDescription>
             </>
           )}
-        </DialogHeader>
+          </DialogHeader>
 
-        <div className="mt-6">
+          <div>
           {currentStep === 'registration' ? (
             <>
               <RegistrationForm onSuccess={handleRegistrationSuccess} />
@@ -206,27 +128,20 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
                          onVerificationSuccess={handleOTPVerificationSuccess}
                          onBack={handleBackToRegistration}
                        />
-                     ) : currentStep === 'knowledge-partner-details' ? (
-                       <KnowledgePartnerDetailsStep
-                         knowledgePartnerDetails={knowledgePartnerDetails}
-                         onChange={setKnowledgePartnerDetails}
-                         onNext={handleKnowledgePartnerDetailsNext}
-                         onBack={handleBackToOTP}
-                       />
-                     ) : currentStep === 'admin-details' ? (
-                       <AdminDetailsStep
-                         adminDetails={adminDetails}
-                         onChange={setAdminDetails}
-                         onNext={handleAdminDetailsNext}
-                         onBack={handleBackToKnowledgePartnerDetails}
+                     ) : currentStep === 'pending-approval' ? (
+                       <PendingApprovalScreen
+                         userEmail={registrationEmail}
+                         organizationName={organizationName}
+                         onComplete={handleSuccessComplete}
                        />
                      ) : (
             <RegistrationSuccess
-              userRole={userRole}
+              userRole="learner"
               userEmail={registrationEmail}
               onComplete={handleSuccessComplete}
             />
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

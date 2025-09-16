@@ -18,12 +18,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True)
-    organization_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    knowledge_partner_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
     
     class Meta:
         model = User
         fields = [
-            'email', 'full_name', 'password', 'confirm_password', 'organization_id'
+            'email', 'full_name', 'password', 'confirm_password', 'knowledge_partner_id'
         ]
         extra_kwargs = {
             'email': {'required': True},
@@ -46,14 +46,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 'password': e.messages
             })
         
-        # Validate organization if provided
-        organization_id = attrs.get('organization_id')
-        if organization_id:
+        # Validate knowledge partner if provided
+        knowledge_partner_id = attrs.get('knowledge_partner_id')
+        if knowledge_partner_id:
             try:
-                KPProfile.objects.get(id=organization_id, is_active=True)
+                KPProfile.objects.get(id=knowledge_partner_id, is_active=True)
             except KPProfile.DoesNotExist:
                 raise serializers.ValidationError({
-                    'organization_id': 'Selected organization does not exist or is not active.'
+                    'knowledge_partner_id': 'Selected knowledge partner does not exist or is not active.'
                 })
         
         return attrs
@@ -63,16 +63,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Remove non-model fields
         password = validated_data.pop('password')
         validated_data.pop('confirm_password')
-        organization_id = validated_data.pop('organization_id', None)
+        knowledge_partner_id = validated_data.pop('knowledge_partner_id', None)
         
         # Force role to learner - SECURITY: Only learners can register publicly
         validated_data['role'] = 'learner'
         validated_data['is_verified'] = False  # Email verification required
         validated_data['is_approved'] = True   # Learners are auto-approved
         
-        # Handle organization assignment for learners
-        if organization_id:
-            validated_data['kp_profile'] = KPProfile.objects.get(id=organization_id)
+        # Handle knowledge partner association for learners
+        if knowledge_partner_id:
+            validated_data['knowledge_partner'] = KPProfile.objects.get(id=knowledge_partner_id)
+            validated_data['kp_approval_status'] = 'pending'  # Requires KP admin approval
+        else:
+            validated_data['kp_approval_status'] = 'none'  # No association requested
         
         # Create user
         user = User.objects.create_user(
@@ -145,19 +148,14 @@ class LearnerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = LearnerProfile
         fields = [
-            'bio', 'profile_picture', 'date_of_birth', 'phone_number',
-            'education_level', 'field_of_study', 'current_institution',
-            'learning_goals'
+            'bio', 'profile_picture', 'phone_number', 'learning_goals', 'interests'
         ]
         extra_kwargs = {
             'bio': {'required': False},
             'profile_picture': {'required': False},
-            'date_of_birth': {'required': False},
             'phone_number': {'required': False},
-            'education_level': {'required': False},
-            'field_of_study': {'required': False},
-            'current_institution': {'required': False},
             'learning_goals': {'required': False},
+            'interests': {'required': False},
         }
 
 
