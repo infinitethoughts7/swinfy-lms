@@ -19,7 +19,19 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ['localhost', 'urchin-app-3xb5n.ondigitalocean.app'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8000',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'urchin-app-3xb5n.ondigitalocean.app',
+        pathname: '/media/**',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
