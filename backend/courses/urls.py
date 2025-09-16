@@ -18,6 +18,7 @@ from .views.instructor_views import (
     course_analytics
 )
 
+
 # Create router for API views
 router = DefaultRouter()
 

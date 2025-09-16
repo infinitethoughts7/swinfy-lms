@@ -40,4 +40,6 @@ wcwidth==0.2.13
 django-storages
 boto3
 psycopg2-binary
-dj-database-url
+dj-database-url 
+
+gunicorn

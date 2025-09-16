@@ -146,6 +146,9 @@ else:
 
 STATIC_ROOT = os.path.join(BASE_DIR, config('STATIC_ROOT', default='staticfiles'))
 
+# Ensure media directory exists
+os.makedirs(MEDIA_ROOT if not USE_S3 else os.path.join(BASE_DIR, 'media'), exist_ok=True)
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
