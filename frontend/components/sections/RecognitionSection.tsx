@@ -36,13 +36,21 @@ const RecognitionSection = () => {
               {/* Logo */}
               <div className="flex justify-center mb-6">
                 <div className="w-24 h-24 lg:w-28 lg:h-28 bg-white rounded-lg flex items-center justify-center p-4">
-                  <Image 
-                    src={org.logo} 
-                    alt={`${org.name} Logo`} 
-                    width={112}
-                    height={112}
-                    className="w-full h-full object-contain"
-                  />
+                  {org.logo.endsWith('.svg') ? (
+                    <img 
+                      src={org.logo} 
+                      alt={`${org.name} Logo`} 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <Image 
+                      src={org.logo} 
+                      alt={`${org.name} Logo`} 
+                      width={112}
+                      height={112}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
               </div>
 

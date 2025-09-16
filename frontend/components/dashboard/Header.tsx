@@ -10,7 +10,7 @@ interface User {
   full_name?: string;
   email: string;
   avatar?: string;
-  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin';
+  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin' | 'super_admin';
 }
 
 interface HeaderProps {
@@ -113,12 +113,12 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
       <div className="flex items-center justify-between">
         {/* Left Section */}
         <div className="flex items-center space-x-4">
-          {/* Sidebar Toggle */}
+          {/* Mobile Menu Toggle - Only visible on mobile */}
           {showSidebarToggle && onSidebarToggle && (
             <button
               onClick={onSidebarToggle}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
-              aria-label="Toggle sidebar"
+              aria-label="Toggle mobile menu"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

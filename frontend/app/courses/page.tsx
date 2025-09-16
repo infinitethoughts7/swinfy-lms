@@ -257,16 +257,28 @@ export default function CoursesPage() {
               {/* Course Thumbnail Background */}
               <div className="relative h-48 overflow-hidden">
                 {/* Course Thumbnail - Full Background */}
-                <Image
-                  src={course.thumbnail || '/assets/courses/python.svg'}
-                  alt={course.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/assets/courses/python.svg';
-                  }}
-                />
+                {(course.thumbnail || '/assets/courses/python.svg').endsWith('.svg') ? (
+                  <img
+                    src={course.thumbnail || '/assets/courses/python.svg'}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/assets/courses/python.svg';
+                    }}
+                  />
+                ) : (
+                  <Image
+                    src={course.thumbnail || '/assets/courses/python.svg'}
+                    alt={course.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/assets/courses/python.svg';
+                    }}
+                  />
+                )}
                 
                 {/* Dark Overlay for Better Text Readability */}
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>

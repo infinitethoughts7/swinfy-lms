@@ -340,7 +340,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   const menuItems = getMenuItems();
 
   return (
-    <div className={`bg-gray-900 text-white h-full flex flex-col transition-all duration-300 ${
+    <div className={`bg-gray-900 text-white h-screen flex flex-col transition-all duration-300 ${
       isCollapsed ? 'w-16' : 'w-64'
     }`}>
       {/* Header */}

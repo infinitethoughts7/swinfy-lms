@@ -54,13 +54,21 @@ const AlumniLogos = () => {
           {alumniData.map((alumni, index) => (
             <div key={index} className="flex flex-col items-center space-y-2 group">
               <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gray-50 rounded-lg flex items-center justify-center p-2 transition-all duration-300 group-hover:bg-gray-100 group-hover:scale-105">
-                <Image 
-                  src={alumni.logo} 
-                  alt={alumni.alt} 
-                  width={80}
-                  height={80}
-                  className="w-full h-full object-contain"
-                />
+                {alumni.logo.endsWith('.svg') ? (
+                  <img 
+                    src={alumni.logo} 
+                    alt={alumni.alt} 
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <Image 
+                    src={alumni.logo} 
+                    alt={alumni.alt} 
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-contain"
+                  />
+                )}
               </div>
               <span className="text-xs text-text-secondary text-center font-inter font-medium">
                 {alumni.name}

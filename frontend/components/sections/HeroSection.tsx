@@ -196,11 +196,9 @@ const HeroSection = () => {
                 {/* Bottom-Right Figma Logo */}
                 <div className="absolute -bottom-2 lg:-bottom-4 -right-2 lg:-right-4">
                   <div className="p-2 sm:p-3 bg-white/90 backdrop-blur-sm shadow-lg rounded-lg">
-                    <Image 
+                    <img 
                       src="/assets/images/logos/figma.svg" 
                       alt="Figma" 
-                      width={32}
-                      height={32}
                       className="w-6 h-6 sm:w-8 sm:h-8" 
                     />
                   </div>

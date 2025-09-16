@@ -11,7 +11,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // For desktop collapse
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // For mobile menu visibility
   const [user, setUser] = useState(getCurrentUser());
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
@@ -56,6 +57,20 @@ export default function DashboardLayout({
     checkAuth();
   }, [pathname, router]);
 
+  // Close mobile menu when route changes - MUST be called before any early returns
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Helper functions
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   // Show loading while checking authentication
   if (isLoading) {
     return (
@@ -73,16 +88,12 @@ export default function DashboardLayout({
     return null;
   }
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 lg:relative lg:translate-x-0 ${
+      {/* Desktop Sidebar - Always visible on lg+ */}
+      <div className={`hidden lg:block fixed left-0 top-0 z-40 transition-all duration-300 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
-      } ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}`}>
+      }`}>
         <Sidebar
           userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
           isCollapsed={sidebarCollapsed}
@@ -90,14 +101,25 @@ export default function DashboardLayout({
         />
       </div>
 
+      {/* Mobile Sidebar - Only visible when mobileMenuOpen is true */}
+      <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <Sidebar
+          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
+          isCollapsed={false} // Never collapsed on mobile
+          onToggle={toggleMobileMenu}
+        />
+      </div>
+
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-      } ml-0`}>
+      }`}>
         {/* Header */}
         <Header
           user={user}
-          onSidebarToggle={toggleSidebar}
+          onSidebarToggle={toggleMobileMenu} // This will handle mobile menu toggle
           showSidebarToggle={true}
         />
 
@@ -110,14 +132,12 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      <div className="lg:hidden">
-        {!sidebarCollapsed && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setSidebarCollapsed(true)}
-          />
-        )}
-      </div>
+      {mobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }

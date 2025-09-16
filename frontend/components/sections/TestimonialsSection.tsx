@@ -50,11 +50,9 @@ const TestimonialsSection = () => {
                 className="bg-white rounded-xl p-6 lg:p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-center"
               >
                 <div className="flex justify-center mb-6">
-                  <Image 
+                  <img 
                     src={client.logo} 
                     alt={`${client.company} Logo`}
-                    width={80}
-                    height={80}
                     className="w-20 h-20 object-contain"
                   />
                 </div>

@@ -123,7 +123,8 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
   const loadKnowledgePartners = async () => {
     try {
       setLoadingKPs(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/knowledge-partners/`);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/api/auth/knowledge-partners/`);
       if (!response.ok) {
         throw new Error('Failed to load knowledge partners');
       }

@@ -100,7 +100,8 @@ const ContactForm = () => {
     setErrors({});
     
     try {
-      const response = await fetch('http://localhost:8000/api/auth/knowledge-partner/apply/', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_BASE_URL}/api/auth/knowledge-partner/apply/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

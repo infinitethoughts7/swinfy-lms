@@ -153,11 +153,11 @@ export default function StudentHomePage() {
   const weeklyActivity = data?.weeklyActivity || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
-        <p className="text-blue-100">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white">
+        <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Welcome back!</h1>
+        <p className="text-blue-100 text-sm sm:text-base">
           Continue your learning journey and explore new opportunities.
         </p>
       </div>
@@ -255,13 +255,21 @@ export default function StudentHomePage() {
                 {recentCourses.slice(0, 6).map((enrollment) => (
                   <div key={enrollment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                     <div className="flex items-start space-x-3 mb-3">
-                      <Image
-                        src={enrollment.course?.thumbnail || '/assets/courses/default.svg'}
-                        alt={enrollment.course?.title || 'Course'}
-                        width={60}
-                        height={60}
-                        className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
-                      />
+                      {(enrollment.course?.thumbnail || '/assets/courses/default.svg').endsWith('.svg') ? (
+                        <img
+                          src={enrollment.course?.thumbnail || '/assets/courses/default.svg'}
+                          alt={enrollment.course?.title || 'Course'}
+                          className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <Image
+                          src={enrollment.course?.thumbnail || '/assets/courses/default.svg'}
+                          alt={enrollment.course?.title || 'Course'}
+                          width={60}
+                          height={60}
+                          className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
                           {enrollment.course?.title || 'Untitled Course'}

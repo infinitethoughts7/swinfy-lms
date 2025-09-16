@@ -41,13 +41,21 @@ const CompaniesHired = () => {
             >
               {/* Company Logo */}
               <div className="w-20 h-20 lg:w-24 lg:h-24 flex items-center justify-center p-2">
-                <Image 
-                  src={company.logo} 
-                  alt={`${company.name} Logo`} 
-                  width={96}
-                  height={96}
-                  className="w-full h-full object-contain transition-all duration-300"
-                />
+                {company.logo.endsWith('.svg') ? (
+                  <img 
+                    src={company.logo} 
+                    alt={`${company.name} Logo`} 
+                    className="w-full h-full object-contain transition-all duration-300"
+                  />
+                ) : (
+                  <Image 
+                    src={company.logo} 
+                    alt={`${company.name} Logo`} 
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-contain transition-all duration-300"
+                  />
+                )}
               </div>
               
               {/* Company Name */}

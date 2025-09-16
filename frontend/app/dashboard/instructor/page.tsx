@@ -79,40 +79,40 @@ export default function InstructorDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">
               Welcome back, {user?.full_name || 'Instructor'}! 👋
             </h1>
-            <p className="text-blue-100">
+            <p className="text-blue-100 text-sm sm:text-base">
               Ready to create amazing courses? Manage your content and track student progress.
             </p>
           </div>
           <Link
             href="/dashboard/instructor/courses/create"
-            className="inline-flex items-center px-6 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/20"
+            className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/20 text-white rounded-lg sm:rounded-xl hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/20 text-sm sm:text-base w-fit"
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             Create Course
           </Link>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {/* Total Courses */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <BookOpen className="h-6 w-6 text-blue-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{stats?.total_courses || 0}</span>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.total_courses || 0}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Total Courses</h3>
-          <p className="text-sm text-gray-600">All your courses</p>
+          <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Total Courses</h3>
+          <p className="text-xs sm:text-sm text-gray-600">All your courses</p>
         </div>
 
         {/* Published Courses */}

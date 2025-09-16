@@ -9,7 +9,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: string;
+  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin' | 'super_admin';
 }
 
 // Get tokens from localStorage (SSR safe)
@@ -72,7 +72,8 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/token/refresh/`, {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

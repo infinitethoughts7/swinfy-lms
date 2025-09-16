@@ -196,23 +196,23 @@ export default function KPDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <X className="h-5 w-5 text-red-400" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
+              <p className="text-xs sm:text-sm text-red-800">{error}</p>
             </div>
             <div className="ml-auto pl-3">
               <button
                 onClick={() => setError(null)}
                 className="text-red-400 hover:text-red-600"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>
@@ -220,27 +220,27 @@ export default function KPDashboard() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 text-sm">Manage your knowledge partner organization</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 text-xs sm:text-sm">Manage your knowledge partner organization</p>
         </div>
         <button
           onClick={openAddModal}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium w-fit"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
           Add Instructor
         </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {/* Instructors */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600" />
             </div>
             <Link 
               href="/dashboard/kp/instructors"
@@ -249,13 +249,13 @@ export default function KPDashboard() {
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Instructors</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Instructors</h3>
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Total</span>
               <span className="font-semibold">{stats?.total_instructors || 0}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Active</span>
               <span className="font-semibold text-green-600">{stats?.active_instructors || 0}</span>
             </div>
@@ -263,10 +263,10 @@ export default function KPDashboard() {
         </div>
 
         {/* Courses */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <BookOpen className="h-5 w-5 text-green-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
+            <div className="p-2 sm:p-3 bg-green-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600" />
             </div>
             <Link 
               href="/dashboard/kp/courses"
@@ -275,13 +275,13 @@ export default function KPDashboard() {
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Courses</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Courses</h3>
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Total</span>
               <span className="font-semibold">{stats?.total_courses || 0}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Published</span>
               <span className="font-semibold text-green-600">{stats?.active_courses || 0}</span>
             </div>
@@ -289,10 +289,10 @@ export default function KPDashboard() {
         </div>
 
         {/* Students */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <UserPlus className="h-5 w-5 text-purple-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600" />
             </div>
             <Link 
               href="/dashboard/kp/students"
@@ -301,13 +301,13 @@ export default function KPDashboard() {
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Students</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Students</h3>
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Enrolled</span>
               <span className="font-semibold">{stats?.total_students || 0}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">This month</span>
               <span className="font-semibold text-purple-600">+24</span>
             </div>
@@ -315,10 +315,10 @@ export default function KPDashboard() {
         </div>
 
         {/* Analytics */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-orange-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
+            <div className="p-2 sm:p-3 bg-orange-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600" />
             </div>
             <Link 
               href="/dashboard/kp/analytics"
@@ -327,13 +327,13 @@ export default function KPDashboard() {
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Analytics</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Analytics</h3>
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Revenue</span>
               <span className="font-semibold">₹2.4L</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Growth</span>
               <span className="font-semibold text-green-600">+12%</span>
             </div>
@@ -342,9 +342,9 @@ export default function KPDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 lg:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <button
             onClick={openAddModal}
             className="group p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 w-full text-left"
