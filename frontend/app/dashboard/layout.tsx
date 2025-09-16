@@ -37,7 +37,8 @@ export default function DashboardLayout({
           'knowledge_partner_admin': 'kp',
           'student': 'student',
           'tutor': 'tutor',
-          'admin': 'admin'
+          'admin': 'admin',
+          'super_admin': 'super-admin'
         };
         
         const expectedDashboard = roleToDashboard[currentUser.role];
@@ -83,7 +84,7 @@ export default function DashboardLayout({
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         <Sidebar
-          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor'}
+          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
           isCollapsed={sidebarCollapsed}
           onToggle={toggleSidebar}
         />

@@ -18,6 +18,7 @@ import {
   Award
 } from 'lucide-react';
 import Link from 'next/link';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 
 interface Course {
   id: string;
@@ -121,6 +122,11 @@ export default function CourseReviewPage() {
   const safeCourses = Array.isArray(courses) ? courses : [];
 
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!isAuthenticated()) {
+      logout();
+      return;
+    }
     fetchCourses();
     fetchStats();
   }, []);
@@ -130,24 +136,9 @@ export default function CourseReviewPage() {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
-      }
 
       const data = await response.json();
       
@@ -167,20 +158,12 @@ export default function CourseReviewPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/stats/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/stats/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      } else {
-        console.error('Failed to fetch stats:', response.status);
-      }
+      const data = await response.json();
+      setStats(data);
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
@@ -190,12 +173,8 @@ export default function CourseReviewPage() {
     try {
       setActionLoading(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/approve/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/approve/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           notes: reviewNotes
         }),
@@ -228,12 +207,8 @@ export default function CourseReviewPage() {
     try {
       setActionLoading(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/reject/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/reject/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           notes: reviewNotes
         }),

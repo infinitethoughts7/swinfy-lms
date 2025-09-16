@@ -30,6 +30,15 @@ from .views.profile_views import (
     profile_stats,
 )
 
+# Import super admin views
+from .views.super_admin_views import (
+    DashboardStatsView,
+    KnowledgePartnerApplicationListView as SuperAdminKPApplicationListView,
+    UserListView,
+    approve_kp_application,
+    reject_kp_application,
+)
+
 app_name = 'users'
 
 urlpatterns = [
@@ -93,4 +102,11 @@ urlpatterns = [
     path('admin/profile/upload-logo/', upload_logo, name='upload_logo'),
     path('admin/profile/remove-logo/', remove_logo, name='remove_logo'),
     path('admin/profile/stats/', profile_stats, name='profile_stats'),
+    
+    # Super Admin endpoints
+    path('super-admin/dashboard/stats/', DashboardStatsView.as_view(), name='super_admin_dashboard_stats'),
+    path('super-admin/applications/', SuperAdminKPApplicationListView.as_view(), name='super_admin_applications'),
+    path('super-admin/applications/<uuid:application_id>/approve/', approve_kp_application, name='super_admin_approve_application'),
+    path('super-admin/applications/<uuid:application_id>/reject/', reject_kp_application, name='super_admin_reject_application'),
+    path('super-admin/users/', UserListView.as_view(), name='super_admin_users'),
 ]

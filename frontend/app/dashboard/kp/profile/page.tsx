@@ -20,6 +20,7 @@ import {
   BookOpen,
   Award
 } from 'lucide-react';
+import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
 
 interface KPProfile {
   id: string;
@@ -83,6 +84,26 @@ export default function KPProfilePage() {
   });
 
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!isAuthenticated()) {
+      logout();
+      return;
+    }
+    
+    // Check if user has the correct role
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.role !== 'knowledge_partner_admin' && userData.role !== 'knowledge_partner') {
+          setError('Access denied. This page is only available for Knowledge Partner accounts.');
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
     fetchProfile();
     fetchStats();
   }, []);
@@ -92,17 +113,9 @@ export default function KPProfilePage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
 
       const data = await response.json();
       setProfile(data);
@@ -127,18 +140,12 @@ export default function KPProfilePage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/stats/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/stats/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
+      const data = await response.json();
+      setStats(data);
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
@@ -165,12 +172,8 @@ export default function KPProfilePage() {
       
       console.log('Sending only non-empty fields:', updateData);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(updateData),
       });
 
@@ -219,27 +222,45 @@ export default function KPProfilePage() {
       const formData = new FormData();
       formData.append('logo', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/upload-logo/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/upload-logo/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload logo');
+        let errorMessage = 'Failed to upload logo';
+        try {
+          const errorData = await safeJsonParse(response) as { error?: string };
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = `Failed to upload logo: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
+      const result = await safeJsonParse(response) as { logo_url?: string };
       if (profile) {
-        setProfile({ ...profile, logo: result.logo_url });
+        setProfile({ ...profile, logo: result.logo_url || '' });
       }
       alert('Logo uploaded successfully!');
     } catch (err) {
       console.error('Error uploading logo:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upload logo');
+      let errorMessage = 'Failed to upload logo';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        // Check for specific error types and provide better guidance
+        if (errorMessage.includes('KP Profile not found')) {
+          errorMessage = 'Profile not found. Please ensure you are logged in with a Knowledge Partner Admin account.';
+        } else if (errorMessage.includes('Invalid file type')) {
+          errorMessage = 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.';
+        } else if (errorMessage.includes('File too large')) {
+          errorMessage = 'File is too large. Please upload an image smaller than 5MB.';
+        } else if (errorMessage.includes('No logo file provided')) {
+          errorMessage = 'Please select an image file to upload.';
+        }
+      }
+      setError(errorMessage);
     } finally {
       setLogoUploading(false);
     }
@@ -249,17 +270,20 @@ export default function KPProfilePage() {
     try {
       setError(null);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/remove-logo/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/remove-logo/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to remove logo');
+        let errorMessage = 'Failed to remove logo';
+        try {
+          const errorData = await safeJsonParse(response) as { error?: string };
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = `Failed to remove logo: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       if (profile) {
@@ -282,14 +306,42 @@ export default function KPProfilePage() {
 
   if (error && !profile) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchProfile}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Try Again
-        </button>
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center mb-3">
+            <AlertCircle className="h-6 w-6 text-red-500 mr-2" />
+            <h2 className="text-lg font-semibold text-red-700">Access Error</h2>
+          </div>
+          <p className="text-red-700 mb-4">{error}</p>
+          
+          {error.includes('Access denied') && (
+            <div className="mb-4 text-sm text-red-600">
+              <strong>Available KP Admin accounts:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li><strong>adfdfm@gmail.com</strong> (hanuman organization)</li>
+                <li><strong>rakeshganji99@gmail.com</strong> (Ganji Rocky's Organization)</li>
+                <li><strong>amaz@gmail.com</strong> (Empty Fields Test 2)</li>
+              </ul>
+              <p className="mt-3">Password for all accounts: <code className="bg-red-100 px-2 py-1 rounded">rockyg07</code></p>
+              <p className="mt-2 text-xs">Please logout and login with one of these accounts to access KP features.</p>
+            </div>
+          )}
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={fetchProfile}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={logout}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -334,9 +386,23 @@ export default function KPProfilePage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
-          <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-          <p className="text-red-700">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            <p className="text-red-700 font-medium">Error</p>
+          </div>
+          <p className="text-red-700 mt-2">{error}</p>
+          {error.includes('Access denied') && (
+            <div className="mt-3 text-sm text-red-600">
+              <strong>Available KP Admin accounts:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>adfdfm@gmail.com (hanuman organization)</li>
+                <li>rakeshganji99@gmail.com (Ganji Rocky's Organization)</li>
+                <li>amaz@gmail.com (Empty Fields Test 2)</li>
+              </ul>
+              <p className="mt-2">Password for all accounts: <code className="bg-red-100 px-1 rounded">rockyg07</code></p>
+            </div>
+          )}
         </div>
       )}
 

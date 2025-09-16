@@ -167,33 +167,27 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = KPInstructorProfile
         fields = [
-            'bio', 'profile_picture', 'date_of_birth', 'phone_number',
+            'bio', 'profile_picture', 'phone_number',
             'title', 'years_of_experience', 'hourly_rate',
             'highest_education', 'certifications',
             'specializations', 'technologies', 'languages_spoken',
-            'linkedin_url', 'github_url', 'portfolio_url', 'personal_website',
-            'is_available', 'availability_notes'
+            'linkedin_url', 'is_available'
         ]
         extra_kwargs = {
-            'bio': {'required': True},  # Professional bio required for tutors
-            'title': {'required': True},  # Title required for tutors
-            'highest_education': {'required': True},  # Education required for tutors
-            'specializations': {'required': True},  # Specializations required for tutors
-            'technologies': {'required': True},  # Technologies required for tutors
+            'bio': {'required': False},  # Make optional for updates
+            'title': {'required': False},  # Make optional for updates
+            'highest_education': {'required': False},  # Make optional for updates
+            'specializations': {'required': False},  # Make optional for updates
+            'technologies': {'required': False},  # Make optional for updates
             # All other fields optional for completion flow
             'profile_picture': {'required': False},
-            'date_of_birth': {'required': False},
             'phone_number': {'required': False},
             'years_of_experience': {'required': False},
             'hourly_rate': {'required': False},
             'certifications': {'required': False},
             'languages_spoken': {'required': False},
             'linkedin_url': {'required': False},
-            'github_url': {'required': False},
-            'portfolio_url': {'required': False},
-            'personal_website': {'required': False},
             'is_available': {'required': False},
-            'availability_notes': {'required': False},
         }
 
 

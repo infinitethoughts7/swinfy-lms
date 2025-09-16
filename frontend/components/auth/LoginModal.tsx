@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { authApi } from '@/lib/api';
-import { setCurrentUser, setTokens } from '@/lib/auth';
+import { saveUser, saveTokens } from '@/lib/auth';
 import Logo from '@/components/shared/Logo';
 
 interface LoginModalProps {
@@ -42,16 +42,17 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       });
 
       // Store tokens
-      setTokens(data.tokens.access, data.tokens.refresh);
+      saveTokens({
+        access: data.tokens.access,
+        refresh: data.tokens.refresh
+      });
 
       // Store user info
-      setCurrentUser({
+      saveUser({
         id: data.user.id,
         email: data.user.email,
         full_name: data.user.full_name,
         role: data.user.role,
-        is_verified: data.user.is_verified,
-        knowledge_partner: data.user.knowledge_partner,
       });
 
       // Close modal
@@ -71,14 +72,15 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
           'knowledge_partner_admin': 'kp',
           'student': 'student',
           'tutor': 'tutor',
-          'admin': 'admin'
+          'admin': 'admin',
+          'super_admin': 'super-admin'
         };
         const dashboardPath = roleToDashboard[data.user.role] || data.user.role;
         router.push(`/dashboard/${dashboardPath}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      setError(error.message || 'Login failed. Please try again.');
+      setError(error instanceof Error ? error.message : 'Login failed. Please try again.');
     }
 
     setIsLoading(false);
@@ -197,7 +199,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
           {/* Register link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button
                 onClick={onSwitchToRegister}
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"

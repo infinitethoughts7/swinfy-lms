@@ -1,33 +1,39 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/auth';
-import { User, Save, Camera, Mail, Phone, MapPin, Calendar, Award, BookOpen, Users, Clock } from 'lucide-react';
+import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
+import { authenticatedFetch } from '@/lib/auth';
+import { User, Mail, Calendar, Award, BookOpen, Users, Clock } from 'lucide-react';
 
 interface UserProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  date_joined: string;
-  last_login: string;
-  is_active: boolean;
-  avatar?: string;
-  phone?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
-  linkedin?: string;
-  twitter?: string;
-  github?: string;
-  expertise_areas?: string[];
-  years_experience?: number;
-  education?: string;
-  certifications?: string[];
+  user: {
+    id: string;
+    full_name: string;
+    email: string;
+    role: string;
+    created_at: string;
+    is_verified: boolean;
+    is_approved: boolean;
+  };
+  profile: {
+    bio?: string;
+    profile_picture?: string;
+    phone_number?: string;
+    title?: string;
+    years_of_experience?: number;
+    highest_education?: string;
+    certifications?: string;
+    specializations?: string;
+    technologies?: string;
+    languages_spoken?: string;
+    linkedin_url?: string;
+    is_available?: boolean;
+  };
+  has_profile: boolean;
 }
 
 export default function InstructorProfilePage() {
-  const [user, setUser] = useState(getCurrentUser());
+  // const [user, setUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,25 +41,25 @@ export default function InstructorProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
+    phone_number: '',
     bio: '',
-    location: '',
-    website: '',
-    linkedin: '',
-    twitter: '',
-    github: '',
-    expertise_areas: [] as string[],
-    years_experience: 0,
-    education: '',
-    certifications: [] as string[],
+    title: '',
+    linkedin_url: '',
+    specializations: '',
+    technologies: '',
+    years_of_experience: 0,
+    highest_education: '',
+    certifications: '',
+    languages_spoken: 'English',
+    is_available: true,
   });
 
-  const [newExpertise, setNewExpertise] = useState('');
-  const [newCertification, setNewCertification] = useState('');
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      logout();
+      return;
+    }
     fetchProfile();
   }, []);
 
@@ -62,48 +68,35 @@ export default function InstructorProfilePage() {
       setLoading(true);
       setError(null);
       
-      // For now, use mock data since we don't have a profile API yet
-      const mockProfile: UserProfile = {
-        id: user?.id || '1',
-        full_name: user?.full_name || 'John Doe',
-        email: user?.email || 'john@example.com',
-        role: 'knowledge_partner_instructor',
-        date_joined: '2024-01-15',
-        last_login: '2024-09-15',
-        is_active: true,
-        avatar: user?.avatar,
-        phone: '+1 (555) 123-4567',
-        bio: 'Experienced software engineer and educator with 8+ years of experience in full-stack development. Passionate about teaching and helping students learn modern technologies.',
-        location: 'San Francisco, CA',
-        website: 'https://johndoe.dev',
-        linkedin: 'https://linkedin.com/in/johndoe',
-        twitter: 'https://twitter.com/johndoe',
-        github: 'https://github.com/johndoe',
-        expertise_areas: ['JavaScript', 'React', 'Node.js', 'Python', 'Machine Learning'],
-        years_experience: 8,
-        education: 'MS Computer Science, Stanford University',
-        certifications: ['AWS Certified Developer', 'Google Cloud Professional', 'React Certified Developer'],
-      };
-
-      setProfile(mockProfile);
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/profile/detail/`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await safeJsonParse(response) as UserProfile;
+      console.log('Profile data received:', data);
+      
+      setProfile(data);
+      
+      // Map API response to form data - API returns {user: {...}, profile: {...}}
+      const profileData = data.profile || {};
       setFormData({
-        full_name: mockProfile.full_name,
-        email: mockProfile.email,
-        phone: mockProfile.phone || '',
-        bio: mockProfile.bio || '',
-        location: mockProfile.location || '',
-        website: mockProfile.website || '',
-        linkedin: mockProfile.linkedin || '',
-        twitter: mockProfile.twitter || '',
-        github: mockProfile.github || '',
-        expertise_areas: mockProfile.expertise_areas || [],
-        years_experience: mockProfile.years_experience || 0,
-        education: mockProfile.education || '',
-        certifications: mockProfile.certifications || [],
+        phone_number: profileData.phone_number || '',
+        bio: profileData.bio || '',
+        title: profileData.title || '',
+        linkedin_url: profileData.linkedin_url || '',
+        specializations: profileData.specializations || '',
+        technologies: profileData.technologies || '',
+        years_of_experience: profileData.years_of_experience || 0,
+        highest_education: profileData.highest_education || '',
+        certifications: profileData.certifications || '',
+        languages_spoken: profileData.languages_spoken || 'English',
+        is_available: profileData.is_available !== undefined ? profileData.is_available : true,
       });
     } catch (err) {
       console.error('Error fetching profile:', err);
-      setError('Failed to load profile data');
+      setError(err instanceof Error ? err.message : 'Failed to load profile data');
     } finally {
       setLoading(false);
     }
@@ -114,20 +107,57 @@ export default function InstructorProfilePage() {
       setSaving(true);
       setError(null);
       
-      // TODO: Implement actual API call to update profile
-      console.log('Saving profile:', formData);
+      // Prepare data for API - only profile data (user data is not editable here)
+      const updateData = {
+        profile_data: {
+          bio: formData.bio,
+          phone_number: formData.phone_number,
+          title: formData.title,
+          linkedin_url: formData.linkedin_url,
+          specializations: formData.specializations,
+          technologies: formData.technologies,
+          years_of_experience: formData.years_of_experience,
+          highest_education: formData.highest_education,
+          certifications: formData.certifications,
+          languages_spoken: formData.languages_spoken,
+          is_available: formData.is_available,
+        }
+      };
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Saving profile data:', updateData);
       
-      setIsEditing(false);
-      // Update the profile state with new data
-      if (profile) {
-        setProfile({ ...profile, ...formData });
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/profile/detail/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to update profile';
+        try {
+          const errorData = await safeJsonParse(response) as { error?: string; message?: string };
+          console.error('Profile update error:', errorData);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = `Failed to update profile: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
+      
+      const updatedProfile = await safeJsonParse(response) as UserProfile;
+      console.log('Profile updated successfully:', updatedProfile);
+      
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      
+      // Show success message
+      alert('Profile updated successfully!');
+      
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError('Failed to save profile');
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
       setSaving(false);
     }
@@ -135,58 +165,24 @@ export default function InstructorProfilePage() {
 
   const handleCancel = () => {
     if (profile) {
+      const profileData = profile.profile || {};
       setFormData({
-        full_name: profile.full_name,
-        email: profile.email,
-        phone: profile.phone || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        website: profile.website || '',
-        linkedin: profile.linkedin || '',
-        twitter: profile.twitter || '',
-        github: profile.github || '',
-        expertise_areas: profile.expertise_areas || [],
-        years_experience: profile.years_experience || 0,
-        education: profile.education || '',
-        certifications: profile.certifications || [],
+        phone_number: profileData.phone_number || '',
+        bio: profileData.bio || '',
+        title: profileData.title || '',
+        linkedin_url: profileData.linkedin_url || '',
+        specializations: profileData.specializations || '',
+        technologies: profileData.technologies || '',
+        years_of_experience: profileData.years_of_experience || 0,
+        highest_education: profileData.highest_education || '',
+        certifications: profileData.certifications || '',
+        languages_spoken: profileData.languages_spoken || 'English',
+        is_available: profileData.is_available !== undefined ? profileData.is_available : true,
       });
     }
     setIsEditing(false);
   };
 
-  const addExpertise = () => {
-    if (newExpertise.trim() && !formData.expertise_areas.includes(newExpertise.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        expertise_areas: [...prev.expertise_areas, newExpertise.trim()]
-      }));
-      setNewExpertise('');
-    }
-  };
-
-  const removeExpertise = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      expertise_areas: prev.expertise_areas.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addCertification = () => {
-    if (newCertification.trim() && !formData.certifications.includes(newCertification.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        certifications: [...prev.certifications, newCertification.trim()]
-      }));
-      setNewCertification('');
-    }
-  };
-
-  const removeCertification = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      certifications: prev.certifications.filter((_, i) => i !== index)
-    }));
-  };
 
   if (loading) {
     return (
@@ -275,32 +271,16 @@ export default function InstructorProfilePage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Name
                 </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium">{profile.full_name}</p>
-                )}
+                <p className="text-gray-900 font-medium">{profile?.user?.full_name || 'Not available'}</p>
+                <p className="text-xs text-gray-500 mt-1">Contact admin to change your name</p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Email
                 </label>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium">{profile.email}</p>
-                )}
+                <p className="text-gray-900 font-medium">{profile?.user?.email || 'Not available'}</p>
+                <p className="text-xs text-gray-500 mt-1">Contact admin to change your email</p>
               </div>
 
               <div>
@@ -310,30 +290,30 @@ export default function InstructorProfilePage() {
                 {isEditing ? (
                   <input
                     type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="+1 (555) 123-4567"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.phone || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">{profile?.profile?.phone_number || 'Not provided'}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Location
+                  Job Title
                 </label>
                 {isEditing ? (
                   <input
                     type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="City, State"
+                    placeholder="e.g., Senior Software Engineer"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.location || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
                 )}
               </div>
             </div>
@@ -350,9 +330,9 @@ export default function InstructorProfilePage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Tell us about yourself..."
                 />
-              ) : (
-                <p className="text-gray-900">{profile.bio || 'No bio provided'}</p>
-              )}
+                ) : (
+                  <p className="text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
+                )}
             </div>
           </div>
 
@@ -374,86 +354,76 @@ export default function InstructorProfilePage() {
                   <input
                     type="number"
                     min="0"
-                    value={formData.years_experience}
-                    onChange={(e) => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) || 0 }))}
+                    value={formData.years_of_experience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || 0 }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.years_experience} years</p>
+                  <p className="text-gray-900 font-medium">{profile?.profile?.years_of_experience || 0} years</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Education
+                  Highest Education
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.education}
-                    onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
+                  <select
+                    value={formData.highest_education}
+                    onChange={(e) => setFormData(prev => ({ ...prev, highest_education: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Degree, University"
-                  />
+                  >
+                    <option value="">Select education level</option>
+                    <option value="bachelor">Bachelor&apos;s Degree</option>
+                    <option value="master">Master&apos;s Degree</option>
+                    <option value="phd">PhD</option>
+                    <option value="professional">Professional Certification</option>
+                    <option value="self_taught">Self-Taught</option>
+                  </select>
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.education || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">
+                    {profile?.profile?.highest_education ? 
+                      profile.profile.highest_education.charAt(0).toUpperCase() + profile.profile.highest_education.slice(1).replace('_', ' ') : 
+                      'Not provided'
+                    }
+                  </p>
                 )}
               </div>
             </div>
 
-            {/* Expertise Areas */}
+            {/* Specializations */}
             <div className="mt-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Expertise Areas
+                Specializations
               </label>
               {isEditing ? (
-                <div className="space-y-3">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={newExpertise}
-                      onChange={(e) => setNewExpertise(e.target.value)}
-                      placeholder="Add expertise area..."
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      onKeyPress={(e) => e.key === 'Enter' && addExpertise()}
-                    />
-                    <button
-                      type="button"
-                      onClick={addExpertise}
-                      className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.expertise_areas.map((area, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                      >
-                        {area}
-                        <button
-                          type="button"
-                          onClick={() => removeExpertise(index)}
-                          className="ml-2 text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <textarea
+                  value={formData.specializations}
+                  onChange={(e) => setFormData(prev => ({ ...prev, specializations: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="e.g., Web Development, Machine Learning, Data Science (comma-separated)"
+                />
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {profile.expertise_areas.map((area, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                    >
-                      {area}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
+              )}
+            </div>
+
+            {/* Technologies */}
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Technologies
+              </label>
+              {isEditing ? (
+                <textarea
+                  value={formData.technologies}
+                  onChange={(e) => setFormData(prev => ({ ...prev, technologies: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="e.g., JavaScript, Python, React, Node.js (comma-separated)"
+                />
+              ) : (
+                <p className="text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
               )}
             </div>
 
@@ -463,53 +433,33 @@ export default function InstructorProfilePage() {
                 Certifications
               </label>
               {isEditing ? (
-                <div className="space-y-3">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={newCertification}
-                      onChange={(e) => setNewCertification(e.target.value)}
-                      placeholder="Add certification..."
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      onKeyPress={(e) => e.key === 'Enter' && addCertification()}
-                    />
-                    <button
-                      type="button"
-                      onClick={addCertification}
-                      className="px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.certifications.map((cert, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                      >
-                        {cert}
-                        <button
-                          type="button"
-                          onClick={() => removeCertification(index)}
-                          className="ml-2 text-green-600 hover:text-green-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <textarea
+                  value={formData.certifications}
+                  onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="List your professional certifications (one per line or comma-separated)"
+                />
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {profile.certifications.map((cert, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-                    >
-                      {cert}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
+              )}
+            </div>
+
+            {/* Languages Spoken */}
+            <div className="mt-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Languages Spoken
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.languages_spoken}
+                  onChange={(e) => setFormData(prev => ({ ...prev, languages_spoken: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="e.g., English, Spanish, French"
+                />
+              ) : (
+                <p className="text-gray-900">{profile?.profile?.languages_spoken || 'Not provided'}</p>
               )}
             </div>
           </div>
@@ -526,69 +476,44 @@ export default function InstructorProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Website
+                  LinkedIn Profile
                 </label>
                 {isEditing ? (
                   <input
                     type="url"
-                    value={formData.website}
-                    onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="https://yourwebsite.com"
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium">{profile.website || 'Not provided'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  LinkedIn
-                </label>
-                {isEditing ? (
-                  <input
-                    type="url"
-                    value={formData.linkedin}
-                    onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                    value={formData.linkedin_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="https://linkedin.com/in/yourprofile"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.linkedin || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">{profile?.profile?.linkedin_url || 'Not provided'}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Twitter
+                  Availability Status
                 </label>
                 {isEditing ? (
-                  <input
-                    type="url"
-                    value={formData.twitter}
-                    onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                  <select
+                    value={formData.is_available ? 'available' : 'unavailable'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'available' }))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="https://twitter.com/yourhandle"
-                  />
+                  >
+                    <option value="available">Available for Teaching</option>
+                    <option value="unavailable">Currently Unavailable</option>
+                  </select>
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile.twitter || 'Not provided'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  GitHub
-                </label>
-                {isEditing ? (
-                  <input
-                    type="url"
-                    value={formData.github}
-                    onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="https://github.com/yourusername"
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium">{profile.github || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm ${
+                      profile?.profile?.is_available 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
+                    </span>
+                  </p>
                 )}
               </div>
             </div>
@@ -605,21 +530,21 @@ export default function InstructorProfilePage() {
                 <Calendar className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-600">Member since</p>
-                  <p className="font-semibold text-gray-900">{new Date(profile.date_joined).toLocaleDateString()}</p>
+                  <p className="font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Clock className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-600">Last login</p>
-                  <p className="font-semibold text-gray-900">{new Date(profile.last_login).toLocaleDateString()}</p>
+                  <p className="font-semibold text-gray-900">Never</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <div className={`w-3 h-3 rounded-full ${profile.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className={`w-3 h-3 rounded-full ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
-                  <p className="font-semibold text-gray-900">{profile.is_active ? 'Active' : 'Inactive'}</p>
+                  <p className="font-semibold text-gray-900">{profile?.user?.is_verified ? 'Verified' : 'Not Verified'}</p>
                 </div>
               </div>
             </div>

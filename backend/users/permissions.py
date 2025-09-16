@@ -12,3 +12,16 @@ class IsKnowledgePartnerAdmin(permissions.BasePermission):
             request.user.is_authenticated and
             request.user.role == 'knowledge_partner_admin'
         )
+
+
+class IsSuperAdmin(permissions.BasePermission):
+    """
+    Custom permission to only allow super admins to access certain views.
+    """
+    
+    def has_permission(self, request, view):
+        return (
+            request.user and
+            request.user.is_authenticated and
+            request.user.is_superuser
+        )

@@ -7,18 +7,12 @@ import {
   User, 
   CheckCircle, 
   Eye, 
-  Calendar,
   Star,
   Users,
-  Play,
-  FileText,
-  Image,
-  Award,
-  Search,
-  Filter,
-  ArrowRight
+  Search
 } from 'lucide-react';
 import Link from 'next/link';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 
 interface Course {
   id: string;
@@ -79,6 +73,11 @@ export default function KPCoursesPage() {
   const safeCourses = Array.isArray(courses) ? courses : [];
 
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!isAuthenticated()) {
+      logout();
+      return;
+    }
     fetchCourses();
   }, []);
 
@@ -87,24 +86,9 @@ export default function KPCoursesPage() {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
-      }
 
       const data = await response.json();
       
@@ -149,20 +133,6 @@ export default function KPCoursesPage() {
     }
   };
 
-  const getLessonIcon = (type: string) => {
-    switch (type) {
-      case 'video':
-        return <Play className="h-4 w-4" />;
-      case 'text':
-        return <FileText className="h-4 w-4" />;
-      case 'assignment':
-        return <Award className="h-4 w-4" />;
-      case 'image_gallery':
-        return <Image className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
 
   // Get unique categories and levels for filters
   const categories = [...new Set(safeCourses.map(course => course.category))];

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/shared/Logo';
 
 interface SidebarProps {
-  userRole: 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor';
+  userRole: 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin';
   isCollapsed?: boolean;
   onToggle?: () => void;
 }
@@ -300,6 +300,38 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           },
         ];
 
+      case 'super_admin':
+        return [
+          {
+            label: 'Dashboard',
+            href: '/dashboard/super-admin',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'KP Applications',
+            href: '/dashboard/super-admin/applications',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Users',
+            href: '/dashboard/super-admin/users',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              </svg>
+            ),
+          },
+        ];
+
       default:
         return baseItems;
     }
@@ -343,7 +375,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           if (pathname === item.href) {
             // Exact match
             isActive = true;
-          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor') {
+          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor' && item.href !== '/dashboard/super-admin') {
             // For non-dashboard root pages, check if current path starts with the item href
             isActive = pathname.startsWith(item.href + '/');
           }
@@ -381,6 +413,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
         {!isCollapsed && (
           <div className="flex items-center">
             <div className={`w-2 h-2 rounded-full mr-2 ${
+              userRole === 'super_admin' ? 'bg-purple-500' :
               userRole === 'admin' ? 'bg-red-500' :
               userRole === 'tutor' ? 'bg-blue-500' : 'bg-green-500'
             }`}></div>

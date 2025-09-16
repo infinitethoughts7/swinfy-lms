@@ -36,7 +36,10 @@ class KPProfileView(generics.RetrieveUpdateAPIView):
 def upload_logo(request):
     """Upload organization logo."""
     try:
-        profile = get_object_or_404(KPProfile, user=request.user)
+        try:
+            profile = KPProfile.objects.get(user=request.user)
+        except KPProfile.DoesNotExist:
+            return Response({'error': 'KP Profile not found. Please create a profile first.'}, status=status.HTTP_404_NOT_FOUND)
         
         if 'logo' not in request.FILES:
             return Response({'error': 'No logo file provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -77,7 +80,10 @@ def upload_logo(request):
 def remove_logo(request):
     """Remove organization logo."""
     try:
-        profile = get_object_or_404(KPProfile, user=request.user)
+        try:
+            profile = KPProfile.objects.get(user=request.user)
+        except KPProfile.DoesNotExist:
+            return Response({'error': 'KP Profile not found. Please create a profile first.'}, status=status.HTTP_404_NOT_FOUND)
         
         if profile.logo:
             try:

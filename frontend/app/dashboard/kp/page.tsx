@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save } from 'lucide-react';
 import Link from 'next/link';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 
 interface Instructor {
   id: string;
@@ -47,6 +48,11 @@ export default function KPDashboard() {
   });
 
   useEffect(() => {
+    // Check if user is authenticated before making API calls
+    if (!isAuthenticated()) {
+      logout();
+      return;
+    }
     fetchDashboardStats();
   }, []);
 
@@ -57,19 +63,11 @@ export default function KPDashboard() {
       
       // Fetch instructor list and approved courses in parallel
       const [instructorsResponse, coursesResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
+        authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
           method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            'Content-Type': 'application/json',
-          },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
+        authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
           method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            'Content-Type': 'application/json',
-          },
         })
       ]);
 

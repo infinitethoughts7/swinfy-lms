@@ -1,5 +1,5 @@
 # Dependencies
-
+frontend/public/asserts/
 *.txt 
 node_modules/
 */node_modules/
@@ -151,3 +151,4 @@ celerybeat.pid
 .mypy_cache/
 .dmypy.json
 dmypy.json
+public/asserts/
