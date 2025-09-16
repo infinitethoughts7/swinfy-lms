@@ -1,0 +1,45 @@
+name: swinfy-lms
+services:
+- name: backend
+  source_dir: backend
+  github:
+    repo: infinitethoughts7/swinfy-lms
+    branch: main
+  run_command: gunicorn --worker-tmp-dir /dev/shm lms_backend.wsgi:application
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: SECRET_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: DEBUG
+    scope: RUN_TIME
+    value: "False"
+  - key: DATABASE_URL
+    scope: RUN_TIME
+    type: SECRET
+  - key: ALLOWED_HOSTS
+    scope: RUN_TIME
+    value: ".ondigitalocean.app"
+  - key: CORS_ALLOWED_ORIGINS
+    scope: RUN_TIME
+    value: "https://your-frontend-domain.vercel.app"
+  - key: USE_S3
+    scope: RUN_TIME
+    value: "True"
+  - key: AWS_ACCESS_KEY_ID
+    scope: RUN_TIME
+    type: SECRET
+  - key: AWS_SECRET_ACCESS_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: AWS_STORAGE_BUCKET_NAME
+    scope: RUN_TIME
+    type: SECRET
+  - key: AWS_S3_ENDPOINT_URL
+    scope: RUN_TIME
+    value: "https://nyc3.digitaloceanspaces.com"
+  - key: AWS_S3_REGION_NAME
+    scope: RUN_TIME
+    value: "nyc3"
