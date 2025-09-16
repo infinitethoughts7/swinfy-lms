@@ -237,8 +237,8 @@ const LiveSessionCard = ({
       </div>
 
       {/* Actions */}
-      <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-        <div className="flex space-x-2">
+      <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+        <div className="flex flex-wrap gap-2">
           {/* Join/View Recording Button */}
           {session.status === 'ended' && session.recordingAvailable && onViewRecording ? (
             <button
@@ -273,9 +273,9 @@ const LiveSessionCard = ({
 
         {/* Participants indicator for live sessions */}
         {session.status === 'live' && session.participants !== undefined && (
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 sm:ml-auto">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-            {session.participants} watching
+            <span className="whitespace-nowrap">{session.participants} watching</span>
           </div>
         )}
       </div>

@@ -82,7 +82,7 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 lg:relative lg:translate-x-0 ${
         sidebarCollapsed ? 'w-16' : 'w-64'
-      }`}>
+      } ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}`}>
         <Sidebar
           userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
           isCollapsed={sidebarCollapsed}
@@ -92,8 +92,8 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        sidebarCollapsed ? 'ml-16 lg:ml-16' : 'ml-64 lg:ml-0'
-      }`}>
+        sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+      } ml-0`}>
         {/* Header */}
         <Header
           user={user}
@@ -103,7 +103,7 @@ export default function DashboardLayout({
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-auto">
-          <div className="p-4 lg:p-6">
+          <div className="p-3 sm:p-4 lg:p-6">
             {children}
           </div>
         </main>

@@ -66,8 +66,8 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
-        <div className="p-8">
+      <DialogContent className="sm:max-w-2xl w-[95vw] max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
+        <div className="p-4 sm:p-8">
           <DialogHeader className="text-center space-y-3 mb-6">
           {/* Logo - Same as navbar (hidden on success screen) */}
           {currentStep !== 'success' && currentStep !== 'pending-approval' && (

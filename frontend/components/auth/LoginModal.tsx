@@ -87,8 +87,8 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
-        <div className="p-8">
+      <DialogContent className="sm:max-w-xl w-[95vw] max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
+        <div className="p-4 sm:p-8">
           <DialogHeader className="text-center space-y-3 mb-6">
             {/* Logo - Same as navbar */}
             <div className="flex justify-center items-center">
@@ -103,7 +103,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-lg mx-auto">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 max-w-lg mx-auto">
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
