@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ['localhost', 'your-backend-domain.ondigitalocean.app'],
+    domains: ['localhost', 'urchin-app-3xb5n.ondigitalocean.app'],
   },
 };
 

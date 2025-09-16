@@ -1,4 +1,5 @@
 // API service for backend communication
+import { getErrorMessage, parseErrorResponse, enhancedFetch } from './error-utils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -142,50 +143,44 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
 export const authApi = {
   // Login user
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    console.log('🔐 Attempting login with:', { email: credentials.email, password: '***' });
-    
-    const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/login/`, {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
 
-    const data = await response.json();
-    console.log('🔐 Login response status:', response.status, response.statusText);
+      const data = await response.json();
 
-    if (!response.ok) {
-      console.error('🔐 Login failed:', data);
-      throw new Error(data.error || 'Login failed');
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-
-    console.log('🔐 Login successful for:', data.user?.email);
-    return data;
   },
 
   // Register user
   register: async (userData: RegistrationData): Promise<RegistrationResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/register/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/register/`, {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      // Handle validation errors
-      if (data.details) {
-        const errorMessages = Object.values(data.details).flat();
-        throw new Error(errorMessages.join(', '));
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
       }
-      throw new Error(data.error || 'Registration failed');
-    }
 
-    return data;
+      return data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
   // Refresh token
