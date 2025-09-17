@@ -251,7 +251,7 @@ class KnowledgePartnerApplicationAdmin(admin.ModelAdmin):
                         email=application.knowledge_partner_email,
                         password='olla@07',  # Fixed password as requested
                         full_name=f"{application.knowledge_partner_name} Admin",
-                        role='knowledge_partner_admin',
+                        role='knowledge_partner',
                         is_verified=True,
                         is_approved=True,
                     )

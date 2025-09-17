@@ -84,37 +84,39 @@ const formatApiError = (message: string): string => {
   const errorMap: Record<string, string> = {
     // Authentication errors
     'Invalid credentials': 'Invalid email or password. Please check your credentials and try again.',
-    'User not found': 'No account found with this email address.',
-    'Account not verified': 'Please verify your email address before logging in.',
-    'Account not approved': 'Your account is pending approval. Please contact support.',
-    'Token expired': 'Your session has expired. Please log in again.',
-    'Invalid token': 'Invalid session. Please log in again.',
+    'Invalid email or password.': '❌ Invalid email or password. Please double-check your credentials and try again.',
+    'Email and password are required.': '⚠️ Please enter both email and password to continue.',
+    'User not found': '🔍 No account found with this email address.',
+    'Account not verified': '📧 Please verify your email address before logging in.',
+    'Account not approved': '⏳ Your account is pending approval. Please contact support.',
+    'Token expired': '⏰ Your session has expired. Please log in again.',
+    'Invalid token': '🔒 Invalid session. Please log in again.',
     
     // Registration errors
-    'User already exists': 'An account with this email already exists. Please try logging in instead.',
-    'Email already registered': 'This email is already registered. Please try logging in or use a different email.',
-    'Weak password': 'Password is too weak. Please use a stronger password with letters, numbers, and symbols.',
-    'Passwords do not match': 'Passwords do not match. Please make sure both passwords are the same.',
+    'User already exists': '👤 An account with this email already exists. Please try logging in instead.',
+    'Email already registered': '📧 This email is already registered. Please try logging in or use a different email.',
+    'Weak password': '🔐 Password is too weak. Please use a stronger password with letters, numbers, and symbols.',
+    'Passwords do not match': '🔄 Passwords do not match. Please make sure both passwords are the same.',
     
     // Validation errors
-    'This field is required': 'This field is required.',
-    'Invalid email format': 'Please enter a valid email address.',
-    'Invalid phone number': 'Please enter a valid phone number.',
+    'This field is required': '⚠️ This field is required.',
+    'Invalid email format': '📧 Please enter a valid email address.',
+    'Invalid phone number': '📞 Please enter a valid phone number.',
     
     // Network errors
-    'Network error': 'Connection problem. Please check your internet connection and try again.',
-    'Server error': 'Server is temporarily unavailable. Please try again later.',
-    'Timeout': 'Request timed out. Please try again.',
+    'Network error': '🌐 Connection problem. Please check your internet connection and try again.',
+    'Server error': '🔧 Server is temporarily unavailable. Please try again later.',
+    'Timeout': '⏱️ Request timed out. Please try again.',
     
     // Permission errors
-    'Permission denied': 'You do not have permission to perform this action.',
-    'Access denied': 'Access denied. Please contact support if you believe this is an error.',
-    'Unauthorized': 'Please log in to continue.',
+    'Permission denied': '🚫 You do not have permission to perform this action.',
+    'Access denied': '🔒 Access denied. Please contact support if you believe this is an error.',
+    'Unauthorized': '🔑 Please log in to continue.',
     
     // File upload errors
-    'File too large': 'File is too large. Please choose a smaller file.',
-    'Invalid file type': 'Invalid file type. Please choose a different file.',
-    'Upload failed': 'File upload failed. Please try again.',
+    'File too large': '📁 File is too large. Please choose a smaller file.',
+    'Invalid file type': '📄 Invalid file type. Please choose a different file.',
+    'Upload failed': '⬆️ File upload failed. Please try again.',
     
     // Course/Content errors
     'Course not found': 'Course not found. It may have been removed or you may not have access.',

@@ -10,7 +10,7 @@ interface User {
   full_name?: string;
   email: string;
   avatar?: string;
-  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin' | 'super_admin';
+  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
 }
 
 interface HeaderProps {

@@ -89,7 +89,7 @@ export default function UsersPage() {
   const getRoleBadge = (role: string) => {
     const styles = {
       learner: 'bg-green-100 text-green-800',
-      knowledge_partner_admin: 'bg-blue-100 text-blue-800',
+      knowledge_partner: 'bg-blue-100 text-blue-800',
       knowledge_partner_instructor: 'bg-purple-100 text-purple-800',
       super_admin: 'bg-red-100 text-red-800',
     };
@@ -156,7 +156,7 @@ export default function UsersPage() {
             <div>
               <p className="text-sm text-gray-600">KP Admins</p>
               <p className="text-2xl font-bold text-blue-600">
-                {safeUsers.filter(u => u.role === 'knowledge_partner_admin').length}
+                {safeUsers.filter(u => u.role === 'knowledge_partner').length}
               </p>
             </div>
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -221,7 +221,7 @@ export default function UsersPage() {
             >
               <option value="all">All Roles</option>
               <option value="learner">Learners</option>
-              <option value="knowledge_partner_admin">KP Admins</option>
+              <option value="knowledge_partner">KP Admins</option>
               <option value="knowledge_partner_instructor">KP Instructors</option>
             </select>
           </div>

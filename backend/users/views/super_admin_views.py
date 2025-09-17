@@ -26,7 +26,7 @@ class DashboardStatsView(generics.GenericAPIView):
         # Get basic counts
         total_users = User.objects.count()
         total_learners = User.objects.filter(role='learner').count()
-        total_kp_admins = User.objects.filter(role='knowledge_partner_admin').count()
+        total_kp_admins = User.objects.filter(role='knowledge_partner').count()
         total_kp_instructors = User.objects.filter(role='knowledge_partner_instructor').count()
         
         # Get application stats
@@ -146,7 +146,7 @@ def approve_kp_application(request, application_id):
             email=application.knowledge_partner_email,
             password='rockyg07',  # Default password as requested
             full_name=f"{application.knowledge_partner_name} Admin",
-            role='knowledge_partner_admin',
+            role='knowledge_partner',
             is_verified=True,
             is_approved=True,
         )

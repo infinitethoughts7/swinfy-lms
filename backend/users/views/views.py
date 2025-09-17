@@ -242,10 +242,10 @@ def dashboard_stats(request):
     
     user = request.user
     
-    if user.role == 'knowledge_partner_admin' and hasattr(user, 'kp_profile') and user.kp_profile:
+    if user.role == 'knowledge_partner' and hasattr(user, 'kp_profile') and user.kp_profile:
         # Admin dashboard stats - simplified since organization model structure changed
         return Response({
-            'role': 'knowledge_partner_admin',
+            'role': 'knowledge_partner',
             'organization': user.kp_profile.name,
             'message': 'Dashboard stats not fully implemented with current model structure'
         })
@@ -345,7 +345,7 @@ class ProfileCompletionView(APIView):
             except:
                 has_profile = False
                 
-        elif user.role == 'knowledge_partner_admin':
+        elif user.role == 'knowledge_partner':
             # Admin profile not available with current model structure
             has_profile = False
             profile_data = {}
@@ -390,7 +390,7 @@ class ProfileCompletionView(APIView):
             return []  # No required fields for learners
         elif role == 'knowledge_partner_instructor':
             return ['bio', 'title', 'highest_education', 'specializations', 'technologies']
-        elif role == 'knowledge_partner_admin':
+        elif role == 'knowledge_partner':
             return []  # No required fields since admin profile model not available
         return []
     
@@ -410,7 +410,7 @@ class ProfileCompletionView(APIView):
                 'portfolio_url', 'personal_website', 'is_available', 
                 'availability_notes'
             ]
-        elif role == 'knowledge_partner_admin':
+        elif role == 'knowledge_partner':
             return []  # No optional fields since admin profile model not available
         return []
 
@@ -440,7 +440,7 @@ class UserProfileDetailView(APIView):
                 profile = user.instructor_profile
                 profile_data = InstructorProfileSerializer(profile).data
                 has_profile = True
-            elif user.role == 'knowledge_partner_admin':
+            elif user.role == 'knowledge_partner':
                 # Admin profile not available with current model structure
                 has_profile = False
         except:
@@ -562,7 +562,7 @@ class KPAdminOnlyMixin:
 
     def _ensure_kp_admin(self, request):
         user = request.user
-        if not user or user.role != 'knowledge_partner_admin':
+        if not user or user.role != 'knowledge_partner':
             return Response({'detail': 'KP admin permission required.'}, status=status.HTTP_403_FORBIDDEN)
         return None
 
@@ -573,8 +573,17 @@ class KPInstructorListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
 
     def get(self, request):
-        # Filters: search by name/email/title, availability
-        qs = KPInstructorProfile.objects.select_related('user').all().order_by('-created_at')
+        # Get the KP admin's organization
+        kp_admin = request.user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            return Response({'detail': 'KP admin must have an associated knowledge partner profile'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Only show instructors from the same KP organization
+        qs = KPInstructorProfile.objects.select_related('user').filter(
+            knowledge_partner=kp_profile
+        ).order_by('-created_at')
 
         search = request.query_params.get('search')
         if search:
@@ -592,11 +601,22 @@ class KPInstructorListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = KPInstructorCreateSerializer(data=request.data)
+        print(f"DEBUG VIEW: Received POST request to create instructor")
+        print(f"DEBUG VIEW: Request user: {request.user.email} (role: {request.user.role})")
+        print(f"DEBUG VIEW: Request data: {request.data}")
+        print(f"DEBUG VIEW: Content type: {request.content_type}")
+        
+        serializer = KPInstructorCreateSerializer(data=request.data, context={'request': request})
+        
+        print(f"DEBUG VIEW: Serializer created, checking validity...")
         serializer.is_valid(raise_exception=True)
+        
+        print(f"DEBUG VIEW: Serializer valid, creating user...")
         user = serializer.save()
         profile = user.instructor_profile
         detail = KPInstructorDetailSerializer(profile).data
+        
+        print(f"DEBUG VIEW: Instructor created successfully: {user.email}")
         return Response(detail, status=status.HTTP_201_CREATED)
 
 
@@ -607,7 +627,17 @@ class KPInstructorDetailView(APIView):
 
     def get_object(self, pk):
         from django.shortcuts import get_object_or_404
-        return get_object_or_404(KPInstructorProfile.objects.select_related('user'), pk=pk)
+        # Only allow access to instructors from the same KP organization
+        kp_admin = self.request.user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            raise PermissionDenied("KP admin must have an associated knowledge partner profile")
+        
+        return get_object_or_404(
+            KPInstructorProfile.objects.select_related('user').filter(knowledge_partner=kp_profile), 
+            pk=pk
+        )
 
     def get(self, request, id):
         profile = self.get_object(id)

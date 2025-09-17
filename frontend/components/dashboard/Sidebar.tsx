@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/shared/Logo';
 
 interface SidebarProps {
-  userRole: 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin';
+  userRole: 'student' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin';
   isCollapsed?: boolean;
   onToggle?: () => void;
 }
@@ -170,7 +170,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           },
         ];
 
-      case 'knowledge_partner_admin':
+      case 'knowledge_partner':
         return [
           {
             label: 'Dashboard',

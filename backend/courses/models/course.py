@@ -92,7 +92,7 @@ class Course(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='created_courses',
-        limit_choices_to={'role__in': ['knowledge_partner_instructor', 'knowledge_partner_admin']},
+        limit_choices_to={'role__in': ['knowledge_partner_instructor', 'knowledge_partner']},
         null=True,
         blank=True,
         help_text="Tutor or Admin who created this course"
@@ -121,15 +121,6 @@ class Course(models.Model):
         null=True,
         help_text="Feedback from training partner admin"
     )
-    training_partner_admin_approved_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='training_partner_approved_courses',
-        help_text="Training partner admin who approved this course"
-    )
-    
     # Publication & Visibility Fields
     is_published = models.BooleanField(
         default=False,

@@ -10,7 +10,7 @@ class IsKnowledgePartnerAdmin(permissions.BasePermission):
         return (
             request.user and
             request.user.is_authenticated and
-            request.user.role == 'knowledge_partner_admin'
+            request.user.role == 'knowledge_partner'
         )
 
 

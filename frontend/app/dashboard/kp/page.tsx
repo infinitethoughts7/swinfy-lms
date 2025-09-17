@@ -148,29 +148,74 @@ export default function KPDashboard() {
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.full_name.trim() || !addForm.email.trim()) return;
+    
+    // Basic validation
+    if (!addForm.full_name.trim()) {
+      setError('Full name is required');
+      return;
+    }
+    if (!addForm.email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (!addForm.email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (addForm.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
 
     try {
       setSaving(true);
       
-      // Call the API to create instructor
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
+      const requestData = {
+        full_name: addForm.full_name,
+        email: addForm.email,
+        password: addForm.password,
+        confirm_password: addForm.password
+      };
+      
+      console.log('=== FRONTEND DEBUG: Instructor Creation Request ===');
+      console.log('Form data:', addForm);
+      console.log('Request payload:', requestData);
+      console.log('Request URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`);
+      console.log('Expected backend fields: email, full_name, password, confirm_password');
+      console.log('===============================================');
+      
+      // Use authenticatedFetch instead of plain fetch for proper token handling
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: addForm.full_name,
-          email: addForm.email,
-          password: addForm.password,
-          confirm_password: addForm.password
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || errorData.error || 'Failed to create instructor');
+        console.error('Response not ok:', response.status, response.statusText);
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Error data:', errorData);
+        } catch (jsonError) {
+          console.error('Could not parse error JSON:', jsonError);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        // Handle validation errors
+        if (errorData.email && Array.isArray(errorData.email)) {
+          const emailError = errorData.email.join(', ');
+          if (emailError.includes('already exists')) {
+            throw new Error('⚠️ This email address is already registered. Please use a different email address.');
+          }
+          throw new Error(`📧 Email error: ${emailError}`);
+        }
+        if (errorData.password && Array.isArray(errorData.password)) {
+          throw new Error(`🔐 Password error: ${errorData.password.join(', ')}`);
+        }
+        if (errorData.full_name && Array.isArray(errorData.full_name)) {
+          throw new Error(`👤 Name error: ${errorData.full_name.join(', ')}`);
+        }
+        
+        throw new Error(errorData.detail || errorData.error || `HTTP ${response.status}: Failed to create instructor`);
       }
 
       const newInstructor = await response.json();

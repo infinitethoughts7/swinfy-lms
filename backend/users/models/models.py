@@ -49,7 +49,7 @@ class User(AbstractUser):
     ROLE_CHOICES = [
         ('learner', 'Learner'),
         ('knowledge_partner_instructor', 'Knowledge Partner Instructor'),
-        ('knowledge_partner_admin', 'Knowledge Partner Admin'),
+        ('knowledge_partner', 'Knowledge Partner'),
         ('super_admin', 'Super Admin'),
     ]
     
@@ -109,7 +109,7 @@ class User(AbstractUser):
             # But KP association needs separate approval
             if self.knowledge_partner and self.kp_approval_status == 'none':
                 self.kp_approval_status = 'pending'
-        elif self.role in ['knowledge_partner_admin']:
+        elif self.role in ['knowledge_partner']:
             self.is_approved = True
         elif self.role == 'knowledge_partner_instructor' and not self.pk:
             self.is_approved = False

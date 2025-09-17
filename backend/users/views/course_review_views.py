@@ -18,10 +18,17 @@ class CourseReviewListView(generics.ListAPIView):
     
     def get_queryset(self):
         """Return courses that need review by the KP admin."""
-        # Get courses from instructors in the same KP organization
-        # For now, return all courses with pending_approval status
+        # Get the KP admin's organization
+        kp_admin = self.request.user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            return Course.objects.none()
+        
+        # Return courses that are pending approval AND belong to the same KP organization
         return Course.objects.filter(
-            approval_status='pending_approval'
+            approval_status='pending_approval',
+            training_partner=kp_profile
         ).select_related('tutor', 'training_partner').prefetch_related(
             Prefetch('modules', queryset=CourseModule.objects.all()),
             Prefetch('modules__lessons', queryset=Lesson.objects.all()),
@@ -37,8 +44,17 @@ class ApprovedCoursesListView(generics.ListAPIView):
     
     def get_queryset(self):
         """Return approved courses for the KP admin."""
+        # Get the KP admin's organization
+        kp_admin = self.request.user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            return Course.objects.none()
+        
+        # Return approved courses that belong to the same KP organization
         return Course.objects.filter(
-            approval_status='approved'
+            approval_status='approved',
+            training_partner=kp_profile
         ).select_related('tutor', 'training_partner').prefetch_related(
             Prefetch('modules', queryset=CourseModule.objects.all()),
             Prefetch('modules__lessons', queryset=Lesson.objects.all()),
@@ -54,8 +70,17 @@ class CourseReviewDetailView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         """Return courses that can be reviewed by the KP admin."""
+        # Get the KP admin's organization
+        kp_admin = self.request.user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            return Course.objects.none()
+        
+        # Return pending courses that belong to the same KP organization
         return Course.objects.filter(
-            approval_status='pending_approval'
+            approval_status='pending_approval',
+            training_partner=kp_profile
         ).select_related('tutor', 'training_partner').prefetch_related(
             Prefetch('modules', queryset=CourseModule.objects.all()),
             Prefetch('modules__lessons', queryset=Lesson.objects.all()),

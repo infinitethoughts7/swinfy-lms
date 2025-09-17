@@ -299,11 +299,15 @@ class KPInstructorCreateSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
+        print(f"DEBUG SERIALIZER: Received data for validation: {attrs}")
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
         return attrs
 
     def create(self, validated_data):
+        print(f"DEBUG SERIALIZER: Creating instructor with validated_data: {validated_data}")
+        print(f"DEBUG SERIALIZER: Required fields - email: {validated_data.get('email')}, full_name: {validated_data.get('full_name')}, password: {'***' if validated_data.get('password') else 'MISSING'}")
+        print(f"DEBUG SERIALIZER: Context request user: {self.context.get('request', {}).user if self.context.get('request') else 'NO REQUEST'}")
         # Remove confirm_password as it's not needed for user creation
         validated_data.pop('confirm_password', None)
 
@@ -311,6 +315,13 @@ class KPInstructorCreateSerializer(serializers.Serializer):
         password = validated_data.pop('password')
         email = validated_data.pop('email')
         full_name = validated_data.pop('full_name')
+
+        # Get the KP admin's profile to link the instructor
+        kp_admin = self.context['request'].user
+        kp_profile = kp_admin.knowledge_partner
+        
+        if not kp_profile:
+            raise serializers.ValidationError("KP admin user must have an associated knowledge partner profile")
 
         # Create instructor user
         user = User.objects.create_user(
@@ -320,11 +331,13 @@ class KPInstructorCreateSerializer(serializers.Serializer):
             role='knowledge_partner_instructor',
             is_verified=True,  # KP admin created users are pre-verified
             is_approved=True,  # KP admin created users are pre-approved
+            knowledge_partner=kp_profile,  # Link user to KP organization
         )
 
         # Create instructor profile with default values that instructor can update later
         KPInstructorProfile.objects.create(
             user=user,
+            knowledge_partner=kp_profile,  # Link instructor to KP organization
             bio='Professional instructor profile - to be updated by instructor.',
             title='Instructor',
             highest_education='bachelor',

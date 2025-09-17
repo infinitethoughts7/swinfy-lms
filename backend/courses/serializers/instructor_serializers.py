@@ -32,11 +32,18 @@ class InstructorCourseCreateSerializer(serializers.ModelSerializer):
         
         # Set training partner from available KP profiles
         # For now, use the first available KP profile
-        # TODO: Implement proper instructor-to-KP relationship
-        from users.models import KPProfile
-        kp_profile = KPProfile.objects.first()
-        if kp_profile:
-            validated_data['training_partner'] = kp_profile
+        # Set the training partner to the instructor's KP organization
+        request = self.context.get('request')
+        if request and request.user:
+            instructor = request.user
+            if hasattr(instructor, 'instructor_profile') and instructor.instructor_profile.knowledge_partner:
+                validated_data['training_partner'] = instructor.instructor_profile.knowledge_partner
+            else:
+                # Fallback to first available KP profile if instructor has no KP association
+                from users.models import KPProfile
+                kp_profile = KPProfile.objects.first()
+                if kp_profile:
+                    validated_data['training_partner'] = kp_profile
         
         # Set default approval status for instructor-created courses
         validated_data['approval_status'] = 'draft'

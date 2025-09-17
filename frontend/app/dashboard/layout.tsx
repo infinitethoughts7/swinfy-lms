@@ -35,7 +35,7 @@ export default function DashboardLayout({
         const roleToDashboard: Record<string, string> = {
           'learner': 'student',
           'knowledge_partner_instructor': 'instructor',
-          'knowledge_partner_admin': 'kp',
+          'knowledge_partner': 'kp',
           'student': 'student',
           'tutor': 'tutor',
           'admin': 'admin',
@@ -95,7 +95,7 @@ export default function DashboardLayout({
         sidebarCollapsed ? 'w-16' : 'w-64'
       }`}>
         <Sidebar
-          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
+          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
           isCollapsed={sidebarCollapsed}
           onToggle={toggleSidebar}
         />
@@ -106,7 +106,7 @@ export default function DashboardLayout({
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <Sidebar
-          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner_admin' | 'knowledge_partner_instructor' | 'super_admin'}
+          userRole={user.role as 'student' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
           isCollapsed={false} // Never collapsed on mobile
           onToggle={toggleMobileMenu}
         />

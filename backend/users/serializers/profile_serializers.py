@@ -57,7 +57,7 @@ class KPProfileSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.kp_admin_email == value:
             return value
         
-        if User.objects.filter(email=value, role='knowledge_partner_admin').exclude(
+        if User.objects.filter(email=value, role='knowledge_partner').exclude(
             kp_profile=self.instance
         ).exists():
             raise serializers.ValidationError("This email is already registered as a KP admin.")

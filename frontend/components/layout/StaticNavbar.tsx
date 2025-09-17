@@ -65,7 +65,7 @@ const StaticNavbar = () => {
       const roleToDashboard: Record<string, string> = {
         'learner': 'student',
         'knowledge_partner_instructor': 'instructor',
-        'knowledge_partner_admin': 'kp',
+        'knowledge_partner': 'kp',
         'student': 'student',
         'tutor': 'tutor',
         'admin': 'admin'

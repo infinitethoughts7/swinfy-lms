@@ -335,8 +335,8 @@ def submit_course_for_approval(request, course_slug):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Update approval status
-    course.approval_status = 'pending_approval'
+    # Update approval status - set is_draft=False to trigger pending_approval status
+    course.is_draft = False
     course.save()
     
     return Response({

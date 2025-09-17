@@ -107,7 +107,7 @@ export default function KPProfilePage() {
     if (user) {
       try {
         const userData = JSON.parse(user);
-        if (userData.role !== 'knowledge_partner_admin' && userData.role !== 'knowledge_partner') {
+        if (userData.role !== 'knowledge_partner') {
           setError('Access denied. This page is only available for Knowledge Partner accounts.');
           return;
         }

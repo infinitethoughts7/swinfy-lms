@@ -157,7 +157,7 @@ class KnowledgePartnerApplication(models.Model):
             email=self.knowledge_partner_email,
             password=temp_password,
             full_name=f"{self.knowledge_partner_name} Admin",
-            role='knowledge_partner_admin',
+            role='knowledge_partner',
             knowledge_partner=knowledge_partner,  # Fixed: use knowledge_partner
             is_verified=True,
             is_approved=True,

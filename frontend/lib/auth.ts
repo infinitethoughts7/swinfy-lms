@@ -9,7 +9,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner_admin' | 'super_admin';
+  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
 }
 
 // Get tokens from localStorage (SSR safe)

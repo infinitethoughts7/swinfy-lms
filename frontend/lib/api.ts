@@ -149,13 +149,12 @@ export const authApi = {
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
         const errorMessage = await parseErrorResponse(response);
         throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       return data;
     } catch (error) {
       throw new Error(getErrorMessage(error));
@@ -170,13 +169,12 @@ export const authApi = {
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
         const errorMessage = await parseErrorResponse(response);
         throw new Error(errorMessage);
       }
 
+      const data = await response.json();
       return data;
     } catch (error) {
       throw new Error(getErrorMessage(error));
