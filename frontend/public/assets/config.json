@@ -1,7 +1,0 @@
-{
-  "baseUrl_p": "http://64.227.128.108/v1/",
-  "baseUrl": "http://localhost:3000/v1/",
-  "baseUrl_prod": "http://64.227.128.108/v1/",
-  "bucket_dev": "http://64.227.128.108/bucket/assest/",
-  "bucket": "http://64.227.128.108/bucket/"
-}
