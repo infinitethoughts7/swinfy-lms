@@ -30,7 +30,7 @@ export default function InstructorDashboard() {
       ]);
       
       setStats(statsData);
-      setCourses(Array.isArray(coursesData) ? coursesData : coursesData?.results || []);
+      setCourses(coursesData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
