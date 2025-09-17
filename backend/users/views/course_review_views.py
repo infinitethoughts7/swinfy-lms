@@ -77,6 +77,11 @@ def approve_course(request, course_id):
         course.approval_notes = request.data.get('notes', '')
         course.is_published = True
         course.is_draft = False
+        
+        # Make approved courses public and accessible
+        course.is_private = False  # Make course public
+        course.requires_admin_enrollment = False  # Allow direct enrollment
+        
         course.save()
         
         return Response({
