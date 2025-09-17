@@ -184,11 +184,9 @@ const StudentCard = ({
         <div className="text-center">
           <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden mx-auto mb-3">
             {student.avatar ? (
-              <Image
+              <img
                 src={student.avatar}
                 alt={student.name}
-                width={64}
-                height={64}
                 className="w-full h-full object-cover"
               />
             ) : (

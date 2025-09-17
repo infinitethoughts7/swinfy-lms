@@ -1,5 +1,4 @@
 # Dependencies
-frontend/public/asserts/
 *.txt 
 node_modules/
 */node_modules/
@@ -111,7 +110,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Note: public folder needed for Next.js static assets
 
 # Storybook build outputs
 .out
@@ -151,4 +150,3 @@ celerybeat.pid
 .mypy_cache/
 .dmypy.json
 dmypy.json
-public/asserts/

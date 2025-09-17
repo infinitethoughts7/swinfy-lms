@@ -49,7 +49,7 @@ export default function TutorAssignment({ courseOutline, onAssignmentComplete }:
       rating: 4.9,
       coursesCompleted: 15,
       availability: 'available',
-      profilePicture: '/assets/images/avatars/avatar-01.jpg'
+      profilePicture: '/assets/images/avatar/avatar-01.jpg'
     },
     {
       id: '2',

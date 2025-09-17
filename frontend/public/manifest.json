@@ -1,0 +1,20 @@
+{
+  "name": "Swinfy LMS",
+  "short_name": "Swinfy LMS",
+  "description": "A modern Learning Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3399cc",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "serviceworker": {
+    "src": "/sw.js",
+    "scope": "/"
+  }
+}

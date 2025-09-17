@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Star, Quote, Play, Pause } from 'lucide-react';
-import Image from 'next/image';
+// Removed Next.js Image import - using regular img for static assets
 
 const TestimonialsCarousel = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -157,11 +157,9 @@ const TestimonialsCarousel = () => {
           {/* 👤 Student Profile */}
           <div className="lg:col-span-1 text-center lg:text-left">
             <div className="relative inline-block mb-6">
-              <Image 
+              <img 
                 src={currentData.avatar} 
                 alt={currentData.name}
-                width={120}
-                height={120}
                 className="w-24 h-24 lg:w-30 lg:h-30 rounded-full object-cover border-4 border-white shadow-lg"
               />
               {/* 🏆 Success Badge */}
