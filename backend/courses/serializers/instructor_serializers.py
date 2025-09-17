@@ -139,7 +139,7 @@ class InstructorModuleCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CourseModule
-        fields = ['title', 'order', 'is_published']
+        fields = ['title', 'order']
     
     def create(self, validated_data):
         """Create module for the specified course."""
@@ -157,7 +157,7 @@ class InstructorModuleListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModule
         fields = [
-            'id', 'title', 'slug', 'order', 'is_published',
+            'id', 'title', 'slug', 'order',
             'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at'
         ]
     
@@ -175,7 +175,7 @@ class InstructorLessonCreateSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'title', 'description', 'lesson_type', 'order', 'content',
-            'video_file', 'duration_minutes', 'is_preview', 'is_published',
+            'video_file', 'duration_minutes', 'is_preview',
             'is_mandatory'
         ]
     
@@ -212,7 +212,7 @@ class InstructorLessonListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'description', 'lesson_type', 'lesson_type_display',
             'order', 'duration_minutes', 'duration_formatted', 'has_video_content',
-            'is_preview', 'is_published', 'is_mandatory', 'created_at', 'updated_at'
+            'is_preview', 'is_mandatory', 'created_at', 'updated_at'
         ]
 
 
@@ -231,7 +231,7 @@ class InstructorLessonDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'description', 'lesson_type', 'lesson_type_display',
             'order', 'content', 'video_file', 'duration_minutes', 'duration_formatted',
-            'has_video_content', 'is_preview', 'is_published', 'is_mandatory',
+            'has_video_content', 'is_preview', 'is_mandatory',
             'total_materials_count', 'module_title', 'course_title',
             'created_at', 'updated_at'
         ]

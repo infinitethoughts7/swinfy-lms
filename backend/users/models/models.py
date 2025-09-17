@@ -48,7 +48,7 @@ class User(AbstractUser):
     
     ROLE_CHOICES = [
         ('learner', 'Learner'),
-        ('knowledge_partner_instructor', 'Knowledge Partner Instructor'),
+        ('knowledge_partner_instructor', 'Instructor'),
         ('knowledge_partner', 'Knowledge Partner'),
         ('super_admin', 'Super Admin'),
     ]

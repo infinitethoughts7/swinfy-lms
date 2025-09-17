@@ -15,7 +15,7 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModule
         fields = [
-            'id', 'title', 'slug', 'course', 'order', 'is_published',
+            'id', 'title', 'slug', 'course', 'order',
             'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'slug', 'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at']
@@ -35,7 +35,7 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseModule
         fields = [
-            'title', 'course', 'order', 'is_published'
+            'title', 'course', 'order'
         ]
     
     def validate(self, data):
@@ -64,7 +64,7 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'slug', 'module', 'course',
             'lesson_type', 'order', 'duration_minutes', 'duration_formatted',
-            'is_preview', 'is_published', 'is_mandatory', 'content', 'video_file',
+            'is_preview', 'is_mandatory', 'content', 'video_file',
             'materials_count', 'is_completed', 'has_video_content',
             'created_at', 'updated_at'
         ]
@@ -104,7 +104,7 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'title', 'description', 'module', 'lesson_type', 'order',
-            'duration_minutes', 'is_preview', 'is_published', 'is_mandatory',
+            'duration_minutes', 'is_preview', 'is_mandatory',
             'content', 'video_file'
         ]
     

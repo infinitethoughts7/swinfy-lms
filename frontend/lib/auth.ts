@@ -10,6 +10,7 @@ export interface User {
   email: string;
   full_name: string;
   role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role_display?: string;
 }
 
 // Get tokens from localStorage (SSR safe)

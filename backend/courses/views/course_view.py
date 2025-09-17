@@ -293,7 +293,7 @@ class CourseModulesView(generics.ListAPIView):
     def get_queryset(self):
         course_slug = self.kwargs['slug']
         course = get_object_or_404(Course, slug=course_slug, is_published=True)
-        return CourseModule.objects.filter(course=course, is_published=True).order_by('order')
+        return CourseModule.objects.filter(course=course).order_by('order')
 
 
 class ModuleLessonsView(generics.ListAPIView):
@@ -305,8 +305,8 @@ class ModuleLessonsView(generics.ListAPIView):
         course_slug = self.kwargs['slug']
         module_id = self.kwargs['module_id']
         course = get_object_or_404(Course, slug=course_slug, is_published=True)
-        module = get_object_or_404(CourseModule, id=module_id, course=course, is_published=True)
-        return Lesson.objects.filter(module=module, is_published=True).order_by('order')
+        module = get_object_or_404(CourseModule, id=module_id, course=course)
+        return Lesson.objects.filter(module=module).order_by('order')
 
 
 class CourseProgressView(generics.RetrieveAPIView):
@@ -328,7 +328,7 @@ class LessonCompleteView(generics.UpdateAPIView):
     
     def get_object(self):
         lesson_id = self.kwargs['lesson_id']
-        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = get_object_or_404(Enrollment, course=lesson.module.course, student=self.request.user)
         return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
     
@@ -358,7 +358,7 @@ class LessonMaterialsView(generics.ListAPIView):
     
     def get_queryset(self):
         lesson_id = self.kwargs['lesson_id']
-        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         return LessonMaterial.objects.filter(lesson=lesson).order_by('order')
 
 
@@ -369,7 +369,7 @@ class LessonProgressView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         lesson_id = self.kwargs['lesson_id']
-        lesson = get_object_or_404(Lesson, id=lesson_id, is_published=True)
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = get_object_or_404(Enrollment, course=lesson.module.course, student=self.request.user)
         return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
 

@@ -11,7 +11,6 @@ interface Lesson {
   order: number;
   duration_minutes: number;
   is_preview: boolean;
-  is_published: boolean;
   content: string;
   video_url: string;
   video_file: string;
@@ -29,7 +28,6 @@ interface CourseModule {
   slug: string;
   order: number;
   duration_weeks: number;
-  is_published: boolean;
   lessons_count: number;
   total_duration_minutes: number;
   created_at: string;

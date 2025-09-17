@@ -916,7 +916,6 @@ export interface Module {
   title: string;
   slug: string;
   order: number;
-  is_published: boolean;
   lessons_count: number;
   total_duration_minutes: number;
   created_at: string;
@@ -926,7 +925,6 @@ export interface Module {
 export interface ModuleCreateData {
   title: string;
   order: number;
-  is_published: boolean;
 }
 
 export interface Lesson {
@@ -943,7 +941,6 @@ export interface Lesson {
   duration_formatted: string;
   has_video_content: boolean;
   is_preview: boolean;
-  is_published: boolean;
   is_mandatory: boolean;
   total_materials_count: number;
   module_title: string;
@@ -961,7 +958,6 @@ export interface LessonCreateData {
   video_file?: File;
   duration_minutes?: number;
   is_preview: boolean;
-  is_published: boolean;
   is_mandatory: boolean;
 }
 

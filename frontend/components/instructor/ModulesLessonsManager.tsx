@@ -425,8 +425,7 @@ const AddModuleModal = ({ courseSlug, onClose, onSuccess }: {
       setLoading(true);
       await instructorApi.modules.create(courseSlug, {
         title: title.trim(),
-        order: 0,
-        is_published: false
+        order: 0
       });
       onSuccess();
     } catch (err) {
@@ -519,7 +518,6 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
       await instructorApi.lessons.create(courseSlug, moduleId, {
         ...formData,
         order: 0, // Will be set by backend based on existing lessons
-        is_published: false,
         video_file: videoFile
       });
       onSuccess();

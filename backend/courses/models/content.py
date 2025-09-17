@@ -90,10 +90,7 @@ class CourseModule(models.Model):
         default=0,
         help_text="Order of module in course"
     )
-    is_published = models.BooleanField(
-        default=True,
-        help_text="Module is visible to students"
-    )
+
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -106,7 +103,6 @@ class CourseModule(models.Model):
         unique_together = ['course', 'order']
         indexes = [
             models.Index(fields=['course', 'order']),
-            models.Index(fields=['is_published']),
         ]
     
     def save(self, *args, **kwargs):
@@ -143,7 +139,6 @@ class Lesson(models.Model):
     
     # Basic Information
     title = models.CharField(max_length=200, help_text="Lesson/Subtopic title")
-    description = models.TextField(blank=True, help_text="Lesson description")
     slug = models.SlugField(max_length=220, help_text="URL-friendly version of title")
     
     # Module Relationship
@@ -173,10 +168,7 @@ class Lesson(models.Model):
         default=False,
         help_text="Lesson is available for preview"
     )
-    is_published = models.BooleanField(
-        default=True,
-        help_text="Lesson is visible to students"
-    )
+
     is_mandatory = models.BooleanField(
         default=True,
         help_text="Lesson must be completed to progress"
@@ -206,7 +198,6 @@ class Lesson(models.Model):
         indexes = [
             models.Index(fields=['module', 'order']),
             models.Index(fields=['lesson_type']),
-            models.Index(fields=['is_published']),
         ]
     
     def save(self, *args, **kwargs):

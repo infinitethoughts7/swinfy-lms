@@ -5,12 +5,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { logout } from '@/lib/auth';
+import { getRoleDisplayName } from '@/lib/role-utils';
 
 interface User {
   full_name?: string;
   email: string;
   avatar?: string;
-  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role: 'student' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role_display?: string;
 }
 
 interface HeaderProps {
@@ -267,7 +269,7 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                <p className="text-xs text-gray-500">{user.role_display || getRoleDisplayName(user.role)}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

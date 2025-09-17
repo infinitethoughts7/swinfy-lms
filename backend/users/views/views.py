@@ -132,6 +132,7 @@ class LoginView(TokenObtainPairView):
                 'email': user.email,
                 'full_name': user.full_name,
                 'role': user.role,
+                'role_display': user.get_role_display(),
                 'is_verified': user.is_verified,
                 'knowledge_partner': {
                     'id': user.kp_profile.id,
