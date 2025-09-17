@@ -102,14 +102,14 @@ class CourseSerializer(serializers.ModelSerializer):
             'is_approved_by_training_partner', 'is_fully_approved', 'can_be_published',
             'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
             'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
-            'approval_notes', 'training_partner_admin_approved_by',
+            'approval_notes',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
             'approval_status', 'is_approved_by_training_partner', 'is_fully_approved',
             'can_be_published', 'visibility_display', 'is_enrollment_open',
-            'training_partner_admin_approved_by', 'created_at', 'updated_at',
+            'created_at', 'updated_at',
             'published_at', 'last_enrollment'
         ]
     
@@ -164,7 +164,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
             'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
             'modules_count', 'lessons_count', 'total_duration_minutes',
-            'approval_notes', 'training_partner_admin_approved_by',
+            'approval_notes',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
@@ -172,7 +172,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             'approval_status', 'is_approved_by_training_partner', 'is_fully_approved',
             'can_be_published', 'visibility_display', 'is_enrollment_open',
             'modules_count', 'lessons_count', 'total_duration_minutes',
-            'training_partner_admin_approved_by', 'created_at', 'updated_at',
+            'created_at', 'updated_at',
             'published_at', 'last_enrollment'
         ]
     
@@ -228,14 +228,14 @@ class CourseAdminSerializer(serializers.ModelSerializer):
             'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
             'visibility_display', 'is_enrollment_open', 'training_partner', 'tutor',
             'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_stats',
-            'approval_notes', 'training_partner_admin_approved_by',
+            'approval_notes',
             'created_at', 'updated_at', 'published_at', 'last_enrollment'
         ]
         read_only_fields = [
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
             'is_fully_approved', 'can_be_published', 'visibility_display', 'is_enrollment_open',
             'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_stats',
-            'training_partner_admin_approved_by', 'created_at', 'updated_at',
+            'created_at', 'updated_at',
             'published_at', 'last_enrollment'
         ]
     

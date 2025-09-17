@@ -18,7 +18,7 @@ interface Course {
   level_display: string;
   duration_weeks: number;
   price: string;
-  thumbnail: string;
+  thumbnail: string | null;
   rating: string;
   total_reviews: number;
   enrollment_count: number;
@@ -29,6 +29,8 @@ interface Course {
     location: string;
     website?: string;
     description?: string;
+    is_active: boolean;
+    created_at: string;
   };
   tutor: {
     id: string;
@@ -37,8 +39,9 @@ interface Course {
     first_name: string;
     last_name: string;
     role: string;
-    organization_name: string;
-    organization_type: string;
+    is_verified: boolean;
+    is_approved: boolean;
+    created_at: string;
   };
   is_featured: boolean;
   created_at: string;
@@ -49,37 +52,22 @@ const categories = [
   'All', 
   'Frontend Development', 
   'Backend Development', 
+  'Programming Languages',
+  'Artificial Intelligence',
+  'AI Tools',
   'Data Science', 
-  'DevOps',
-  'AI for Kids',
-  'Programming for Kids',
-  'Machine Learning',
-  'Web Development',
-  'Mobile Development',
-  'UI/UX Design',
-  'Cloud Computing',
-  'Cybersecurity',
-  'Database Management',
-  'Software Testing',
-  'Project Management',
-  'Digital Marketing',
-  'Graphic Design',
-  'Video Editing',
-  'Photography',
-  'Music Production',
-  'Language Learning',
-  'Business Skills',
-  'Personal Development',
-  'Health & Fitness',
-  'Cooking',
-  'Art & Crafts',
-  'Other'
+  'Data Analysis',
+  'Software Engineering Essentials'
 ];
 
+
+// Level choices to match backend
+const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 export default function CoursesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedLevel, setSelectedLevel] = useState('All');
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -97,33 +85,24 @@ export default function CoursesPage() {
           const categoryMap: { [key: string]: string } = {
             'Frontend Development': 'frontend_development',
             'Backend Development': 'backend_development',
+            'Programming Languages': 'programming_languages',
+            'Artificial Intelligence': 'ai',
+            'AI Tools': 'ai_tools',
             'Data Science': 'data_science',
-            'DevOps': 'devops',
-            'AI for Kids': 'ai_kids',
-            'Programming for Kids': 'programming_kids',
-            'Machine Learning': 'machine_learning',
-            'Web Development': 'web_development',
-            'Mobile Development': 'mobile_development',
-            'UI/UX Design': 'ui_ux_design',
-            'Cloud Computing': 'cloud_computing',
-            'Cybersecurity': 'cybersecurity',
-            'Database Management': 'database_management',
-            'Software Testing': 'software_testing',
-            'Project Management': 'project_management',
-            'Digital Marketing': 'digital_marketing',
-            'Graphic Design': 'graphic_design',
-            'Video Editing': 'video_editing',
-            'Photography': 'photography',
-            'Music Production': 'music_production',
-            'Language Learning': 'language_learning',
-            'Business Skills': 'business_skills',
-            'Personal Development': 'personal_development',
-            'Health & Fitness': 'health_fitness',
-            'Cooking': 'cooking',
-            'Art & Crafts': 'art_crafts',
-            'Other': 'other'
+            'Data Analysis': 'data_analysis',
+            'Software Engineering Essentials': 'software_engineering'
           };
           params.category = categoryMap[selectedCategory];
+        }
+        
+        if (selectedLevel !== 'All') {
+          // Map display names to backend values
+          const levelMap: { [key: string]: string } = {
+            'Beginner': 'beginner',
+            'Intermediate': 'intermediate',
+            'Advanced': 'advanced'
+          };
+          params.level = levelMap[selectedLevel];
         }
         
         if (searchTerm) {
@@ -143,7 +122,7 @@ export default function CoursesPage() {
     };
 
     fetchCourses();
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, selectedLevel]);
 
   // Filter courses based on search term and category (for client-side filtering of fetched data)
   const filteredCourses = useMemo(() => {
@@ -217,6 +196,21 @@ export default function CoursesPage() {
               </select>
             </div>
 
+            {/* Level Filter */}
+            <div className="lg:w-48">
+              <select
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value)}
+                className="block w-full px-3 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-0 focus:border-gray-300 font-inter text-gray-900"
+              >
+                {levels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+
           </div>
 
           {/* Results Count */}
@@ -231,6 +225,7 @@ export default function CoursesPage() {
                 Showing {filteredCourses.length} of {courses.length} courses
                 {searchTerm && ` for "${searchTerm}"`}
                 {selectedCategory !== 'All' && ` in ${selectedCategory}`}
+                {selectedLevel !== 'All' && ` at ${selectedLevel} level`}
               </>
             )}
           </div>
@@ -257,19 +252,9 @@ export default function CoursesPage() {
               {/* Course Thumbnail Background */}
               <div className="relative h-48 overflow-hidden">
                 {/* Course Thumbnail - Full Background */}
-                {(course.thumbnail || '/assets/courses/python.svg').endsWith('.svg') ? (
-                  <img
-                    src={course.thumbnail || '/assets/courses/python.svg'}
-                    alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/assets/courses/python.svg';
-                    }}
-                  />
-                ) : (
+                {course.thumbnail ? (
                   <Image
-                    src={course.thumbnail || '/assets/courses/python.svg'}
+                    src={course.thumbnail}
                     alt={course.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -278,6 +263,13 @@ export default function CoursesPage() {
                       target.src = '/assets/courses/python.svg';
                     }}
                   />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <div className="text-4xl mb-2">📚</div>
+                      <div className="text-sm font-medium">{course.category_display}</div>
+                    </div>
+                  </div>
                 )}
                 
                 {/* Dark Overlay for Better Text Readability */}
@@ -309,24 +301,31 @@ export default function CoursesPage() {
                   <div className="mb-3">
                     <div className="flex items-center mb-2">
                       <div className="w-6 h-6 mr-2">
-                        {course.training_partner.name === 'MAT' ? (
-                          <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-800 rounded flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">MAT</span>
+                        {course.training_partner.name.toLowerCase() === 'netflix' ? (
+                          <div className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-800 rounded flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">N</span>
                           </div>
-                        ) : course.training_partner.name === 'Swinfy' ? (
+                        ) : course.training_partner.name.toLowerCase() === 'google' ? (
+                          <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-green-600 rounded flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">G</span>
+                          </div>
+                        ) : course.training_partner.name.toLowerCase() === 'swinfy' ? (
                           <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-purple-800 rounded flex items-center justify-center">
                             <span className="text-white font-bold text-xs">S</span>
                           </div>
                         ) : (
                           <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
                             <span className="text-white font-bold text-xs">
-                              {course.training_partner.name?.charAt(0) || 'O'}
+                              {course.training_partner.name?.charAt(0)?.toUpperCase() || 'O'}
                             </span>
                           </div>
                         )}
                       </div>
                       <span className="text-blue-600 font-inter font-semibold text-sm">
                         {course.training_partner.name}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({course.training_partner.type})
                       </span>
                     </div>
                   </div>
@@ -366,15 +365,24 @@ export default function CoursesPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center text-gray-600 text-sm">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {course.duration_weeks ? `${course.duration_weeks} weeks` : 'TBD'}
                   </div>
+                  <div className="text-green-600 font-inter font-bold text-lg">
+                    ₹{parseFloat(course.price).toFixed(0)}
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
                   <div className="text-blue-600 font-inter font-medium text-sm group-hover:text-blue-700 transition-colors">
                     View Details →
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {course.enrollment_count > 0 ? `${course.enrollment_count} enrolled` : 'New course'}
                   </div>
                 </div>
               </div>
@@ -397,6 +405,7 @@ export default function CoursesPage() {
               onClick={() => {
                 setSearchTerm('');
                 setSelectedCategory('All');
+                setSelectedLevel('All');
               }}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-inter"
             >

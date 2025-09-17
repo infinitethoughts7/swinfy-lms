@@ -5,16 +5,17 @@ import VideoPlayer from './VideoPlayer';
 interface Lesson {
   id: string;
   title: string;
-  description: string;
   slug: string;
   lesson_type: 'video' | 'text' | 'quiz' | 'assignment' | 'live_session' | 'download';
+  lesson_type_display: string;
   order: number;
   duration_minutes: number;
+  duration_formatted: string;
   is_preview: boolean;
-  content: string;
-  video_url: string;
-  video_file: string;
-  attachment: string;
+  is_mandatory: boolean;
+  content?: string;
+  video_file?: string;
+  has_video_content: boolean;
   materials_count: number;
   is_completed: boolean;
   created_at: string;
@@ -230,11 +231,9 @@ const LessonsSection = ({ modules, lessons, isEnrolled = false }: LessonsSection
                                   <h5 className="font-sora font-semibold text-text-primary mb-1 group-hover:text-green-700">
                                     {lesson.title}
                                   </h5>
-                                  {lesson.description && (
-                                    <p className="text-gray-600 font-inter text-sm">
-                                      {lesson.description}
-                                    </p>
-                                  )}
+                                  <p className="text-gray-600 font-inter text-sm">
+                                    {lesson.lesson_type_display} • {lesson.duration_formatted}
+                                  </p>
                                   <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                                     <span className="flex items-center">
                                       <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -359,11 +358,9 @@ const LessonsSection = ({ modules, lessons, isEnrolled = false }: LessonsSection
                   </p>
                 </div>
               </div>
-              {previewLesson.description && (
-                <p className="text-gray-600 font-inter">
-                  {previewLesson.description}
-                </p>
-              )}
+              <p className="text-gray-600 font-inter">
+                {previewLesson.lesson_type_display} • {previewLesson.duration_formatted}
+              </p>
             </div>
           </div>
         </div>
@@ -397,16 +394,16 @@ const LessonsSection = ({ modules, lessons, isEnrolled = false }: LessonsSection
               />
               
               {/* Lesson Description */}
-              {selectedLesson.description && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-sora font-semibold text-gray-900 mb-2">
-                    About this lesson
-                  </h3>
-                  <p className="text-gray-600 font-inter leading-relaxed">
-                    {selectedLesson.description}
-                  </p>
-                </div>
-              )}
+              <div className="mt-6">
+                <h3 className="text-lg font-sora font-semibold text-gray-900 mb-2">
+                  Lesson Details
+                </h3>
+                <p className="text-gray-600 font-inter leading-relaxed">
+                  Type: {selectedLesson.lesson_type_display}<br/>
+                  Duration: {selectedLesson.duration_formatted}<br/>
+                  {selectedLesson.is_mandatory ? 'Required lesson' : 'Optional lesson'}
+                </p>
+              </div>
 
               {/* Lesson Details */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">

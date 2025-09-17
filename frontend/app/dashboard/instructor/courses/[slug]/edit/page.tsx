@@ -6,21 +6,9 @@ import Link from 'next/link';
 import { instructorApi, type Course, type CourseCreateData } from '@/lib/api';
 import { 
   ChevronRight, Save, X, Upload, AlertCircle,
-  Image as ImageIcon, Video, FileText, Plus, Trash2, Edit,
-  File, Clock
+  Image as ImageIcon, Video
 } from 'lucide-react';
 
-interface Lesson {
-  id?: string;
-  title: string;
-  lesson_type: 'video' | 'text' | 'assignment' | 'image_gallery' | 'mixed';
-  duration_minutes: number;
-  is_preview: boolean;
-  is_mandatory: boolean;
-  content?: string;
-  video_file?: File | null;
-  order: number;
-}
 
 export default function EditCoursePage() {
   const params = useParams();
@@ -50,7 +38,6 @@ export default function EditCoursePage() {
     demo_video?: File;
   }>({});
 
-  const [lessons, setLessons] = useState<Lesson[]>([]);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -123,44 +110,6 @@ export default function EditCoursePage() {
     }
   };
 
-  const addLesson = () => {
-    const newLesson: Lesson = {
-      title: '',
-      lesson_type: 'video',
-      duration_minutes: 0,
-      is_preview: false,
-      is_mandatory: true,
-      content: '',
-      video_file: null,
-      order: lessons.length + 1
-    };
-    setLessons([...lessons, newLesson]);
-  };
-
-  const updateLesson = (index: number, updatedLesson: Partial<Lesson>) => {
-    setLessons(prev => 
-      prev.map((lesson, i) => 
-        i === index ? { ...lesson, ...updatedLesson } : lesson
-      )
-    );
-  };
-
-  const deleteLesson = (index: number) => {
-    if (confirm('Are you sure you want to delete this lesson?')) {
-      setLessons(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const getLessonIcon = (type: string) => {
-    switch (type) {
-      case 'video': return <Video className="h-4 w-4 text-blue-500" />;
-      case 'text': return <FileText className="h-4 w-4 text-green-500" />;
-      case 'assignment': return <Edit className="h-4 w-4 text-orange-500" />;
-      case 'image_gallery': return <ImageIcon className="h-4 w-4 text-purple-500" />;
-      case 'mixed': return <File className="h-4 w-4 text-gray-500" />;
-      default: return <FileText className="h-4 w-4 text-gray-500" />;
-    }
-  };
 
   if (loading) {
     return (
@@ -228,7 +177,7 @@ export default function EditCoursePage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Basic Info */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2">
             {/* Basic Information */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Course Details</h2>
@@ -342,49 +291,6 @@ export default function EditCoursePage() {
                 </div>
               </div>
             </div>
-
-            {/* Lessons Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Course Lessons ({lessons.length})</h2>
-                <button
-                  type="button"
-                  onClick={addLesson}
-                  className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Lesson
-                </button>
-              </div>
-
-              {lessons.length === 0 ? (
-                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                  <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-3">No lessons added yet</p>
-                  <button
-                    type="button"
-                    onClick={addLesson}
-                    className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add First Lesson
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {lessons.map((lesson, index) => (
-                    <LessonCard
-                      key={index}
-                      lesson={lesson}
-                      index={index}
-                      onUpdate={updateLesson}
-                      onDelete={deleteLesson}
-                      getLessonIcon={getLessonIcon}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Right Column - Media & Settings */}
@@ -481,7 +387,7 @@ export default function EditCoursePage() {
                   {saving ? 'Updating...' : 'Update Course'}
                 </button>
 
-                {course?.approval_status === 'draft' && lessons.length > 0 && (
+                {course?.approval_status === 'draft' && (
                   <button
                     type="button"
                     onClick={async () => {
@@ -531,188 +437,3 @@ export default function EditCoursePage() {
     </div>
   );
 }
-
-// Lesson Card Component
-interface LessonCardProps {
-  lesson: Lesson;
-  index: number;
-  onUpdate: (index: number, lesson: Partial<Lesson>) => void;
-  onDelete: (index: number) => void;
-  getLessonIcon: (type: string) => React.ReactElement;
-}
-
-const LessonCard = ({ lesson, index, onUpdate, onDelete, getLessonIcon }: LessonCardProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState(lesson);
-
-  const handleSave = () => {
-    onUpdate(index, editData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditData(lesson);
-    setIsEditing(false);
-  };
-
-  const handleFileChange = (file: File | null) => {
-    setEditData(prev => ({ ...prev, video_file: file }));
-  };
-
-  if (isEditing) {
-    return (
-      <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lesson Title</label>
-            <input
-              type="text"
-              value={editData.title}
-              onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter lesson title..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lesson Type</label>
-              <select
-                value={editData.lesson_type}
-                onChange={(e) => setEditData(prev => ({ ...prev, lesson_type: e.target.value as 'video' | 'text' | 'assignment' | 'image_gallery' | 'mixed' }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="video">Video Lesson</option>
-                <option value="text">Text Lesson</option>
-                <option value="assignment">Assignment</option>
-                <option value="image_gallery">Image Gallery</option>
-                <option value="mixed">Mixed Content</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-              <input
-                type="number"
-                min="0"
-                value={editData.duration_minutes}
-                onChange={(e) => setEditData(prev => ({ ...prev, duration_minutes: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          {editData.lesson_type === 'video' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Video File</label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-              {editData.video_file && (
-                <p className="text-xs text-gray-500 mt-1">Selected: {editData.video_file.name}</p>
-              )}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Content/Description</label>
-            <textarea
-              value={editData.content || ''}
-              onChange={(e) => setEditData(prev => ({ ...prev, content: e.target.value }))}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Lesson content or description..."
-            />
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={editData.is_preview}
-                onChange={(e) => setEditData(prev => ({ ...prev, is_preview: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              />
-              <span className="ml-2 text-sm text-gray-700">Free Preview</span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={editData.is_mandatory}
-                onChange={(e) => setEditData(prev => ({ ...prev, is_mandatory: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              />
-              <span className="ml-2 text-sm text-gray-700">Mandatory</span>
-            </label>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Save Lesson
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border">
-      <div className="flex items-center space-x-3">
-        <span className="text-sm font-medium text-gray-500 bg-white px-2 py-1 rounded min-w-[2rem] text-center">
-          {index + 1}
-        </span>
-        <div className="flex items-center space-x-2">
-          {getLessonIcon(lesson.lesson_type)}
-          <span className="font-medium text-gray-900">
-            {lesson.title || `Lesson ${index + 1}`}
-          </span>
-        </div>
-        {lesson.duration_minutes > 0 && (
-          <div className="flex items-center text-sm text-gray-500">
-            <Clock className="h-3 w-3 mr-1" />
-            {lesson.duration_minutes}m
-          </div>
-        )}
-        {lesson.is_preview && (
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Preview</span>
-        )}
-        {!lesson.is_mandatory && (
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Optional</span>
-        )}
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <button
-          type="button"
-          onClick={() => setIsEditing(true)}
-          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <Edit className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(index)}
-          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
-};

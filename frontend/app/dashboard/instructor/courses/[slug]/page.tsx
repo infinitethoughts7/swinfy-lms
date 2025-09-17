@@ -27,15 +27,15 @@ const CourseDetailTabs = ({ activeTab, setActiveTab }: TabProps) => {
   ];
 
   return (
-    <div className="border-b border-gray-200 mb-6">
-      <nav className="flex space-x-8">
+    <div className="border-b border-gray-200 mb-4">
+      <nav className="flex space-x-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`flex items-center py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -52,62 +52,64 @@ const CourseDetailTabs = ({ activeTab, setActiveTab }: TabProps) => {
 };
 
 const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => void }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
     {/* Course Info */}
-    <div className="lg:col-span-2 space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Information</h3>
-        <div className="space-y-4">
+    <div className="lg:col-span-2 space-y-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Course Information</h3>
+        <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <p className="text-gray-600">{course.description || 'No description provided'}</p>
+            <span className="block text-sm font-semibold text-gray-900 mb-1">Description:</span>
+            <p className="text-sm text-gray-700 leading-relaxed">{course.description || 'No description provided'}</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <p className="text-gray-600">{course.category_display}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-semibold text-gray-900">Category:</span>
+              <span className="text-sm font-medium text-gray-700">{course.category_display}</span>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
-              <p className="text-gray-600">{course.level_display}</p>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-semibold text-gray-900">Level:</span>
+              <span className="text-sm font-medium text-gray-700">{course.level_display}</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-              <p className="text-gray-600">{course.duration_weeks} weeks</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-semibold text-gray-900">Duration:</span>
+              <span className="text-sm font-medium text-gray-700">{course.duration_weeks} weeks</span>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-              <p className="text-gray-600">₹{course.price}</p>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-semibold text-gray-900">Price:</span>
+              <span className="text-sm font-bold text-green-600">₹{course.price}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Learning Outcomes */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Outcomes</h3>
-        <div className="prose prose-sm">
-          <p className="text-gray-600">{course.learning_outcomes || 'No learning outcomes specified'}</p>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Learning Outcomes</h3>
+        <div>
+          <span className="block text-sm font-semibold text-gray-900 mb-1">What you'll learn:</span>
+          <p className="text-sm text-gray-700 leading-relaxed">{course.learning_outcomes || 'No learning outcomes specified'}</p>
         </div>
       </div>
 
       {/* Prerequisites */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Prerequisites</h3>
-        <div className="prose prose-sm">
-          <p className="text-gray-600">{course.prerequisites || 'No prerequisites specified'}</p>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Prerequisites</h3>
+        <div>
+          <span className="block text-sm font-semibold text-gray-900 mb-1">Requirements:</span>
+          <p className="text-sm text-gray-700 leading-relaxed">{course.prerequisites || 'No prerequisites specified'}</p>
         </div>
       </div>
     </div>
 
     {/* Course Stats & Actions */}
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Course Image */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Thumbnail</h3>
-        <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-4 flex items-center justify-center">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Course Thumbnail</h3>
+        <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center">
           {course.thumbnail ? (
             <img 
               src={course.thumbnail} 
@@ -115,37 +117,37 @@ const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => 
               className="w-full h-full object-cover rounded-lg"
             />
           ) : (
-            <BookOpen className="h-12 w-12 text-white" />
+            <BookOpen className="h-8 w-8 text-white" />
           )}
         </div>
-        <button className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center">
+        <button className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm">
           <Upload className="h-4 w-4 mr-2" />
           Update Thumbnail
         </button>
       </div>
 
       {/* Quick Stats */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Modules</span>
-            <span className="font-medium">{course.modules_count || 0}</span>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Quick Stats</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Modules:</span>
+            <span className="text-sm font-bold text-blue-600">{course.modules_count || 0}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Lessons</span>
-            <span className="font-medium">{course.lessons_count || 0}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Lessons:</span>
+            <span className="text-sm font-bold text-blue-600">{course.lessons_count || 0}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Duration</span>
-            <span className="font-medium">{Math.round((course.total_duration_minutes || 0) / 60)}h</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Duration:</span>
+            <span className="text-sm font-bold text-purple-600">{Math.round((course.total_duration_minutes || 0) / 60)}h</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Enrollments</span>
-            <span className="font-medium">{course.enrollment_count || 0}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Enrollments:</span>
+            <span className="text-sm font-bold text-green-600">{course.enrollment_count || 0}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Status</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-900">Status:</span>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               course.approval_status === 'approved' 
                 ? 'bg-green-100 text-green-800'
@@ -160,17 +162,17 @@ const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => 
       </div>
 
       {/* Actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-        <div className="space-y-3">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Actions</h3>
+        <div className="space-y-2">
           <Link
             href={`/dashboard/instructor/courses/${course.slug}/edit`}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-sm"
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit Course
           </Link>
-          <button className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center">
+          <button className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm">
             <Eye className="h-4 w-4 mr-2" />
             Preview Course
           </button>
@@ -201,14 +203,14 @@ const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => 
                     }
                   }
                 }}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-sm"
               >
                 <Award className="h-4 w-4 mr-2" />
                 Submit for Approval
               </button>
             )}
             {course.approval_status === 'draft' && course.lessons_count === 0 && (
-              <div className="w-full px-4 py-2 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center cursor-not-allowed">
+              <div className="w-full px-3 py-2 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center cursor-not-allowed text-sm">
                 <Award className="h-4 w-4 mr-2" />
                 Add lessons to submit
               </div>
@@ -290,10 +292,10 @@ export default function CourseDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <Link
             href="/dashboard/instructor/courses"
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -301,8 +303,8 @@ export default function CourseDetailPage() {
             <ChevronRight className="h-5 w-5 rotate-180" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
-            <p className="text-gray-600">{course.short_description}</p>
+            <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
+            <p className="text-gray-600 text-sm">{course.short_description}</p>
           </div>
         </div>
         <div className="flex items-center space-x-3">

@@ -132,44 +132,42 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link
-              href="/dashboard/instructor/courses"
-              className="p-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Link>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <BookOpen className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900">Create New Course</h1>
-                <p className="text-gray-600 mt-2 text-lg">Build an engaging learning experience for your students</p>
-              </div>
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="flex items-center space-x-4">
+          <Link
+            href="/dashboard/instructor/courses"
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Create New Course</h1>
+              <p className="text-gray-600 text-sm">Build an engaging learning experience for your students</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Basic Information */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg mr-3">
-              <BookOpen className="h-5 w-5 text-blue-600" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center mb-4">
+            <div className="p-1.5 bg-blue-100 rounded-lg mr-2">
+              <BookOpen className="h-4 w-4 text-blue-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Course Title *
               </label>
               <input
@@ -177,8 +175,8 @@ export default function CreateCoursePage() {
                 value={formData.title}
                 onChange={(e) => handleChange('title', e.target.value)}
                 placeholder="e.g., Complete React Development Course"
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                  formErrors.title ? 'ring-2 ring-red-500' : ''
+                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
+                  formErrors.title ? 'ring-1 ring-red-500 border-red-500' : ''
                 }`}
               />
               {formErrors.title && (
@@ -187,13 +185,13 @@ export default function CreateCoursePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Category *
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -202,13 +200,13 @@ export default function CreateCoursePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Difficulty Level *
               </label>
               <select
                 value={formData.level}
                 onChange={(e) => handleChange('level', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
               >
                 {LEVELS.map(level => (
                   <option key={level.value} value={level.value}>{level.label}</option>
@@ -217,17 +215,17 @@ export default function CreateCoursePage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Short Description *
               </label>
               <textarea
                 value={formData.short_description}
                 onChange={(e) => handleChange('short_description', e.target.value)}
                 placeholder="Brief description for course cards (max 300 characters)"
-                rows={3}
+                rows={2}
                 maxLength={300}
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 resize-none ${
-                  formErrors.short_description ? 'ring-2 ring-red-500' : ''
+                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none ${
+                  formErrors.short_description ? 'ring-1 ring-red-500 border-red-500' : ''
                 }`}
               />
               <div className="flex justify-between mt-1">
@@ -239,16 +237,16 @@ export default function CreateCoursePage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Full Description *
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
                 placeholder="Detailed course description, what students will learn, course structure..."
-                rows={6}
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 resize-none ${
-                  formErrors.description ? 'ring-2 ring-red-500' : ''
+                rows={4}
+                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none ${
+                  formErrors.description ? 'ring-1 ring-red-500 border-red-500' : ''
                 }`}
               />
               {formErrors.description && (
@@ -259,17 +257,17 @@ export default function CreateCoursePage() {
         </div>
 
         {/* Course Details */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-green-100 rounded-lg mr-3">
-              <Tag className="h-5 w-5 text-green-600" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center mb-4">
+            <div className="p-1.5 bg-green-100 rounded-lg mr-2">
+              <Tag className="h-4 w-4 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Course Details</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Course Details</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Price (₹) *
               </label>
               <div className="relative">
@@ -280,8 +278,8 @@ export default function CreateCoursePage() {
                   step="1"
                   value={formData.price}
                   onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                    formErrors.price ? 'ring-2 ring-red-500' : ''
+                  className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
+                    formErrors.price ? 'ring-1 ring-red-500 border-red-500' : ''
                   }`}
                 />
               </div>
@@ -291,19 +289,19 @@ export default function CreateCoursePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Duration (weeks) *
               </label>
               <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="number"
                   min="1"
                   max="52"
                   value={formData.duration_weeks}
                   onChange={(e) => handleChange('duration_weeks', parseInt(e.target.value) || 1)}
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                    formErrors.duration_weeks ? 'ring-2 ring-red-500' : ''
+                  className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
+                    formErrors.duration_weeks ? 'ring-1 ring-red-500 border-red-500' : ''
                   }`}
                 />
               </div>
@@ -313,7 +311,7 @@ export default function CreateCoursePage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Tags (comma-separated)
               </label>
               <input
@@ -321,52 +319,52 @@ export default function CreateCoursePage() {
                 value={formData.tags || ''}
                 onChange={(e) => handleChange('tags', e.target.value)}
                 placeholder="e.g., React, JavaScript, Frontend, Web Development"
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
               />
               <p className="text-gray-500 text-sm mt-1">Help students find your course with relevant tags</p>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Learning Outcomes
               </label>
               <textarea
                 value={formData.learning_outcomes || ''}
                 onChange={(e) => handleChange('learning_outcomes', e.target.value)}
                 placeholder="What will students be able to do after completing this course?"
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 resize-none"
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Prerequisites
               </label>
               <textarea
                 value={formData.prerequisites || ''}
                 onChange={(e) => handleChange('prerequisites', e.target.value)}
                 placeholder="What should students know before taking this course?"
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 resize-none"
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
               />
             </div>
           </div>
         </div>
 
         {/* Media Upload */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-purple-100 rounded-lg mr-3">
-              <Upload className="h-5 w-5 text-purple-600" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center mb-4">
+            <div className="p-1.5 bg-purple-100 rounded-lg mr-2">
+              <Upload className="h-4 w-4 text-purple-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Course Media</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Course Media</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Thumbnail Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Course Thumbnail
               </label>
               <div className="relative">
@@ -379,18 +377,18 @@ export default function CreateCoursePage() {
                 />
                 <label
                   htmlFor="thumbnail-upload"
-                  className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"
+                  className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   {thumbnailPreview ? (
                     <img
                       src={thumbnailPreview}
                       alt="Thumbnail preview"
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <Upload className="h-8 w-8 mb-2" />
-                      <span className="text-sm">Upload thumbnail</span>
+                      <Upload className="h-6 w-6 mb-1" />
+                      <span className="text-xs">Upload thumbnail</span>
                     </div>
                   )}
                 </label>
@@ -399,7 +397,7 @@ export default function CreateCoursePage() {
 
             {/* Banner Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Course Banner
               </label>
               <div className="relative">
@@ -412,18 +410,18 @@ export default function CreateCoursePage() {
                 />
                 <label
                   htmlFor="banner-upload"
-                  className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"
+                  className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   {bannerPreview ? (
                     <img
                       src={bannerPreview}
                       alt="Banner preview"
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <Upload className="h-8 w-8 mb-2" />
-                      <span className="text-sm">Upload banner</span>
+                      <Upload className="h-6 w-6 mb-1" />
+                      <span className="text-xs">Upload banner</span>
                     </div>
                   )}
                 </label>
@@ -432,58 +430,58 @@ export default function CreateCoursePage() {
 
             {/* Demo Video Upload */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Demo Video (Optional)
               </label>
               <input
                 type="file"
                 accept="video/*"
                 onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
-                className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
               />
-              <p className="text-gray-500 text-sm mt-1">Upload a short video preview of your course</p>
+              <p className="text-gray-500 text-xs mt-1">Upload a short video preview of your course</p>
             </div>
           </div>
         </div>
 
         {/* Course Settings */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-orange-100 rounded-lg mr-3">
-              <Eye className="h-5 w-5 text-orange-600" />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center mb-4">
+            <div className="p-1.5 bg-orange-100 rounded-lg mr-2">
+              <Eye className="h-4 w-4 text-orange-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Course Settings</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Course Settings</h2>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
-                <h3 className="font-medium text-gray-900">Private Course</h3>
-                <p className="text-gray-600 text-sm">Only visible to learners from your organization</p>
+                <h3 className="font-medium text-gray-900 text-sm">Private Course</h3>
+                <p className="text-gray-600 text-xs">Only visible to learners from your organization</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.is_private}
                 onChange={(e) => handleChange('is_private', e.target.checked)}
-                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
-                <h3 className="font-medium text-gray-900">Require Admin Approval</h3>
-                <p className="text-gray-600 text-sm">All enrollments need admin approval</p>
+                <h3 className="font-medium text-gray-900 text-sm">Require Admin Approval</h3>
+                <p className="text-gray-600 text-xs">All enrollments need admin approval</p>
               </div>
               <input
                 type="checkbox"
                 checked={formData.requires_admin_enrollment}
                 onChange={(e) => handleChange('requires_admin_enrollment', e.target.checked)}
-                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-1">
                 Maximum Enrollments (Optional)
               </label>
               <input
@@ -492,8 +490,8 @@ export default function CreateCoursePage() {
                 value={formData.max_enrollments || ''}
                 onChange={(e) => handleChange('max_enrollments', e.target.value ? parseInt(e.target.value) : undefined)}
                 placeholder="Leave empty for unlimited"
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                  formErrors.max_enrollments ? 'ring-2 ring-red-500' : ''
+                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
+                  formErrors.max_enrollments ? 'ring-1 ring-red-500 border-red-500' : ''
                 }`}
               />
               {formErrors.max_enrollments && (
@@ -505,16 +503,16 @@ export default function CreateCoursePage() {
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {/* Form Actions */}
-        <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
           <Link
             href="/dashboard/instructor/courses"
-            className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors text-sm"
           >
             Cancel
           </Link>
@@ -522,8 +520,8 @@ export default function CreateCoursePage() {
           <button
             type="submit"
             disabled={loading}
-            className={`inline-flex items-center px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 ${
-              loading ? 'opacity-50 cursor-not-allowed' : 'shadow-lg hover:shadow-xl'
+            className={`inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm ${
+              loading ? 'opacity-50 cursor-not-allowed' : 'shadow-sm hover:shadow-md'
             }`}
           >
             {loading ? (

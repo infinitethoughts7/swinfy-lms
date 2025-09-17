@@ -174,7 +174,7 @@ class InstructorLessonCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = [
-            'title', 'description', 'lesson_type', 'order', 'content',
+            'title', 'lesson_type', 'order', 'content',
             'video_file', 'duration_minutes', 'is_preview',
             'is_mandatory'
         ]
@@ -210,7 +210,7 @@ class InstructorLessonListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = [
-            'id', 'title', 'slug', 'description', 'lesson_type', 'lesson_type_display',
+            'id', 'title', 'slug', 'lesson_type', 'lesson_type_display',
             'order', 'duration_minutes', 'duration_formatted', 'has_video_content',
             'is_preview', 'is_mandatory', 'created_at', 'updated_at'
         ]
@@ -229,7 +229,7 @@ class InstructorLessonDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = [
-            'id', 'title', 'slug', 'description', 'lesson_type', 'lesson_type_display',
+            'id', 'title', 'slug', 'lesson_type', 'lesson_type_display',
             'order', 'content', 'video_file', 'duration_minutes', 'duration_formatted',
             'has_video_content', 'is_preview', 'is_mandatory',
             'total_materials_count', 'module_title', 'course_title',

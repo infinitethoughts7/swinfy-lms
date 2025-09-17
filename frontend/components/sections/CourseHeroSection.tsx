@@ -24,13 +24,22 @@ interface Course {
   rating: string;
   total_reviews: number;
   enrollment_count: number;
-  thumbnail: string;
-  banner_image: string;
-  demo_video?: string;
+  view_count: number;
+  thumbnail: string | null;
+  banner_image: string | null;
+  demo_video?: string | null;
   learning_outcomes: string;
   prerequisites: string;
   tags: string;
   tags_list: string[];
+  is_published: boolean;
+  is_featured: boolean;
+  is_draft: boolean;
+  approval_status: string;
+  is_private: boolean;
+  is_active: boolean;
+  requires_admin_enrollment: boolean;
+  max_enrollments?: number;
   training_partner: {
     id: string;
     name: string;
@@ -38,6 +47,8 @@ interface Course {
     location: string;
     website?: string;
     description?: string;
+    is_active: boolean;
+    created_at: string;
   };
   tutor: {
     id: string;
@@ -46,11 +57,12 @@ interface Course {
     first_name: string;
     last_name: string;
     role: string;
-    organization_name: string;
-    organization_type: string;
+    is_verified: boolean;
+    is_approved: boolean;
+    created_at: string;
   };
-  is_featured: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 interface FloatingIconProps {
