@@ -180,7 +180,16 @@ class KPInstructorProfile(models.Model):
     """Profile for knowledge partner instructors with qualifications and expertise."""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile') 
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
+    
+    # Knowledge Partner Relationship
+    knowledge_partner = models.ForeignKey(
+        KPProfile,
+        on_delete=models.CASCADE,
+        related_name='instructors',
+        help_text="Knowledge Partner organization the instructor belongs to"
+    )
+    
     # Personal Information
     bio = models.TextField(help_text="Professional bio for students to see")
     profile_picture = models.ImageField(upload_to='profiles/instructors/', blank=True, null=True)
@@ -210,18 +219,19 @@ class KPInstructorProfile(models.Model):
     linkedin_url = models.URLField(blank=True, null=True)
     
     # Status
-    is_available = models.BooleanField(default=True)  
+    is_available = models.BooleanField(default=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.full_name} - {self.knowledge_partner.name} Instructor"
+        kp_name = self.knowledge_partner.name if self.knowledge_partner else 'Independent'
+        return f"{self.user.full_name} - {kp_name} Instructor"
     
     class Meta:
         verbose_name = 'Instructor Profile'
-        verbose_name_plural = 'Instructor Profiles'
+        verbose_name_plural = 'Instructor Profiles'           
 
 
 class LearnerProfile(models.Model):
