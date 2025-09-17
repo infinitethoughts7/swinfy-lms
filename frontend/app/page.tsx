@@ -6,6 +6,7 @@ import RecognitionSection from '@/components/sections/RecognitionSection';
 import ContactSection from '@/components/sections/ContactSection';
 import Footer from '@/components/layout/Footer';
 import AlumniLogos from '@/components/sections/AlumniLogos';
+import FeaturedCoursesSlider from '@/components/sections/FeaturedCoursesSlider';
 
 export default function Home() {
   return (
@@ -14,7 +15,7 @@ export default function Home() {
       <div className="pt-12">
         <HeroSection />
         <AlumniLogos />
-        <CompaniesHired />
+        <FeaturedCoursesSlider />
         <TestimonialsSection />
         <RecognitionSection />
         <ContactSection />

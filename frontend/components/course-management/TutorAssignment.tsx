@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Plus, X, CheckCircle, Clock, Star } from 'lucide-react';
+import { User, Plus, X, Clock, Star } from 'lucide-react';
 
 interface TutorAssignmentProps {
   courseOutline: any;
@@ -49,7 +49,7 @@ export default function TutorAssignment({ courseOutline, onAssignmentComplete }:
       rating: 4.9,
       coursesCompleted: 15,
       availability: 'available',
-      profilePicture: '/assets/images/avatar/avatar-01.jpg'
+      profilePicture: '/assets/students/s1.jpg'
     },
     {
       id: '2',

@@ -175,6 +175,7 @@ export default function ProfileCompletionScreen({
       
       if (token) {
         // Send skip request to backend
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         await fetch(`${API_BASE_URL}/api/auth/profile/complete/`, {
           method: 'POST',
           headers: {
@@ -221,8 +222,8 @@ export default function ProfileCompletionScreen({
         >
           <option value="">Select your education level</option>
           <option value="high_school">High School</option>
-          <option value="bachelor">Bachelor's Degree</option>
-          <option value="master">Master's Degree</option>
+          <option value="bachelor">Bachelor&apos;s Degree</option>
+          <option value="master">Master&apos;s Degree</option>
           <option value="phd">PhD</option>
           <option value="other">Other</option>
         </select>
@@ -315,8 +316,8 @@ export default function ProfileCompletionScreen({
           }`}
         >
           <option value="">Select your highest education</option>
-          <option value="bachelor">Bachelor's Degree</option>
-          <option value="master">Master's Degree</option>
+          <option value="bachelor">Bachelor&apos;s Degree</option>
+          <option value="master">Master&apos;s Degree</option>
           <option value="phd">PhD</option>
           <option value="professional">Professional Certification</option>
           <option value="self_taught">Self-Taught</option>
@@ -543,14 +544,14 @@ export default function ProfileCompletionScreen({
           variant="outline"
           className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all duration-200"
         >
-          Skip for Now - I'll Complete Later
+          Skip for Now - I&apos;ll Complete Later
         </Button>
       </div>
 
       {/* Skip info */}
       <div className="text-center">
         <p className="text-sm text-gray-500">
-          Don't worry! You can always complete your profile from your dashboard later.
+          Don&apos;t worry! You can always complete your profile from your dashboard later.
         </p>
       </div>
     </div>

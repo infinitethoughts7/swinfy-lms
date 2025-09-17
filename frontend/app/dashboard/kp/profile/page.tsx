@@ -53,6 +53,18 @@ interface ProfileStats {
   updated_at: string;
 }
 
+interface KPProfileUpdateData {
+  name?: string;
+  type?: string;
+  description?: string;
+  location?: string;
+  website?: string;
+  kp_admin_name?: string;
+  kp_admin_email?: string;
+  kp_admin_phone?: string;
+  linkedin_url?: string;
+}
+
 const KP_TYPE_OPTIONS = [
   { value: 'company', label: 'Company' },
   { value: 'organization', label: 'Organization' },
@@ -157,7 +169,7 @@ export default function KPProfilePage() {
       setError(null);
       
       // Only send fields that have values or have been changed
-      const updateData: any = {};
+      const updateData: KPProfileUpdateData = {};
       
       // Only include fields that have actual values
       if (formData.name && formData.name.trim()) updateData.name = formData.name.trim();
@@ -319,7 +331,7 @@ export default function KPProfilePage() {
               <strong>Available KP Admin accounts:</strong>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li><strong>adfdfm@gmail.com</strong> (hanuman organization)</li>
-                <li><strong>rakeshganji99@gmail.com</strong> (Ganji Rocky's Organization)</li>
+                <li><strong>rakeshganji99@gmail.com</strong> (Ganji Rocky&apos;s Organization)</li>
                 <li><strong>amaz@gmail.com</strong> (Empty Fields Test 2)</li>
               </ul>
               <p className="mt-3">Password for all accounts: <code className="bg-red-100 px-2 py-1 rounded">rockyg07</code></p>

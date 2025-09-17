@@ -285,7 +285,7 @@ export default function CourseDetailPage() {
       case 'analytics':
         return <AnalyticsTab course={course} />;
       default:
-        return <CourseOverview course={course} />;
+        return <CourseOverview course={course} onUpdate={fetchCourse} />;
     }
   };
 

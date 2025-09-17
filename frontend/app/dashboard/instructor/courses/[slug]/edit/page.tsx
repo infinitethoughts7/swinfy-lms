@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { instructorApi, type Course, type CourseCreateData } from '@/lib/api';
 import { 
-  BookOpen, ChevronRight, Save, X, Upload, AlertCircle,
+  ChevronRight, Save, X, Upload, AlertCircle,
   Image as ImageIcon, Video, FileText, Plus, Trash2, Edit,
-  Play, File, Link as LinkIcon, Clock
+  File, Clock
 } from 'lucide-react';
 
 interface Lesson {
@@ -51,13 +51,8 @@ export default function EditCoursePage() {
   }>({});
 
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [showAddLesson, setShowAddLesson] = useState(false);
 
-  useEffect(() => {
-    fetchCourse();
-  }, [courseSlug]);
-
-  const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -83,7 +78,11 @@ export default function EditCoursePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseSlug]);
+
+  useEffect(() => {
+    fetchCourse();
+  }, [fetchCourse]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +107,7 @@ export default function EditCoursePage() {
     }
   };
 
-  const handleInputChange = (field: keyof CourseCreateData, value: any) => {
+  const handleInputChange = (field: keyof CourseCreateData, value: string | number | boolean | File) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -136,7 +135,6 @@ export default function EditCoursePage() {
       order: lessons.length + 1
     };
     setLessons([...lessons, newLesson]);
-    setShowAddLesson(false);
   };
 
   const updateLesson = (index: number, updatedLesson: Partial<Lesson>) => {
@@ -540,7 +538,7 @@ interface LessonCardProps {
   index: number;
   onUpdate: (index: number, lesson: Partial<Lesson>) => void;
   onDelete: (index: number) => void;
-  getLessonIcon: (type: string) => JSX.Element;
+  getLessonIcon: (type: string) => React.ReactElement;
 }
 
 const LessonCard = ({ lesson, index, onUpdate, onDelete, getLessonIcon }: LessonCardProps) => {
@@ -581,7 +579,7 @@ const LessonCard = ({ lesson, index, onUpdate, onDelete, getLessonIcon }: Lesson
               <label className="block text-sm font-medium text-gray-700 mb-1">Lesson Type</label>
               <select
                 value={editData.lesson_type}
-                onChange={(e) => setEditData(prev => ({ ...prev, lesson_type: e.target.value as any }))}
+                onChange={(e) => setEditData(prev => ({ ...prev, lesson_type: e.target.value as 'video' | 'text' | 'assignment' | 'image_gallery' | 'mixed' }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="video">Video Lesson</option>

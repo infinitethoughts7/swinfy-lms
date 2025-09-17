@@ -149,9 +149,9 @@ export default function CoursesPage() {
   const filteredCourses = useMemo(() => {
     return courses.filter(course => {
       const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           course.organization?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           course.instructor?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+                           (course.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                           course.training_partner?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           course.tutor?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
   }, [courses, searchTerm]);
@@ -245,7 +245,7 @@ export default function CoursesPage() {
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map((course, index) => {
+          {filteredCourses.map((course) => {
             // Different light gradient backgrounds for variety
             
             return (
@@ -426,7 +426,7 @@ export default function CoursesPage() {
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-200">
               <div className="text-3xl font-sora font-bold text-orange-600 mb-2">
-                {courses.length > 0 ? (courses.reduce((sum, course) => sum + (course.rating || 0), 0) / courses.length).toFixed(1) : '0.0'}
+                {courses.length > 0 ? (courses.reduce((sum, course) => sum + (parseFloat(course.rating) || 0), 0) / courses.length).toFixed(1) : '0.0'}
               </div>
               <div className="text-gray-600 font-inter">Average Rating</div>
             </div>

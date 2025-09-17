@@ -177,7 +177,7 @@ const HeroSection = () => {
                       {[1, 2, 3, 4].map((i) => (
                         <div key={i} className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-white rounded-full overflow-hidden">
                           <img 
-                            src={`/assets/images/avatar/avatar-0${i}.jpg`} 
+                            src={`/assets/students/s${i}.jpg`} 
                             alt={`Student ${i}`}
                             className="w-full h-full object-cover"
                           />

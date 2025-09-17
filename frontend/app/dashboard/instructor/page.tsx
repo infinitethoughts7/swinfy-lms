@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getCurrentUser } from '@/lib/auth';
 import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
 import { BookOpen, Users, Clock, Star, TrendingUp, Calendar, Plus, Eye, Edit, Trash2, Video, FileText, Award } from 'lucide-react';
@@ -186,12 +187,13 @@ export default function InstructorDashboard() {
             {(Array.isArray(courses) ? courses : []).slice(0, 6).map((course) => (
               <div key={course.id} className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
                 {/* Course Thumbnail */}
-                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-4 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
                   {course.thumbnail ? (
-                    <img 
+                    <Image 
                       src={course.thumbnail} 
                       alt={course.title}
-                      className="w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                     />
                   ) : (
                     <BookOpen className="h-8 w-8 text-white" />

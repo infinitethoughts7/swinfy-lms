@@ -104,6 +104,7 @@ jspm_packages/
 # Next.js build output
 .next
 
+forntend/public/asserts/client/
 # Nuxt.js build / generate output
 .nuxt
 dist

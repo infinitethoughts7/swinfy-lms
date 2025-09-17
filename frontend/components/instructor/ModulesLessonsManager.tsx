@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { instructorApi, type Course, type Module, type Lesson } from '@/lib/api';
 import { 
   Plus, Video, FileText, Edit, Trash2, GripVertical, 
-  ChevronDown, ChevronRight, Play, Upload, Clock, Eye,
-  Save, X, Check, AlertCircle
+  ChevronDown, ChevronRight, Play, Clock, Eye, AlertCircle
 } from 'lucide-react';
 
 interface ModulesLessonsManagerProps {
@@ -508,7 +507,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
     is_preview: false,
     is_mandatory: true
   });
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -519,6 +518,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
       setLoading(true);
       await instructorApi.lessons.create(courseSlug, moduleId, {
         ...formData,
+        order: 0, // Will be set by backend based on existing lessons
         is_published: false,
         video_file: videoFile
       });
@@ -565,7 +565,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
               </label>
               <select
                 value={formData.lesson_type}
-                onChange={(e) => setFormData(prev => ({ ...prev, lesson_type: e.target.value as any }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, lesson_type: e.target.value as 'video' | 'text' | 'quiz' }))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               >
                 <option value="video">📹 Video Lesson</option>
@@ -584,7 +584,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
                 <input
                   type="file"
                   accept="video/*"
-                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  onChange={(e) => setVideoFile(e.target.files?.[0] || undefined)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
                 <p className="text-sm text-gray-500 mt-2">Upload MP4, MOV, or AVI files</p>
