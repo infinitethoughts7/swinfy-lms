@@ -89,7 +89,7 @@ export default function LearnerMyCoursesPage() {
                 <span className={`px-2 py-0.5 rounded-full ${en.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{en.status}</span>
               </div>
               <div className="pt-3 border-t border-gray-100 mt-3">
-                <Link href={`/dashboard/student/courses/${en.course?.slug || en.course?.id || en.id}`} className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{(en.progress_percentage || 0) > 0 ? 'Continue' : 'Start'}</Link>
+                <Link href={`/dashboard/learner/courses/${en.course?.slug || en.course?.id || en.id}`} className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{(en.progress_percentage || 0) > 0 ? 'Continue' : 'Start'}</Link>
               </div>
             </div>
           ))}

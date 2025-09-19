@@ -327,7 +327,7 @@ export default function LearnerHomePage() {
                     {/* Action Button */}
                     <div className="pt-3 border-t border-gray-100">
                       <Link
-                        href={`/courses/${enrollment.course?.slug || enrollment.course?.id || enrollment.id}`}
+                        href={`/dashboard/learner/courses/${enrollment.course?.slug || enrollment.course?.id || enrollment.id}`}
                         className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                       >
                         {(enrollment.progress_percentage || 0) > 0 ? 'Continue Learning' : 'Start Learning'}
