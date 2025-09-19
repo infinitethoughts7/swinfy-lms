@@ -574,12 +574,14 @@ class KPInstructorListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
 
     def get(self, request):
-        # Get the KP admin's organization
-        kp_admin = request.user
-        kp_profile = kp_admin.knowledge_partner
+        # Get the Knowledge Partner user
+        kp_user = request.user
         
-        if not kp_profile:
-            return Response({'detail': 'KP admin must have an associated knowledge partner profile'}, status=status.HTTP_403_FORBIDDEN)
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            return Response({'detail': 'Knowledge Partner must have an associated profile'}, status=status.HTTP_403_FORBIDDEN)
         
         # Only show instructors from the same KP organization
         qs = KPInstructorProfile.objects.select_related('user').filter(
@@ -629,11 +631,13 @@ class KPInstructorDetailView(APIView):
     def get_object(self, pk):
         from django.shortcuts import get_object_or_404
         # Only allow access to instructors from the same KP organization
-        kp_admin = self.request.user
-        kp_profile = kp_admin.knowledge_partner
+        kp_user = self.request.user
         
-        if not kp_profile:
-            raise PermissionDenied("KP admin must have an associated knowledge partner profile")
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            raise PermissionDenied("Knowledge Partner must have an associated profile")
         
         return get_object_or_404(
             KPInstructorProfile.objects.select_related('user').filter(knowledge_partner=kp_profile), 

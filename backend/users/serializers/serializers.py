@@ -316,12 +316,14 @@ class KPInstructorCreateSerializer(serializers.Serializer):
         email = validated_data.pop('email')
         full_name = validated_data.pop('full_name')
 
-        # Get the KP admin's profile to link the instructor
-        kp_admin = self.context['request'].user
-        kp_profile = kp_admin.knowledge_partner
+        # Get the Knowledge Partner user
+        kp_user = self.context['request'].user
         
-        if not kp_profile:
-            raise serializers.ValidationError("KP admin user must have an associated knowledge partner profile")
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            raise serializers.ValidationError("Knowledge Partner must have an associated profile")
 
         # Create instructor user
         user = User.objects.create_user(
