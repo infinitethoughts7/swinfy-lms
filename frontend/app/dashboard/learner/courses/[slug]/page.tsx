@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { learnerDashboardApi } from '@/lib/api';
-import { authenticatedFetch } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, getCurrentUser } from '@/lib/auth';
 import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
 import { 
   Play, 
@@ -130,6 +130,8 @@ export default function CourseLearningPage() {
   // Debug logging
   console.log('Course Learning Page - Params:', params);
   console.log('Course Learning Page - Course Slug:', courseSlug);
+  console.log('Course Learning Page - Is Authenticated:', isAuthenticated());
+  console.log('Course Learning Page - User:', getCurrentUser());
   
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -190,6 +192,12 @@ export default function CourseLearningPage() {
   }, [courseSlug, fetchCourseResources]);
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      setError('Please log in to access this course');
+      setLoading(false);
+      return;
+    }
+    
     if (courseSlug) {
       fetchCourseData();
     }
@@ -353,14 +361,32 @@ export default function CourseLearningPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
-            <p className="text-gray-600 mb-4">{error || 'The course you are looking for does not exist or you do not have access to it.'}</p>
-            <Link 
-              href="/dashboard/learner/courses"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Back to My Courses
-            </Link>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {error === 'Please log in to access this course' ? 'Authentication Required' : 'Course Not Found'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {error === 'Please log in to access this course' 
+                ? 'Please log in to access this course content.' 
+                : error || 'The course you are looking for does not exist or you do not have access to it.'
+              }
+            </p>
+            <div className="flex space-x-4 justify-center">
+              {error === 'Please log in to access this course' ? (
+                <Link 
+                  href="/auth/login"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Log In
+                </Link>
+              ) : (
+                <Link 
+                  href="/dashboard/learner/courses"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Back to My Courses
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
