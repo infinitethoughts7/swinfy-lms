@@ -80,6 +80,8 @@ export default function LearnerHomePage() {
         setLoading(true);
         setError('');
 
+        console.log('Fetching learner dashboard data...');
+        
         const [
           dashboardStatsData,
           enrolledCoursesData,
@@ -93,6 +95,12 @@ export default function LearnerHomePage() {
           learnerDashboardApi.getLearnerDistribution(),
           paymentsApi.getPaymentHistory()
         ]);
+        
+        console.log('Dashboard stats:', dashboardStatsData);
+        console.log('Enrolled courses:', enrolledCoursesData);
+        console.log('Weekly activity:', weeklyActivityData);
+        console.log('Learner distribution:', learnerDistributionData);
+        console.log('Recent payments:', recentPaymentsData);
 
         setData({
           dashboardStats: dashboardStatsData.status === 'fulfilled' ? dashboardStatsData.value : null,
