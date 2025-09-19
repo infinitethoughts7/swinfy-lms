@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { learnerDashboardApi } from '@/lib/api';
+import { authenticatedFetch } from '@/lib/auth';
 
 interface Course {
   id: string;
@@ -76,6 +77,31 @@ interface Lesson {
   updated_at: string;
 }
 
+interface LessonMaterial {
+  id: string;
+  title: string;
+  description: string;
+  material_type: string;
+  file: string;
+  file_size: number;
+  file_size_formatted: string;
+  is_required: boolean;
+  is_downloadable: boolean;
+  download_count: number;
+  created_at: string;
+}
+
+interface CourseResource {
+  id: string;
+  title: string;
+  description: string;
+  resource_type: string;
+  file?: string;
+  url?: string;
+  is_public: boolean;
+  created_at: string;
+}
+
 interface Enrollment {
   id: string;
   course: Course;
@@ -94,42 +120,133 @@ export default function StudentCourseDetailPage() {
   const [error, setError] = useState('');
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
+  const [courseResources, setCourseResources] = useState<CourseResource[]>([]);
+  const [completingLesson, setCompletingLesson] = useState<string | null>(null);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+
+  const fetchCourseResources = useCallback(async () => {
+    try {
+      const response = await authenticatedFetch(
+        `/api/courses/${courseSlug}/resources/`
+      );
+      if (response.ok) {
+        const resources = await response.json();
+        setCourseResources(resources);
+      }
+    } catch (error) {
+      console.error('Failed to fetch course resources:', error);
+    }
+  }, [courseSlug]);
+
+  const fetchCourseData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Fetch course details
+      const courseResponse = await learnerDashboardApi.getCourseDetail(courseSlug);
+      setCourse(courseResponse);
+      
+      // Fetch enrollment status
+      const enrollmentResponse = await learnerDashboardApi.getMyCourses();
+      const enrollments = (enrollmentResponse?.results || enrollmentResponse || []) as Enrollment[];
+      const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
+      setEnrollment(currentEnrollment || null);
+      
+      // Set first module as selected by default
+      if (courseResponse?.modules?.length > 0) {
+        setSelectedModule(courseResponse.modules[0]);
+      }
+      
+      // Fetch course resources
+      await fetchCourseResources();
+      
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load course details');
+    } finally {
+      setLoading(false);
+    }
+  }, [courseSlug, fetchCourseResources]);
 
   useEffect(() => {
-    const fetchCourseData = async () => {
-      try {
-        setLoading(true);
-        setError('');
+    if (courseSlug) {
+      fetchCourseData();
+    }
+  }, [courseSlug, fetchCourseData]);
+
+  const handleLessonClick = async (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    
+    // Fetch lesson materials
+    try {
+      const response = await authenticatedFetch(
+        `/api/courses/lessons/${lesson.id}/materials/`
+      );
+      if (response.ok) {
+        const materials = await response.json();
+        setLessonMaterials(materials);
+      }
+    } catch (error) {
+      console.error('Failed to fetch lesson materials:', error);
+    }
+  };
+
+  const handleCompleteLesson = async (lessonId: string) => {
+    try {
+      setCompletingLesson(lessonId);
+      const response = await authenticatedFetch(
+        `/api/courses/lessons/${lessonId}/complete/`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_completed: true }),
+        }
+      );
+
+      if (response.ok) {
+        // Update the lesson completion status in the UI
+        if (course) {
+          const updatedCourse = { ...course };
+          updatedCourse.modules = updatedCourse.modules.map(module => ({
+            ...module,
+            lessons: module.lessons.map(lesson => 
+              lesson.id === lessonId 
+                ? { ...lesson, is_completed: true }
+                : lesson
+            )
+          }));
+          setCourse(updatedCourse);
+        }
         
-        // Fetch course details
-        const courseResponse = await learnerDashboardApi.getCourseDetail(courseSlug);
-        setCourse(courseResponse);
+        // Update selected lesson if it's the one being completed
+        if (selectedLesson?.id === lessonId) {
+          setSelectedLesson({ ...selectedLesson, is_completed: true });
+        }
         
-        // Fetch enrollment status
+        // Refresh enrollment data to update progress
         const enrollmentResponse = await learnerDashboardApi.getMyCourses();
         const enrollments = (enrollmentResponse?.results || enrollmentResponse || []) as Enrollment[];
         const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
         setEnrollment(currentEnrollment || null);
         
-        // Set first module as selected by default
-        if (courseResponse?.modules?.length > 0) {
-          setSelectedModule(courseResponse.modules[0]);
-        }
-        
-      } catch (err: any) {
-        setError(err.message || 'Failed to load course details');
-      } finally {
-        setLoading(false);
+        alert('Lesson completed successfully!');
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || 'Failed to complete lesson');
       }
-    };
-
-    if (courseSlug) {
-      fetchCourseData();
+    } catch (error) {
+      console.error('Error completing lesson:', error);
+      alert('Failed to complete lesson');
+    } finally {
+      setCompletingLesson(null);
     }
-  }, [courseSlug]);
+  };
 
-  const handleLessonClick = (lesson: Lesson) => {
-    setSelectedLesson(lesson);
+  const handleVideoPlay = () => {
+    setShowVideoPlayer(true);
   };
 
   const getLessonIcon = (type: string) => {
@@ -326,7 +443,7 @@ export default function StudentCourseDetailPage() {
             {/* Learning Outcomes */}
             {course.learning_outcomes && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">What You'll Learn</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">What You&apos;ll Learn</h2>
                 <div className="prose max-w-none">
                   <div dangerouslySetInnerHTML={{ __html: course.learning_outcomes }} />
                 </div>
@@ -483,6 +600,54 @@ export default function StudentCourseDetailPage() {
               </div>
             </div>
 
+            {/* Course Resources */}
+            {courseResources.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Resources</h3>
+                <div className="space-y-3">
+                  {courseResources.map((resource) => (
+                    <div key={resource.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          {resource.file ? (
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-gray-900">{resource.title}</h5>
+                          <p className="text-sm text-gray-600">{resource.resource_type}</p>
+                        </div>
+                      </div>
+                      {resource.file ? (
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${resource.file}`}
+                          download
+                          className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          Download
+                        </a>
+                      ) : resource.url ? (
+                        <a
+                          href={resource.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Course Tags */}
             {course.tags_list && course.tags_list.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -505,12 +670,15 @@ export default function StudentCourseDetailPage() {
         {/* Lesson Content Modal */}
         {selectedLesson && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-gray-900">{selectedLesson.title}</h3>
                   <button
-                    onClick={() => setSelectedLesson(null)}
+                    onClick={() => {
+                      setSelectedLesson(null);
+                      setShowVideoPlayer(false);
+                    }}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -519,7 +687,7 @@ export default function StudentCourseDetailPage() {
                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
                     <span className="flex items-center">
                       {getLessonIcon(selectedLesson.lesson_type)}
@@ -531,29 +699,96 @@ export default function StudentCourseDetailPage() {
                         Required
                       </span>
                     )}
+                    {selectedLesson.is_completed && (
+                      <span className="px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded-full">
+                        Completed
+                      </span>
+                    )}
                   </div>
                   
+                  {/* Video Player */}
+                  {selectedLesson.video_file && (
+                    <div className="bg-gray-900 rounded-lg overflow-hidden">
+                      {showVideoPlayer ? (
+                        <video
+                          controls
+                          className="w-full h-96 object-contain"
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${selectedLesson.video_file}`}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <div className="h-96 flex items-center justify-center">
+                          <button
+                            onClick={handleVideoPlay}
+                            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-4 transition-all"
+                          >
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Lesson Content */}
                   {selectedLesson.content && (
                     <div className="prose max-w-none">
                       <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
                     </div>
                   )}
                   
-                  {selectedLesson.video_file && (
-                    <div className="bg-gray-100 rounded-lg p-4 text-center">
-                      <p className="text-gray-600">Video content available</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Click to play video ({selectedLesson.duration_formatted})
-                      </p>
+                  {/* Lesson Materials */}
+                  {lessonMaterials.length > 0 && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-900 mb-3">Lesson Materials</h4>
+                      <div className="space-y-2">
+                        {lessonMaterials.map((material) => (
+                          <div key={material.id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <h5 className="font-medium text-gray-900">{material.title}</h5>
+                                <p className="text-sm text-gray-600">{material.file_size_formatted}</p>
+                              </div>
+                            </div>
+                            {material.is_downloadable && (
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${material.file}`}
+                                download
+                                className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                              >
+                                Download
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   
-                  {selectedLesson.materials_count > 0 && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h4 className="font-medium text-blue-900 mb-2">Lesson Materials</h4>
-                      <p className="text-sm text-blue-700">
-                        {selectedLesson.materials_count} material(s) available for download
-                      </p>
+                  {/* Lesson Completion */}
+                  {!selectedLesson.is_completed && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleCompleteLesson(selectedLesson.id)}
+                        disabled={completingLesson === selectedLesson.id}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {completingLesson === selectedLesson.id ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Completing...
+                          </div>
+                        ) : (
+                          'Mark as Complete'
+                        )}
+                      </button>
                     </div>
                   )}
                 </div>
