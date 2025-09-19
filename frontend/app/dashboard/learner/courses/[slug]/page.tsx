@@ -342,16 +342,17 @@ export default function CourseLearningPage() {
   };
 
   const calculateModuleProgress = (module: Module) => {
+    if (!module.lessons) return 0;
     const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
     const totalLessons = module.lessons.length;
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   };
 
   const calculateTotalProgress = () => {
-    if (!course) return 0;
-    const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+    if (!course || !course.modules) return 0;
+    const totalLessons = course.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0);
     const completedLessons = course.modules.reduce((total, module) => 
-      total + module.lessons.filter(lesson => lesson.is_completed).length, 0
+      total + (module.lessons?.filter(lesson => lesson.is_completed).length || 0), 0
     );
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   };
