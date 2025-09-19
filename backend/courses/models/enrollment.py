@@ -260,6 +260,11 @@ class Enrollment(models.Model):
     @property
     def can_access_content(self):
         """Check if learner can access course content."""
+        # Simplified: If payment is successful, give access immediately
+        if hasattr(self, 'payment') and self.payment and self.payment.status == 'paid':
+            return not self.is_completed
+        
+        # Fallback to original logic for non-paid enrollments
         return self.is_active and not self.is_completed
     
     @property
