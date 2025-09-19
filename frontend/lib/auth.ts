@@ -133,8 +133,8 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     const accessToken = await getValidAccessToken();
     
     if (!accessToken) {
-      // No valid token available, logout immediately
-      logout();
+      console.log('No valid access token available, redirecting to login');
+      // Don't logout immediately, let the component handle the error
       throw new Error('No valid access token available');
     }
 
@@ -156,20 +156,23 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
       headers,
     });
 
-    // If still unauthorized after refresh, logout immediately
+    // If still unauthorized after refresh, throw error but don't logout immediately
     if (response.status === 401) {
-      logout();
+      console.log('401 Unauthorized - user needs to login again');
       throw new Error('Authentication failed - please log in again');
     }
 
     return response;
   } catch (error) {
-    // If any error occurs during authentication, logout
+    // Only logout if it's a specific authentication error, not general errors
+    if (error instanceof Error && error.message.includes('No valid access token available')) {
+      throw error;
+    }
     if (error instanceof Error && error.message.includes('Authentication failed')) {
       throw error;
     }
-    logout();
-    throw new Error('Authentication failed - please log in again');
+    // For other errors, just throw them without logging out
+    throw error;
   }
 };
 

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { learnerDashboardApi } from '@/lib/api';
-import { authenticatedFetch, isAuthenticated, getCurrentUser } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, getCurrentUser, getTokens } from '@/lib/auth';
 import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
 import { 
   Play, 
@@ -189,7 +189,14 @@ export default function CourseLearningPage() {
       await fetchCourseResources();
       
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load course details');
+      console.error('Error fetching course data:', err);
+      if (err instanceof Error && err.message.includes('No valid access token available')) {
+        setError('Please log in to access this course');
+      } else if (err instanceof Error && err.message.includes('Authentication failed')) {
+        setError('Please log in to access this course');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load course details');
+      }
     } finally {
       setLoading(false);
     }
@@ -199,7 +206,12 @@ export default function CourseLearningPage() {
     // Check authentication on client side only
     if (typeof window !== 'undefined') {
       const authStatus = isAuthenticated();
+      const tokens = getTokens();
+      const user = getCurrentUser();
+      
       console.log('Authentication check:', authStatus);
+      console.log('Tokens available:', !!tokens);
+      console.log('User data:', user);
       
       if (!authStatus) {
         console.log('User not authenticated, setting error');
