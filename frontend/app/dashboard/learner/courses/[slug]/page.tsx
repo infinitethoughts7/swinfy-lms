@@ -3,10 +3,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { learnerDashboardApi } from '@/lib/api';
 import { authenticatedFetch } from '@/lib/auth';
-import { getCourseBannerUrl, getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
+import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
+import { 
+  Play, 
+  CheckCircle, 
+  User, 
+  Download,
+  ChevronRight,
+  ChevronDown,
+  Target,
+  FileText,
+  Video,
+  File,
+  ExternalLink
+} from 'lucide-react';
 
 interface Course {
   id: string;
@@ -111,7 +123,7 @@ interface Enrollment {
   can_access_content: boolean;
 }
 
-export default function StudentCourseDetailPage() {
+export default function CourseLearningPage() {
   const params = useParams();
   const courseSlug = params.slug as string;
   
@@ -119,12 +131,12 @@ export default function StudentCourseDetailPage() {
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
   const [courseResources, setCourseResources] = useState<CourseResource[]>([]);
   const [completingLesson, setCompletingLesson] = useState<string | null>(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   const fetchCourseResources = useCallback(async () => {
     try {
@@ -155,9 +167,9 @@ export default function StudentCourseDetailPage() {
       const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
       setEnrollment(currentEnrollment || null);
       
-      // Set first module as selected by default
+      // Expand first module by default
       if (courseResponse?.modules?.length > 0) {
-        setSelectedModule(courseResponse.modules[0]);
+        setExpandedModules(new Set([courseResponse.modules[0].id]));
       }
       
       // Fetch course resources
@@ -250,16 +262,26 @@ export default function StudentCourseDetailPage() {
     setShowVideoPlayer(true);
   };
 
+  const toggleModule = (moduleId: string) => {
+    const newExpanded = new Set(expandedModules);
+    if (newExpanded.has(moduleId)) {
+      newExpanded.delete(moduleId);
+    } else {
+      newExpanded.add(moduleId);
+    }
+    setExpandedModules(newExpanded);
+  };
+
   const getLessonIcon = (type: string) => {
     const icons = {
-      video: '🎥',
-      text: '📄',
-      quiz: '❓',
-      assignment: '📝',
-      live_session: '🔴',
-      download: '📥'
+      video: Video,
+      text: FileText,
+      quiz: Target,
+      assignment: File,
+      live_session: Play,
+      download: Download
     };
-    return icons[type as keyof typeof icons] || '📄';
+    return icons[type as keyof typeof icons] || FileText;
   };
 
   const getStatusColor = (status: string) => {
@@ -277,14 +299,29 @@ export default function StudentCourseDetailPage() {
     }
   };
 
+  const calculateModuleProgress = (module: Module) => {
+    const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
+    const totalLessons = module.lessons.length;
+    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  };
+
+  const calculateTotalProgress = () => {
+    if (!course) return 0;
+    const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+    const completedLessons = course.modules.reduce((total, module) => 
+      total + module.lessons.filter(lesson => lesson.is_completed).length, 0
+    );
+    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-3 space-y-6">
                 <div className="h-64 bg-gray-200 rounded-lg"></div>
                 <div className="h-32 bg-gray-200 rounded-lg"></div>
               </div>
@@ -312,7 +349,7 @@ export default function StudentCourseDetailPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
             <p className="text-gray-600 mb-4">{error || 'The course you are looking for does not exist or you do not have access to it.'}</p>
             <Link 
-              href="/dashboard/student/courses"
+              href="/dashboard/learner/courses"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               Back to My Courses
@@ -344,7 +381,7 @@ export default function StudentCourseDetailPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link 
-                href="/dashboard/student/courses"
+                href="/dashboard/learner/courses"
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
                 Back to My Courses
@@ -371,7 +408,7 @@ export default function StudentCourseDetailPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <Link 
-              href="/dashboard/student/courses"
+              href="/dashboard/learner/courses"
               className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,184 +420,135 @@ export default function StudentCourseDetailPage() {
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(enrollment.status)}`}>
                 {enrollment.status}
               </span>
-              <span className="text-sm text-gray-600">
-                {enrollment.progress_percentage}% Complete
-              </span>
             </div>
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course.title}</h1>
           <p className="text-lg text-gray-600 mb-4">{course.short_description}</p>
-          
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {course.duration_weeks} weeks
-            </span>
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              {course.level_display}
-            </span>
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-              {course.category_display}
-            </span>
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              {course.rating} ({course.total_reviews} reviews)
-            </span>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Course Banner */}
-            {course.banner_image && (
-              <div className="relative h-64 rounded-lg overflow-hidden">
-                <Image
-                  src={getCourseBannerUrl(course.banner_image)}
-                  alt={course.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-
-            {/* Course Description */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">About This Course</h2>
-              <p className="text-gray-700 leading-relaxed">{course.description}</p>
-            </div>
-
-            {/* Learning Outcomes */}
-            {course.learning_outcomes && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">What You&apos;ll Learn</h2>
-                <div className="prose max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: course.learning_outcomes }} />
-                </div>
-              </div>
-            )}
-
-            {/* Prerequisites */}
-            {course.prerequisites && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Prerequisites</h2>
-                <div className="prose max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: course.prerequisites }} />
-                </div>
-              </div>
-            )}
-
-            {/* Course Content */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Content</h2>
-              <div className="space-y-4">
-                {course.modules.map((module) => (
-                  <div key={module.id} className="border border-gray-200 rounded-lg">
-                    <button
-                      onClick={() => setSelectedModule(module)}
-                      className={`w-full p-4 text-left transition-colors ${
-                        selectedModule?.id === module.id 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{module.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span>{module.lessons.length} lessons</span>
-                          <span>•</span>
-                          <span>{module.duration_formatted}</span>
-                          <svg 
-                            className={`w-5 h-5 transition-transform ${
-                              selectedModule?.id === module.id ? 'rotate-180' : ''
-                            }`} 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </button>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content - Course Modules */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Course Content</h2>
+                
+                <div className="space-y-4">
+                  {course.modules.map((module) => {
+                    const moduleProgress = calculateModuleProgress(module);
+                    const isExpanded = expandedModules.has(module.id);
+                    const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
                     
-                    {selectedModule?.id === module.id && (
-                      <div className="border-t border-gray-200 p-4 bg-gray-50">
-                        <div className="space-y-2">
-                          {module.lessons.map((lesson) => (
-                            <button
-                              key={lesson.id}
-                              onClick={() => handleLessonClick(lesson)}
-                              className={`w-full p-3 text-left rounded-lg transition-colors ${
-                                selectedLesson?.id === lesson.id
-                                  ? 'bg-blue-100 border-blue-200'
-                                  : 'hover:bg-white border border-transparent'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-lg">{getLessonIcon(lesson.lesson_type)}</span>
-                                  <div>
-                                    <h4 className="font-medium text-gray-900">{lesson.title}</h4>
-                                    <p className="text-sm text-gray-600">
-                                      {lesson.lesson_type_display} • {lesson.duration_formatted}
-                                      {lesson.is_mandatory && ' • Required'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  {lesson.is_completed && (
-                                    <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                  {lesson.is_preview && (
-                                    <span className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full">
-                                      Preview
-                                    </span>
-                                  )}
-                                </div>
+                    return (
+                      <div key={module.id} className="border border-gray-200 rounded-lg">
+                        <button
+                          onClick={() => toggleModule(module.id)}
+                          className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                {isExpanded ? (
+                                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                                )}
                               </div>
-                            </button>
-                          ))}
-                        </div>
+                              <div>
+                                <h3 className="font-medium text-gray-900">{module.title}</h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {completedLessons}/{module.lessons.length} lessons • {module.duration_formatted}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <div className="text-sm text-gray-500">
+                                {moduleProgress}% complete
+                              </div>
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${moduleProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                        
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-4 bg-gray-50">
+                            <div className="space-y-2">
+                              {module.lessons.map((lesson) => {
+                                const LessonIcon = getLessonIcon(lesson.lesson_type);
+                                
+                                return (
+                                  <button
+                                    key={lesson.id}
+                                    onClick={() => handleLessonClick(lesson)}
+                                    className={`w-full p-3 text-left rounded-lg transition-colors ${
+                                      selectedLesson?.id === lesson.id
+                                        ? 'bg-blue-100 border border-blue-200'
+                                        : 'hover:bg-white border border-transparent'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-3">
+                                        <div className="flex-shrink-0">
+                                          {lesson.is_completed ? (
+                                            <CheckCircle className="h-5 w-5 text-green-600" />
+                                          ) : (
+                                            <LessonIcon className="h-5 w-5 text-gray-400" />
+                                          )}
+                                        </div>
+                                        <div>
+                                          <h4 className="font-medium text-gray-900">{lesson.title}</h4>
+                                          <p className="text-sm text-gray-600">
+                                            {lesson.lesson_type_display} • {lesson.duration_formatted}
+                                            {lesson.is_mandatory && ' • Required'}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        {lesson.is_preview && (
+                                          <span className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full">
+                                            Preview
+                                          </span>
+                                        )}
+                                        <span className="text-sm text-gray-500">
+                                          Review
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Course Progress */}
+            {/* Progress Card */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm text-gray-600 mb-2">
                     <span>Overall Progress</span>
-                    <span>{enrollment.progress_percentage}%</span>
+                    <span>{calculateTotalProgress()}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${enrollment.progress_percentage}%` }}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${calculateTotalProgress()}%` }}
                     />
                   </div>
                 </div>
@@ -584,10 +572,8 @@ export default function StudentCourseDetailPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Instructor</h3>
               <div className="flex items-start space-x-3">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                  <User className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900">{course.tutor.full_name}</h4>
@@ -597,6 +583,11 @@ export default function StudentCourseDetailPage() {
                   <p className="text-sm text-gray-500 mt-1">
                     {course.training_partner.name}
                   </p>
+                  {course.tutor.instructor_profile?.bio && (
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-3">
+                      {course.tutor.instructor_profile.bio}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -604,63 +595,42 @@ export default function StudentCourseDetailPage() {
             {/* Course Resources */}
             {courseResources.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Course Resources</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Resources</h3>
                 <div className="space-y-3">
-                  {courseResources.map((resource) => (
+                  {courseResources.slice(0, 3).map((resource) => (
                     <div key={resource.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                           {resource.file ? (
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                            <File className="w-4 h-4 text-blue-600" />
                           ) : (
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
+                            <ExternalLink className="w-4 h-4 text-blue-600" />
                           )}
                         </div>
                         <div>
-                          <h5 className="font-medium text-gray-900">{resource.title}</h5>
-                          <p className="text-sm text-gray-600">{resource.resource_type}</p>
+                          <h5 className="font-medium text-gray-900 text-sm">{resource.title}</h5>
+                          <p className="text-xs text-gray-600">{resource.resource_type}</p>
                         </div>
                       </div>
                       {resource.file ? (
                         <a
                           href={getCourseResourceUrl(resource.file)}
                           download
-                          className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                          className="text-blue-600 hover:text-blue-800"
                         >
-                          Download
+                          <Download className="w-4 h-4" />
                         </a>
                       ) : resource.url ? (
                         <a
                           href={resource.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                          className="text-blue-600 hover:text-blue-800"
                         >
-                          Open
+                          <ExternalLink className="w-4 h-4" />
                         </a>
                       ) : null}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Course Tags */}
-            {course.tags_list && course.tags_list.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {course.tags_list.map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded-full"
-                    >
-                      {tag}
-                    </span>
                   ))}
                 </div>
               </div>
@@ -691,7 +661,10 @@ export default function StudentCourseDetailPage() {
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
                     <span className="flex items-center">
-                      {getLessonIcon(selectedLesson.lesson_type)}
+                      {(() => {
+                        const LessonIcon = getLessonIcon(selectedLesson.lesson_type);
+                        return <LessonIcon className="w-4 h-4 mr-1" />;
+                      })()}
                       <span className="ml-1">{selectedLesson.lesson_type_display}</span>
                     </span>
                     <span>{selectedLesson.duration_formatted}</span>
@@ -724,9 +697,7 @@ export default function StudentCourseDetailPage() {
                             onClick={handleVideoPlay}
                             className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-4 transition-all"
                           >
-                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
+                            <Play className="w-16 h-16 text-white" />
                           </button>
                         </div>
                       )}
@@ -749,9 +720,7 @@ export default function StudentCourseDetailPage() {
                           <div key={material.id} className="flex items-center justify-between bg-white rounded-lg p-3">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
+                                <File className="w-4 h-4 text-blue-600" />
                               </div>
                               <div>
                                 <h5 className="font-medium text-gray-900">{material.title}</h5>
