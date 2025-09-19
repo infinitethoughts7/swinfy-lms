@@ -690,7 +690,9 @@ export const adminDashboardApi = {
 
   // Get payments by status for admin (default paid)
   getPaymentsByStatus: async (status: 'paid' | 'verified' | 'rejected' | 'pending' = 'paid') => {
-    const response = await authenticatedFetch(`/api/payments/admin/history/?status=${status}`);
+    // For KP admins, use the pending payments endpoint for paid status
+    const endpoint = status === 'paid' ? '/api/payments/admin/pending/' : `/api/payments/admin/history/?status=${status}`;
+    const response = await authenticatedFetch(endpoint);
     if (!response.ok) {
       throw new Error('Failed to fetch payments');
     }

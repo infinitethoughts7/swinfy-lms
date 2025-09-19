@@ -50,7 +50,7 @@ class Payment(models.Model):
         null=True, 
         blank=True,
         related_name='verified_payments',
-        limit_choices_to={'role': 'admin'}
+        limit_choices_to={'role': 'knowledge_partner'}
     )
     verification_notes = models.TextField(blank=True, null=True)
     verified_at = models.DateTimeField(null=True, blank=True)

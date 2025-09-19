@@ -120,7 +120,7 @@ def verify_payment(request, payment_id):
             message = 'Payment rejected successfully.'
         
         # Log the verification action
-        from .payment_views import create_payment_log
+        from .views import create_payment_log
         create_payment_log(
             payment=payment,
             level='info',
