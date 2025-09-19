@@ -127,11 +127,15 @@ export default function CourseLearningPage() {
   const params = useParams();
   const courseSlug = params.slug as string;
   
-  // Debug logging
-  console.log('Course Learning Page - Params:', params);
-  console.log('Course Learning Page - Course Slug:', courseSlug);
-  console.log('Course Learning Page - Is Authenticated:', isAuthenticated());
-  console.log('Course Learning Page - User:', getCurrentUser());
+  // Debug logging (client side only)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Course Learning Page - Params:', params);
+      console.log('Course Learning Page - Course Slug:', courseSlug);
+      console.log('Course Learning Page - Is Authenticated:', isAuthenticated());
+      console.log('Course Learning Page - User:', getCurrentUser());
+    }
+  }, [courseSlug]);
   
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -192,10 +196,13 @@ export default function CourseLearningPage() {
   }, [courseSlug, fetchCourseResources]);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      setError('Please log in to access this course');
-      setLoading(false);
-      return;
+    // Check authentication on client side only
+    if (typeof window !== 'undefined') {
+      if (!isAuthenticated()) {
+        setError('Please log in to access this course');
+        setLoading(false);
+        return;
+      }
     }
     
     if (courseSlug) {

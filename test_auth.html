@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <h1>Authentication Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Test authentication functions
+        function getTokens() {
+            try {
+                const access = localStorage.getItem('access_token');
+                const refresh = localStorage.getItem('refresh_token');
+                return { access, refresh };
+            } catch (error) {
+                return null;
+            }
+        }
+        
+        function isAuthenticated() {
+            const tokens = getTokens();
+            return tokens && tokens.access && tokens.refresh;
+        }
+        
+        function getCurrentUser() {
+            try {
+                const user = localStorage.getItem('user');
+                return user ? JSON.parse(user) : null;
+            } catch (error) {
+                return null;
+            }
+        }
+        
+        // Display results
+        document.getElementById('result').innerHTML = `
+            <p>Is Authenticated: ${isAuthenticated()}</p>
+            <p>Tokens: ${JSON.stringify(getTokens())}</p>
+            <p>User: ${JSON.stringify(getCurrentUser())}</p>
+        `;
+    </script>
+</body>
+</html>
