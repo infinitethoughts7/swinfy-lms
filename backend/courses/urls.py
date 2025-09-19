@@ -80,6 +80,9 @@ urlpatterns = [
     path('modules/<int:module_id>/lessons/create/', views.LessonCreateView.as_view(), name='lesson-create'),
     path('<slug:slug>/resources/', views.CourseResourceView.as_view(), name='course-resources'),
     
+    # Learner Content Access Endpoints
+    path('<slug:slug>/learner-resources/', views.LearnerCourseResourceView.as_view(), name='learner-course-resources'),
+    
     # Analytics Endpoints
     path('analytics/learner-progress/', views.LearnerProgressAnalyticsView.as_view(), name='learner-progress-analytics'),
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),

@@ -485,6 +485,30 @@ class CourseResourceView(generics.ListCreateAPIView):
         serializer.save(course=course)
 
 
+class LearnerCourseResourceView(generics.ListAPIView):
+    """Get course resources for enrolled learners."""
+    serializer_class = CourseResourceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        user = self.request.user
+        
+        # Check if user is enrolled in the course
+        if user.role == 'learner':
+            from ..models import Enrollment
+            try:
+                enrollment = Enrollment.objects.get(learner=user, course=course)
+                if enrollment.can_access_content:
+                    return CourseResource.objects.filter(course=course, is_public=True)
+            except Enrollment.DoesNotExist:
+                pass
+        
+        # If not enrolled or no access, return empty queryset
+        return CourseResource.objects.none()
+
+
 # ==================== ANALYTICS ENDPOINTS ====================
 
 class LearnerProgressAnalyticsView(generics.ListAPIView):

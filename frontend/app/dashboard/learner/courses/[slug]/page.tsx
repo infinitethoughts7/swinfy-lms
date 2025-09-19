@@ -151,11 +151,13 @@ export default function CourseLearningPage() {
   const fetchCourseResources = useCallback(async () => {
     try {
       const response = await authenticatedFetch(
-        `/api/courses/${courseSlug}/resources/`
+        `/api/courses/${courseSlug}/learner-resources/`
       );
       if (response.ok) {
         const resources = await response.json();
-        setCourseResources(resources);
+        setCourseResources(resources.results || resources);
+      } else {
+        console.error('Failed to fetch course resources:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch course resources:', error);
