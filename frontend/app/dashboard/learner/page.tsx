@@ -275,8 +275,19 @@ export default function LearnerHomePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentCourses.slice(0, 6).map((enrollment) => (
-                  <div key={enrollment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
+                {recentCourses.slice(0, 6).map((enrollment) => {
+                  // Debug logging
+                  console.log('Enrollment data:', enrollment);
+                  console.log('Course data:', enrollment.course);
+                  console.log('Course slug:', enrollment.course?.slug);
+                  console.log('Course ID:', enrollment.course?.id);
+                  console.log('Enrollment ID:', enrollment.id);
+                  
+                  const courseUrl = `/dashboard/learner/courses/${enrollment.course?.slug || enrollment.course?.id || enrollment.id}`;
+                  console.log('Generated URL:', courseUrl);
+                  
+                  return (
+                    <div key={enrollment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">
                     <div className="flex items-start space-x-3 mb-3">
                       {(enrollment.course?.thumbnail || '/assets/courses/default.svg').endsWith('.svg') ? (
                         <img
@@ -327,7 +338,7 @@ export default function LearnerHomePage() {
                     {/* Action Button */}
                     <div className="pt-3 border-t border-gray-100">
                       <Link
-                        href={`/dashboard/learner/courses/${enrollment.course?.slug || enrollment.course?.id || enrollment.id}`}
+                        href={courseUrl}
                         className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                       >
                         {(enrollment.progress_percentage || 0) > 0 ? 'Continue Learning' : 'Start Learning'}
@@ -337,7 +348,8 @@ export default function LearnerHomePage() {
                       </Link>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

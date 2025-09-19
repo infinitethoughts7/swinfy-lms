@@ -127,6 +127,10 @@ export default function CourseLearningPage() {
   const params = useParams();
   const courseSlug = params.slug as string;
   
+  // Debug logging
+  console.log('Course Learning Page - Params:', params);
+  console.log('Course Learning Page - Course Slug:', courseSlug);
+  
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,8 +161,11 @@ export default function CourseLearningPage() {
       setLoading(true);
       setError('');
       
+      console.log('Fetching course data for slug:', courseSlug);
+      
       // Fetch course details
       const courseResponse = await learnerDashboardApi.getCourseDetail(courseSlug);
+      console.log('Course response:', courseResponse);
       setCourse(courseResponse);
       
       // Fetch enrollment status
