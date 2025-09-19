@@ -259,28 +259,43 @@ def verify_payment(request):
         payment.status = 'paid'
         payment.save()
         
-        # Update enrollment status
-        payment.enrollment.status = 'pending_approval'
+        # Update enrollment status based on course requirements
+        course = payment.enrollment.course
+        if course.requires_admin_enrollment:
+            # Course requires admin approval - set to pending
+            payment.enrollment.status = 'pending_approval'
+        else:
+            # Course doesn't require admin approval - auto-approve
+            payment.enrollment.status = 'approved'
+            payment.enrollment.approved_by = payment.enrollment.course.training_partner.user
+            payment.enrollment.approval_date = timezone.now()
+            payment.enrollment.start_date = timezone.now()
         payment.enrollment.save()
         
-        # Create notification for admin
-        admin_user = payment.enrollment.course.training_partner.users.filter(role='knowledge_partner').first()
-        if admin_user:
-            create_payment_notification(
-                payment=payment,
-                notification_type='verification_needed',
-                recipient=admin_user,
-                title='New Payment Verification Required',
-                message=f'{payment.user.full_name} has paid ₹{payment.amount} for {payment.enrollment.course.title}. Please verify and approve the enrollment.'
-            )
+        # Create notification for admin (only if approval is required)
+        if course.requires_admin_enrollment:
+            admin_user = payment.enrollment.course.training_partner.user
+            if admin_user and admin_user.role == 'knowledge_partner':
+                create_payment_notification(
+                    payment=payment,
+                    notification_type='verification_needed',
+                    recipient=admin_user,
+                    title='New Payment Verification Required',
+                    message=f'{payment.user.full_name} has paid ₹{payment.amount} for {payment.enrollment.course.title}. Please verify and approve the enrollment.'
+                )
         
         # Create notification for user
+        if course.requires_admin_enrollment:
+            message = f'Your payment of ₹{payment.amount} for {payment.enrollment.course.title} has been received. Waiting for admin approval.'
+        else:
+            message = f'Your payment of ₹{payment.amount} for {payment.enrollment.course.title} has been received. You can now access the course!'
+        
         create_payment_notification(
             payment=payment,
             notification_type='payment_received',
             recipient=payment.user,
             title='Payment Successful',
-            message=f'Your payment of ₹{payment.amount} for {payment.enrollment.course.title} has been received. Waiting for admin approval.'
+            message=message
         )
         
         # Log successful verification
@@ -293,8 +308,13 @@ def verify_payment(request):
             request=request
         )
         
+        if course.requires_admin_enrollment:
+            response_message = 'Payment verified successfully. Waiting for admin approval.'
+        else:
+            response_message = 'Payment verified successfully. You can now access the course!'
+        
         return Response({
-            'message': 'Payment verified successfully. Waiting for admin approval.',
+            'message': response_message,
             'status': 'paid',
             'payment_id': str(payment.id),
             'enrollment_status': payment.enrollment.status
