@@ -209,10 +209,10 @@ export default function CourseLearningPage() {
       }
       
       console.log('User is authenticated, proceeding with course data fetch');
-    }
-    
-    if (courseSlug) {
-      fetchCourseData();
+      
+      if (courseSlug) {
+        fetchCourseData();
+      }
     }
   }, [courseSlug, fetchCourseData]);
 
