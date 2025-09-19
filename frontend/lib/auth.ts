@@ -9,7 +9,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
-  role: 'student' | 'tutor' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role: 'learner' | 'tutor' | 'admin' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
   role_display?: string;
 }
 
@@ -138,11 +138,18 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
       throw new Error('No valid access token available');
     }
 
-    const headers = {
-      ...options.headers,
+    // Build headers. If body is FormData, let the browser set the multipart boundary
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> | undefined),
     };
+    if (!isFormData) {
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    } else {
+      // Ensure we don't force JSON for file uploads
+      if ('Content-Type' in headers) delete headers['Content-Type'];
+    }
 
     const response = await fetch(url, {
       ...options,

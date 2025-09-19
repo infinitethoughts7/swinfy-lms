@@ -51,7 +51,7 @@ def create_payment_notification(payment, notification_type, recipient, title, me
     """Utility function to create payment notifications"""
     PaymentNotification.objects.create(
         recipient=recipient,
-        recipient_type='admin' if recipient.role == 'admin' else 'user',
+        recipient_type='admin' if recipient.role == 'knowledge_partner' else 'user',
         notification_type=notification_type,
         title=title,
         message=message,
@@ -74,7 +74,7 @@ def create_payment_order(request):
     
     # Check if user already enrolled
     existing_enrollment = Enrollment.objects.filter(
-        student=request.user, 
+        learner=request.user, 
         course=course
     ).first()
     
@@ -101,7 +101,7 @@ def create_payment_order(request):
     try:
         # Create or update enrollment
         enrollment, created = Enrollment.objects.get_or_create(
-            student=request.user,
+            learner=request.user,
             course=course,
             defaults={'status': 'pending'}
         )
@@ -260,11 +260,11 @@ def verify_payment(request):
         payment.save()
         
         # Update enrollment status
-        payment.enrollment.status = 'payment_verification'
+        payment.enrollment.status = 'pending_approval'
         payment.enrollment.save()
         
         # Create notification for admin
-        admin_user = payment.enrollment.course.training_partner.users.filter(role='admin').first()
+        admin_user = payment.enrollment.course.training_partner.users.filter(role='knowledge_partner').first()
         if admin_user:
             create_payment_notification(
                 payment=payment,
@@ -295,7 +295,7 @@ def verify_payment(request):
         
         return Response({
             'message': 'Payment verified successfully. Waiting for admin approval.',
-            'status': 'payment_verification',
+            'status': 'paid',
             'payment_id': str(payment.id),
             'enrollment_status': payment.enrollment.status
         }, status=status.HTTP_200_OK)

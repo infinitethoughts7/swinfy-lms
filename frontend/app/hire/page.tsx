@@ -37,7 +37,7 @@ const HirePage = () => {
   };
 
   const successStats = [
-    { number: '2,847', label: 'Students Placed', description: 'in top companies worldwide' },
+    { number: '2,847', label: 'Learners Placed', description: 'in top companies worldwide' },
     { number: '₹2.5Cr+', label: 'Average Salary', description: 'for our placed students' },
     { number: '94%', label: 'Success Rate', description: 'in job placements' },
     { number: '500+', label: 'Partner Companies', description: 'trust our talent' }

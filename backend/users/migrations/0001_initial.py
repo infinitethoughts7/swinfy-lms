@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             name='KPIProfile',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('bio', models.TextField(help_text='Professional bio for students to see')),
+                ('bio', models.TextField(help_text='Professional bio learners to see')),
                 ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profiles/tutors/')),
                 ('date_of_birth', models.DateField(blank=True, null=True)),
                 ('phone_number', models.CharField(blank=True, max_length=15, null=True)),
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('bio', models.TextField(blank=True, help_text='Tell us about yourself', null=True)),
-                ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profiles/students/')),
+                ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profiles/learners/')),
                 ('date_of_birth', models.DateField(blank=True, null=True)),
                 ('phone_number', models.CharField(blank=True, max_length=15, null=True)),
                 ('education_level', models.CharField(blank=True, choices=[('high_school', 'High School'), ('bachelor', "Bachelor's Degree"), ('master', "Master's Degree"), ('phd', 'PhD'), ('other', 'Other')], max_length=50, null=True)),

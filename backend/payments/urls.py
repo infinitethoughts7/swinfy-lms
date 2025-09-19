@@ -19,7 +19,7 @@ urlpatterns = [
     
     # Admin payment endpoints
     path('admin/pending/', pending_payments, name='pending_payments'),
-    path('admin/verify/<int:payment_id>/', admin_verify_payment, name='admin_verify_payment'),
+    path('admin/verify/<uuid:payment_id>/', admin_verify_payment, name='admin_verify_payment'),
     path('admin/history/', admin_payment_history, name='admin_payment_history'),
     path('admin/analytics/', payment_analytics, name='payment_analytics'),
     

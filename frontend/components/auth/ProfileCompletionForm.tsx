@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AuthAPI, ProfileCompletionRequest } from '@/lib/api/auth';
 
 interface ProfileCompletionFormProps {
-  userRole: 'student' | 'tutor' | 'admin';
+  userRole: 'learner' | 'tutor' | 'admin';
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -34,7 +34,7 @@ export default function ProfileCompletionForm({
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'student': return 'Student';
+      case 'learner': return 'learner';
       case 'tutor': return 'Tutor';
       case 'admin': return 'Admin';
       default: return role;

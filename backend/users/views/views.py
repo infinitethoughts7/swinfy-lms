@@ -295,15 +295,15 @@ def dashboard_stats(request):
     
     else:
         # Learner dashboard stats
-        my_enrollments = Enrollment.objects.filter(student=user)
+        my_enrollments = Enrollment.objects.filter(learner=user)
         total_enrollments = my_enrollments.count()
         active_enrollments = my_enrollments.filter(status='active').count()
         completed_enrollments = my_enrollments.filter(status='completed').count()
         
         # Payment statistics
-        total_payments = Payment.objects.filter(enrollment__student=user).count()
+        total_payments = Payment.objects.filter(enrollment__learner=user).count()
         total_spent = Payment.objects.filter(
-            enrollment__student=user,
+            enrollment__learner=user,
             status__in=['paid', 'verified']
         ).aggregate(total=Sum('amount'))['total'] or 0
         

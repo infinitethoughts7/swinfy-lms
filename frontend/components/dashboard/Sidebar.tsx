@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/components/shared/Logo';
 
 interface SidebarProps {
-  userRole: 'student' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin';
+  userRole: 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin';
   isCollapsed?: boolean;
   onToggle?: () => void;
 }
@@ -36,11 +36,11 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     ];
 
     switch (userRole) {
-      case 'student':
+      case 'learner':
         return [
           {
             label: 'Home',
-            href: '/dashboard/student',
+            href: '/dashboard/learner',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -49,7 +49,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           },
           {
             label: 'My Courses',
-            href: '/dashboard/student/courses',
+            href: '/dashboard/learner/courses',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -67,7 +67,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           },
           {
             label: 'Live Sessions',
-            href: '/dashboard/student/sessions',
+            href: '/dashboard/learner/sessions',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -76,8 +76,17 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             badge: '2',
           },
           {
+            label: 'Analytics',
+            href: '/dashboard/learner/analytics',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            ),
+          },
+          {
             label: 'Payments',
-            href: '/dashboard/student/payments',
+            href: '/dashboard/learner/payments',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -85,20 +94,20 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             ),
           },
           {
-            label: 'Notifications',
-            href: '/dashboard/student/notifications',
+            label: 'My Profile',
+            href: '/dashboard/learner/profile',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             ),
           },
           {
-            label: 'My Profile',
-            href: '/dashboard/student/profile',
+            label: 'Notifications',
+            href: '/dashboard/learner/notifications',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             ),
           },
@@ -117,8 +126,8 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             ),
           },
           {
-            label: 'My Students',
-            href: '/dashboard/tutor/students',
+            label: 'My Learners',
+            href: '/dashboard/tutor/learners',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
@@ -201,8 +210,8 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             ),
           },
           {
-            label: 'Students',
-            href: '/dashboard/kp/students',
+            label: 'Learners',
+            href: '/dashboard/kp/learners',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -216,6 +225,15 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Payments',
+            href: '/dashboard/kp/payments',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             ),
           },
@@ -271,8 +289,8 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             ),
           },
           {
-            label: 'Students',
-            href: '/dashboard/instructor/students',
+            label: 'Learners',
+            href: '/dashboard/instructor/learners',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -375,7 +393,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
           if (pathname === item.href) {
             // Exact match
             isActive = true;
-          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/student' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor' && item.href !== '/dashboard/super-admin') {
+          } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/learner' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor' && item.href !== '/dashboard/super-admin') {
             // For non-dashboard root pages, check if current path starts with the item href
             isActive = pathname.startsWith(item.href + '/');
           }

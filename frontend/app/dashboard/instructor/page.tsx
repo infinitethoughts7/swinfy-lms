@@ -89,7 +89,7 @@ export default function InstructorDashboard() {
               Welcome back, {user?.full_name || 'Instructor'}! 👋
             </h1>
             <p className="text-blue-100 text-sm sm:text-base">
-              Ready to create amazing courses? Manage your content and track student progress.
+              Ready to create amazing courses? Manage your content and track learner progress.
             </p>
           </div>
           <Link
@@ -137,7 +137,7 @@ export default function InstructorDashboard() {
             <span className="text-2xl font-bold text-gray-900">{stats?.total_enrollments || 0}</span>
           </div>
           <h3 className="font-semibold text-gray-900 mb-1">Enrollments</h3>
-          <p className="text-sm text-gray-600">Total students</p>
+          <p className="text-sm text-gray-600">Total learners</p>
         </div>
 
         {/* Content Stats */}
@@ -173,7 +173,7 @@ export default function InstructorDashboard() {
           <div className="text-center py-12">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
-            <p className="text-gray-600 mb-6">Create your first course to start teaching students</p>
+            <p className="text-gray-600 mb-6">Create your first course to start teaching learners</p>
             <Link
               href="/dashboard/instructor/courses/create"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
@@ -294,7 +294,7 @@ export default function InstructorDashboard() {
             </div>
           </div>
           <h3 className="font-semibold text-gray-900 mb-2">Analytics</h3>
-          <p className="text-gray-600 text-sm">View detailed insights about your courses and students</p>
+          <p className="text-gray-600 text-sm">View detailed insights about your courses and learners</p>
         </Link>
       </div>
     </div>

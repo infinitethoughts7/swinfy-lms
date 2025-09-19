@@ -38,7 +38,7 @@ class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Core Identity Fields
-    title = models.CharField(max_length=200, default="Untitled Course", help_text="Course title as shown to students")
+    title = models.CharField(max_length=200, default="Untitled Course", help_text="Course title as shown to learners")
     slug = models.SlugField(max_length=220, unique=True, help_text="URL-friendly version of title")
     description = models.TextField(default="Course description", help_text="Full course description for course detail page")
     short_description = models.CharField(
@@ -124,7 +124,7 @@ class Course(models.Model):
     # Publication & Visibility Fields
     is_published = models.BooleanField(
         default=False,
-        help_text="Course is live and visible to students"
+        help_text="Course is live and visible to learners"
     )
     is_featured = models.BooleanField(
         default=False,
@@ -166,13 +166,13 @@ class Course(models.Model):
         help_text="Course preview/demo video"
     )
     learning_outcomes = models.TextField(
-        default="Students will learn various skills and concepts",
-        help_text="What students will learn (bullet points or paragraph)"
+        default="Learners will learn various skills and concepts",
+        help_text="What learners will learn (bullet points or paragraph)"
     )
     prerequisites = models.TextField(
         blank=True,
         null=True,
-        help_text="What students should know before taking this course"
+        help_text="What learners should know before taking this course"
     )
     
     # Timestamp Fields
@@ -342,7 +342,7 @@ class Course(models.Model):
         
         # Check if already enrolled
         from courses.models import Enrollment
-        if Enrollment.objects.filter(student=user, course=self).exists():
+        if Enrollment.objects.filter(learner=user, course=self).exists():
             return False
         
         return True

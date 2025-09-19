@@ -48,6 +48,15 @@ const ProgressChart = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Normalize and defensively copy data
+    const safeData: ProgressData[] = Array.isArray(data)
+      ? data.map((item, index) => ({
+          label: (item?.label ?? `Item ${index + 1}`).toString(),
+          value: Number(item?.value ?? 0) || 0,
+          color: item?.color,
+        }))
+      : [];
+
     // Set canvas size
     canvas.width = canvas.offsetWidth * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
@@ -56,12 +65,21 @@ const ProgressChart = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.offsetWidth, height);
 
+    if (safeData.length === 0) {
+      // Render empty-state text
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data available', canvas.offsetWidth / 2, height / 2);
+      return;
+    }
+
     if (type === 'pie' || type === 'doughnut') {
-      drawPieChart(ctx, data, canvas.offsetWidth, height, type === 'doughnut');
+      drawPieChart(ctx, safeData, canvas.offsetWidth, height, type === 'doughnut');
     } else if (type === 'bar') {
-      drawBarChart(ctx, data, canvas.offsetWidth, height);
+      drawBarChart(ctx, safeData, canvas.offsetWidth, height);
     } else if (type === 'line') {
-      drawLineChart(ctx, data, canvas.offsetWidth, height);
+      drawLineChart(ctx, safeData, canvas.offsetWidth, height);
     }
   }, [data, type, height]);
 
@@ -77,11 +95,21 @@ const ProgressChart = ({
     const radius = Math.min(width, height) / 2 - 40;
     const innerRadius = isDoughnut ? radius * 0.6 : 0;
 
-    const total = data.reduce((sum, item) => sum + item.value, 0);
+    const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
     let currentAngle = -Math.PI / 2; // Start from top
 
+    if (total <= 0) {
+      // Draw a faint empty circle for zero total
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+    }
+
     data.forEach((item, index) => {
-      const sliceAngle = (item.value / total) * 2 * Math.PI;
+      const value = Number(item.value) || 0;
+      const sliceAngle = total > 0 ? (value / total) * 2 * Math.PI : 0;
       const color = item.color || colors[index % colors.length];
 
       // Draw slice
@@ -118,13 +146,15 @@ const ProgressChart = ({
     const padding = 40;
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
-    const barWidth = chartWidth / data.length * 0.7;
-    const barSpacing = chartWidth / data.length * 0.3;
+    const barWidth = data.length > 0 ? (chartWidth / data.length) * 0.7 : 0;
+    const barSpacing = data.length > 0 ? (chartWidth / data.length) * 0.3 : 0;
 
-    const maxValue = Math.max(...data.map(item => item.value));
+    const values = data.map(item => Number(item.value) || 0);
+    const maxValue = Math.max(...values, 0) || 1;
 
     data.forEach((item, index) => {
-      const barHeight = (item.value / maxValue) * chartHeight;
+      const value = Number(item.value) || 0;
+      const barHeight = (value / maxValue) * chartHeight;
       const x = padding + index * (barWidth + barSpacing) + barSpacing / 2;
       const y = height - padding - barHeight;
 
@@ -138,7 +168,7 @@ const ProgressChart = ({
       ctx.fillStyle = '#374151';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(item.value.toString(), x + barWidth / 2, y - 5);
+      ctx.fillText((value).toString(), x + barWidth / 2, y - 5);
 
       // Draw label
       ctx.fillText(item.label, x + barWidth / 2, height - padding + 20);
@@ -155,8 +185,9 @@ const ProgressChart = ({
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
 
-    const maxValue = Math.max(...data.map(item => item.value));
-    const stepX = chartWidth / (data.length - 1);
+    const values = data.map(item => Number(item.value) || 0);
+    const maxValue = Math.max(...values, 0) || 1;
+    const stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
 
     // Draw line
     ctx.beginPath();
@@ -165,7 +196,8 @@ const ProgressChart = ({
 
     data.forEach((item, index) => {
       const x = padding + index * stepX;
-      const y = height - padding - (item.value / maxValue) * chartHeight;
+      const value = Number(item.value) || 0;
+      const y = height - padding - (value / maxValue) * chartHeight;
 
       if (index === 0) {
         ctx.moveTo(x, y);
@@ -186,7 +218,7 @@ const ProgressChart = ({
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(item.label, x, height - padding + 20);
-      ctx.fillText(item.value.toString(), x, y - 10);
+      ctx.fillText((value).toString(), x, y - 10);
     });
 
     ctx.stroke();
@@ -252,13 +284,13 @@ export const PerformanceChart = ({ data }: { data: { month: string; score: numbe
   />
 );
 
-export const StudentDistributionChart = ({ students }: { 
-  students: { level: string; count: number }[] 
+export const LearnerDistributionChart = ({ learners }: { 
+  learners: { level: string; count: number }[] 
 }) => (
   <ProgressChart
-    data={(students || []).map(item => ({ label: item.level, value: item.count }))}
+    data={(learners || []).map(item => ({ label: item.level, value: item.count }))}
     type="pie"
-    title="Students by Level"
+    title="Learners by Level"
     height={300}
   />
 );

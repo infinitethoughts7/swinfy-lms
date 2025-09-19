@@ -20,7 +20,7 @@ from .course_view import (
     CourseModuleCreateView,
     LessonCreateView,
     CourseResourceView,
-    StudentProgressAnalyticsView,
+    LearnerProgressAnalyticsView,
     CoursePerformanceAnalyticsView,
     NotificationView,
     NotificationDetailView,
@@ -30,7 +30,7 @@ from .course_view import (
     featured_courses,
     enrollment_status,
     weekly_activity_analytics,
-    student_distribution_analytics
+    learner_distribution_analytics
 )
 from .training_partner_view import KnowledgePartnerListView, KnowledgePartnerDetailView, knowledge_partner_list
 
@@ -56,7 +56,7 @@ __all__ = [
     'CourseModuleCreateView',
     'LessonCreateView',
     'CourseResourceView',
-    'StudentProgressAnalyticsView',
+    'LearnerProgressAnalyticsView',
     'CoursePerformanceAnalyticsView',
     'NotificationView',
     'NotificationDetailView',
@@ -69,5 +69,5 @@ __all__ = [
     'knowledge_partner_list',
     'enrollment_status',
     'weekly_activity_analytics',
-    'student_distribution_analytics'
+    'learner_distribution_analytics'
 ]

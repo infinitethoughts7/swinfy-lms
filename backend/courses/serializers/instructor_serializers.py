@@ -315,18 +315,18 @@ class InstructorCourseStatsSerializer(serializers.Serializer):
     recent_courses = InstructorCourseListSerializer(many=True, read_only=True)
 
 
-class StudentProgressSummarySerializer(serializers.ModelSerializer):
-    """Serializer for student progress summary in instructor dashboard."""
+class LearnerProgressSummarySerializer(serializers.ModelSerializer):
+    """Serializer for learner progress summary in instructor dashboard."""
     
-    student_name = serializers.CharField(source='enrollment.student.full_name', read_only=True)
-    student_email = serializers.CharField(source='enrollment.student.email', read_only=True)
+    learner_name = serializers.CharField(source='enrollment.learner.full_name', read_only=True)
+    learner_email = serializers.CharField(source='enrollment.learner.email', read_only=True)
     course_title = serializers.CharField(source='enrollment.course.title', read_only=True)
     enrollment_date = serializers.DateTimeField(source='enrollment.enrolled_at', read_only=True)
     
     class Meta:
         model = CourseProgress
         fields = [
-            'id', 'student_name', 'student_email', 'course_title',
+            'id', 'learner_name', 'learner_email', 'course_title',
             'overall_progress', 'lessons_completed', 'total_lessons',
             'enrollment_date', 'started_at', 'completed_at', 'last_activity'
         ]

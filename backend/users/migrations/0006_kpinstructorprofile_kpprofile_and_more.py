@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             name='KPInstructorProfile',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('bio', models.TextField(help_text='Professional bio for students to see')),
+                ('bio', models.TextField(help_text='Professional bio for learners to see')),
                 ('profile_picture', models.ImageField(blank=True, null=True, upload_to='profiles/instructors/')),
                 ('phone_number', models.CharField(blank=True, max_length=15, null=True)),
                 ('title', models.CharField(help_text='e.g., Senior Software Engineer, Data Scientist', max_length=100)),

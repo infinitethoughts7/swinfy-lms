@@ -25,7 +25,9 @@ interface DashboardStats {
   available_instructors: number;
   total_courses: number;
   active_courses: number;
-  total_students: number;
+  pending_payments_count: number;
+  pending_payments_amount: number;
+  total_learners: number;
   recent_activity: Array<{
     id: string;
     type: string;
@@ -62,11 +64,14 @@ export default function KPDashboard() {
       setError(null);
       
       // Fetch instructor list and approved courses in parallel
-      const [instructorsResponse, coursesResponse] = await Promise.all([
+      const [instructorsResponse, coursesResponse, pendingPaymentsResponse] = await Promise.all([
         authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
           method: 'GET',
         }),
         authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
+          method: 'GET',
+        }),
+        authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/admin/pending/`, {
           method: 'GET',
         })
       ]);
@@ -86,11 +91,21 @@ export default function KPDashboard() {
       let total_courses = 0;
       let active_courses = 0;
       
+      let pending_payments_count = 0;
+      let pending_payments_amount = 0;
+
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
         const courses = coursesData.results || coursesData;
         total_courses = courses.length;
         active_courses = courses.filter((course: { is_published: boolean; is_active: boolean }) => course.is_published && course.is_active).length;
+      }
+
+      if (pendingPaymentsResponse.ok) {
+        const pendingData = await pendingPaymentsResponse.json();
+        const payments = pendingData.results || pendingData;
+        pending_payments_count = payments.length;
+        pending_payments_amount = payments.reduce((sum: number, p: { amount: number }) => sum + (Number(p.amount) || 0), 0);
       }
       
       const data = {
@@ -99,11 +114,13 @@ export default function KPDashboard() {
         available_instructors,
         total_courses,
         active_courses,
-        total_students: 156, // Mock data - will need student API later
+        pending_payments_count,
+        pending_payments_amount,
+        total_learners: 156, // Mock data - will need learner API later
         recent_activity: [
           { id: '1', type: 'instructor', message: 'New instructor joined', timestamp: '2 hours ago' },
           { id: '2', type: 'course', message: 'Course "React Basics" published', timestamp: '4 hours ago' },
-          { id: '3', type: 'student', message: '5 new student enrollments', timestamp: '6 hours ago' },
+          { id: '3', type: 'learner', message: '5 new learner enrollments', timestamp: '6 hours ago' },
         ],
         instructors // Store instructor list for display
       };
@@ -119,7 +136,9 @@ export default function KPDashboard() {
         available_instructors: 0,
         total_courses: 0,
         active_courses: 0,
-        total_students: 0,
+        pending_payments_count: 0,
+        pending_payments_amount: 0,
+        total_learners: 0,
         recent_activity: [],
         instructors: []
       });
@@ -340,17 +359,17 @@ export default function KPDashboard() {
               <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600" />
             </div>
             <Link 
-              href="/dashboard/kp/students"
+              href="/dashboard/kp/learners"
               className="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center"
             >
               View all <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </div>
-          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Students</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Learners</h3>
           <div className="space-y-1">
             <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">Enrolled</span>
-              <span className="font-semibold">{stats?.total_students || 0}</span>
+              <span className="font-semibold">{stats?.total_learners || 0}</span>
             </div>
             <div className="flex justify-between text-xs sm:text-sm">
               <span className="text-gray-600">This month</span>
@@ -382,6 +401,29 @@ export default function KPDashboard() {
               <span className="text-gray-600">Growth</span>
               <span className="font-semibold text-green-600">+12%</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payments Summary */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 lg:p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Payments</h2>
+          <Link 
+            href="/dashboard/kp/payments"
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center"
+          >
+            Review payments <ArrowRight className="h-3 w-3 ml-1" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+            <p className="text-xs text-blue-700">Pending Verifications</p>
+            <p className="text-lg font-semibold text-blue-900">{stats?.pending_payments_count || 0}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-green-50 border border-green-100">
+            <p className="text-xs text-green-700">Pending Amount</p>
+            <p className="text-lg font-semibold text-green-900">₹{(stats?.pending_payments_amount || 0).toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -421,7 +463,7 @@ export default function KPDashboard() {
           </Link>
 
           <Link
-            href="/dashboard/kp/students"
+            href="/dashboard/kp/learners"
             className="group p-4 border border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
           >
             <div className="flex items-center">
@@ -429,7 +471,7 @@ export default function KPDashboard() {
                 <Users className="h-5 w-5 text-purple-600" />
               </div>
               <div className="ml-3">
-                <p className="font-medium text-gray-900">View Students</p>
+                <p className="font-medium text-gray-900">View learners</p>
                 <p className="text-sm text-gray-600">Track progress</p>
               </div>
             </div>

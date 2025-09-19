@@ -27,7 +27,7 @@ from ..serializers.instructor_serializers import (
     InstructorCourseResourceCreateSerializer,
     InstructorCourseResourceListSerializer,
     InstructorCourseStatsSerializer,
-    StudentProgressSummarySerializer
+    LearnerProgressSummarySerializer
 )
 
 
@@ -286,15 +286,15 @@ def instructor_dashboard_stats(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated, IsKnowledgePartnerInstructor])
-def instructor_student_progress(request):
-    """Get student progress for instructor's courses."""
+def instructor_learner_progress(request):
+    """Get learner progress for instructor's courses."""
     user = request.user
     
     # Get all course progress for instructor's courses
     course_progress = CourseProgress.objects.filter(
         enrollment__course__tutor=user
     ).select_related(
-        'enrollment__student', 'enrollment__course'
+        'enrollment__learner', 'enrollment__course'
     ).order_by('-last_activity')
     
     # Apply filters
@@ -309,10 +309,10 @@ def instructor_student_progress(request):
     
     page = paginator.paginate_queryset(course_progress, request)
     if page is not None:
-        serializer = StudentProgressSummarySerializer(page, many=True)
+        serializer = LearnerProgressSummarySerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
     
-    serializer = StudentProgressSummarySerializer(course_progress, many=True)
+    serializer = LearnerProgressSummarySerializer(course_progress, many=True)
     return Response(serializer.data)
 
 
@@ -384,12 +384,12 @@ def course_analytics(request, course_slug):
     # Get recent activity
     recent_progress = LessonProgress.objects.filter(
         lesson__module__course=course
-    ).select_related('enrollment__student', 'lesson').order_by('-updated_at')[:10]
+    ).select_related('enrollment__learner', 'lesson').order_by('-updated_at')[:10]
     
     recent_activity = []
     for progress in recent_progress:
         recent_activity.append({
-            'student_name': progress.enrollment.student.full_name,
+            'learner_name': progress.enrollment.learner.full_name,
             'lesson_title': progress.lesson.title,
             'action': 'completed' if progress.is_completed else 'started',
             'timestamp': progress.updated_at

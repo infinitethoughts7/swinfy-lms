@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             name='PaymentNotification',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('recipient_type', models.CharField(choices=[('user', 'Student'), ('admin', 'Training Partner Admin'), ('super_admin', 'Super Admin')], max_length=20)),
+                ('recipient_type', models.CharField(choices=[('user', 'Learner'), ('admin', 'Training Partner Admin'), ('super_admin', 'Super Admin')], max_length=20)),
                 ('notification_type', models.CharField(choices=[('payment_received', 'Payment Received'), ('payment_failed', 'Payment Failed'), ('verification_needed', 'Admin Verification Needed'), ('payment_approved', 'Payment Approved'), ('payment_rejected', 'Payment Rejected'), ('enrollment_activated', 'Enrollment Activated')], max_length=30)),
                 ('title', models.CharField(max_length=200)),
                 ('message', models.TextField()),

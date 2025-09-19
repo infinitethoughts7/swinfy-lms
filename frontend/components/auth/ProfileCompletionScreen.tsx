@@ -6,14 +6,14 @@ import Logo from '@/components/shared/Logo';
 import { getAccessToken } from '@/lib/auth-utils';
 
 interface ProfileCompletionScreenProps {
-  userRole: 'student' | 'tutor' | 'admin';
+  userRole: 'learner' | 'tutor' | 'admin';
   userEmail: string;
   onComplete: () => void;
   onSkip: () => void;
 }
 
 interface FormData {
-  // Student fields
+  // learner fields
   bio?: string;
   education_level?: string;
   field_of_study?: string;
@@ -196,7 +196,7 @@ export default function ProfileCompletionScreen({
     }
   };
 
-  const renderStudentFields = () => (
+  const renderlearnerFields = () => (
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -279,7 +279,7 @@ export default function ProfileCompletionScreen({
         <textarea
           value={formData.bio || ''}
           onChange={(e) => handleInputChange('bio', e.target.value)}
-          placeholder="Tell students about your professional background and teaching approach..."
+          placeholder="Tell learners about your professional background and teaching approach..."
           className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
             errors.bio ? 'border-red-500' : 'border-gray-300'
           }`}
@@ -448,7 +448,7 @@ export default function ProfileCompletionScreen({
 
   const getRoleDisplayName = () => {
     switch (userRole) {
-      case 'student': return 'Student';
+      case 'learner': return 'learner';
       case 'tutor': return 'Tutor';
       case 'admin': return 'Organization Admin';
       default: return 'User';
@@ -457,10 +457,10 @@ export default function ProfileCompletionScreen({
 
   const getRoleDescription = () => {
     switch (userRole) {
-      case 'student': 
+      case 'learner': 
         return 'Help us personalize your learning experience by sharing some details about your educational background and goals.';
       case 'tutor': 
-        return 'Create your teaching profile to help students find you. Share your expertise and professional background.';
+        return 'Create your teaching profile to help learners find you. Share your expertise and professional background.';
       case 'admin': 
         return 'Set up your administrator profile to manage your organization and oversee educational programs.';
       default: 
@@ -495,7 +495,7 @@ export default function ProfileCompletionScreen({
           <div>
             <h3 className="font-semibold text-gray-900">Profile Information</h3>
             <p className="text-sm text-gray-600">
-              {userRole === 'student' ? 'All fields are optional' : 
+              {userRole === 'learner' ? 'All fields are optional' : 
                userRole === 'tutor' ? 'Fields marked with * are required' :
                'Please provide your job title at minimum'}
             </p>
@@ -510,7 +510,7 @@ export default function ProfileCompletionScreen({
         )}
 
         {/* Role-specific fields */}
-        {userRole === 'student' && renderStudentFields()}
+        {userRole === 'learner' && renderlearnerFields()}
         {userRole === 'tutor' && renderTutorFields()}
         {userRole === 'admin' && renderAdminFields()}
 

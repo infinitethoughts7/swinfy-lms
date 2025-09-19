@@ -7,7 +7,6 @@ export type UserRole =
   | 'knowledge_partner' 
   | 'knowledge_partner_instructor' 
   | 'learner' 
-  | 'student' 
   | 'admin' 
   | 'tutor';
 
@@ -20,7 +19,6 @@ export const getRoleDisplayName = (role: string): string => {
     'knowledge_partner': 'Knowledge Partner',
     'knowledge_partner_instructor': 'Instructor',
     'learner': 'Learner',
-    'student': 'Student',
     'admin': 'Admin',
     'tutor': 'Tutor'
   };
@@ -37,7 +35,6 @@ export const getRoleBadgeClasses = (role: string): string => {
     'knowledge_partner': 'bg-blue-100 text-blue-800',
     'knowledge_partner_instructor': 'bg-green-100 text-green-800',
     'learner': 'bg-purple-100 text-purple-800',
-    'student': 'bg-purple-100 text-purple-800',
     'admin': 'bg-gray-100 text-gray-800',
     'tutor': 'bg-yellow-100 text-yellow-800'
   };
@@ -63,5 +60,5 @@ export const canTeach = (role: string): boolean => {
  * Check if a role can learn/enroll in courses
  */
 export const canLearn = (role: string): boolean => {
-  return ['learner', 'student'].includes(role);
+  return ['learner'].includes(role);
 };

@@ -11,7 +11,7 @@ from .content import Lesson
 
 class LessonProgress(models.Model):
     """
-    Student progress for individual lessons - simplified version.
+    Learner progress for individual lessons - simplified version.
     """
     
     # Primary Key
@@ -126,9 +126,9 @@ class LessonProgress(models.Model):
         self.save()
     
     @property
-    def student(self):
-        """Get the student."""
-        return self.enrollment.student
+    def learner(self):
+        """Get the learner."""
+        return self.enrollment.learner
     
     @property
     def course(self):
@@ -141,12 +141,12 @@ class LessonProgress(models.Model):
         return self.lesson.module
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.lesson.title} ({'✓' if self.is_completed else '○'})"
+        return f"{self.learner.full_name} - {self.lesson.title} ({'✓' if self.is_completed else '○'})"
 
 
 class CourseProgress(models.Model):
     """
-    Overall course progress summary for a student.
+    Overall course progress summary for a learner.
     """
     
     # Primary Key
@@ -290,9 +290,9 @@ class CourseProgress(models.Model):
         return next_lesson.module if next_lesson else None
     
     @property
-    def student(self):
-        """Get the student."""
-        return self.enrollment.student
+    def learner(self):
+        """Get the learner."""
+        return self.enrollment.learner
     
     @property
     def course(self):
@@ -325,7 +325,7 @@ class CourseProgress(models.Model):
         return 0
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.course.title} - {self.overall_progress}%"
+        return f"{self.learner.full_name} - {self.course.title} - {self.overall_progress}%"
 
 
 # Helper functions for easy progress management
@@ -367,8 +367,8 @@ def mark_lesson_started(enrollment, lesson):
     return progress
 
 
-def get_student_progress_summary(enrollment):
-    """Get comprehensive progress summary for a student."""
+def get_learner_progress_summary(enrollment):
+    """Get comprehensive progress summary for a learner."""
     course_progress, created = CourseProgress.objects.get_or_create(
         enrollment=enrollment,
         defaults={'started_at': timezone.now()}

@@ -66,10 +66,9 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       } else {
         // Default behavior: redirect based on role
         const roleToDashboard: Record<string, string> = {
-          'learner': 'student',
+          'learner': 'learner',
           'knowledge_partner_instructor': 'instructor',
           'knowledge_partner': 'kp',
-          'student': 'student',
           'tutor': 'tutor',
           'admin': 'admin',
           'super_admin': 'super-admin'

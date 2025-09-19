@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='kpinstructorprofile',
             name='knowledge_partner',
-            field=models.ForeignKey(default=1, help_text='Knowledge Partner organization the instructor belongs to', on_delete=django.db.models.deletion.CASCADE, related_name='instructors', to='users.kpprofile'),
+            field=models.ForeignKey(default='4b1b427f-3044-4bb5-99ad-cb8479b4d1d9', help_text='Knowledge Partner organization the instructor belongs to', on_delete=django.db.models.deletion.CASCADE, related_name='instructors', to='users.kpprofile'),
             preserve_default=False,
         ),
     ]

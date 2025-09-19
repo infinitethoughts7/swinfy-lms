@@ -20,7 +20,7 @@ from .instructor_serializers import (
     InstructorLessonCreateSerializer, InstructorLessonListSerializer, InstructorLessonDetailSerializer,
     InstructorLessonMaterialCreateSerializer, InstructorLessonMaterialListSerializer,
     InstructorCourseResourceCreateSerializer, InstructorCourseResourceListSerializer,
-    InstructorCourseStatsSerializer, StudentProgressSummarySerializer
+    InstructorCourseStatsSerializer, LearnerProgressSummarySerializer
 )
 
 __all__ = [
@@ -74,5 +74,5 @@ __all__ = [
     'InstructorCourseResourceCreateSerializer',
     'InstructorCourseResourceListSerializer',
     'InstructorCourseStatsSerializer',
-    'StudentProgressSummarySerializer'
+    'LearnerProgressSummarySerializer'
 ]

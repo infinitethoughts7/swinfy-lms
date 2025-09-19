@@ -11,13 +11,13 @@ from users.models import User
 
 class Enrollment(models.Model):
     """
-    Student enrollment in a course with admin approval workflow.
+    Learner enrollment in a course with admin approval workflow.
     """
     
     STATUS_CHOICES = [
         ('pending_approval', 'Pending Admin Approval'),  # NEW: Waiting for admin approval
-        ('approved', 'Approved'),  # NEW: Admin approved, student can access
-        ('active', 'Active'),  # Student actively learning
+        ('approved', 'Approved'),  # NEW: Admin approved, learner can access
+        ('active', 'Active'),  # Learner actively learning
         ('completed', 'Completed'),
         ('rejected', 'Rejected'),  # NEW: Admin rejected enrollment
         ('dropped', 'Dropped'),
@@ -34,19 +34,19 @@ class Enrollment(models.Model):
     
     ENROLLMENT_TYPE_CHOICES = [  # NEW: How enrollment was created
         ('admin_created', 'Created by Admin'),
-        ('student_requested', 'Requested by Student'),
+        ('learner_requested', 'Requested by Learner'),
     ]
     
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Relationships
-    student = models.ForeignKey(
+    learner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='enrollments',
-        limit_choices_to={'role': 'student'},
-        help_text="Student enrolled in the course"
+        limit_choices_to={'role': 'learner'},
+        help_text="Learner enrolled in the course"
     )
     course = models.ForeignKey(
         Course,
@@ -59,7 +59,7 @@ class Enrollment(models.Model):
     enrollment_type = models.CharField(
         max_length=20,
         choices=ENROLLMENT_TYPE_CHOICES,
-        default='student_requested',
+        default='learner_requested',
         help_text="How this enrollment was created"
     )
     approved_by = models.ForeignKey(
@@ -101,7 +101,7 @@ class Enrollment(models.Model):
     start_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Date when student started learning (after approval)"
+        help_text="Date when learner started learning (after approval)"
     )
     completion_date = models.DateTimeField(
         null=True,
@@ -111,7 +111,7 @@ class Enrollment(models.Model):
     last_accessed = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Last time student accessed the course"
+        help_text="Last time learner accessed the course"
     )
     
     # Progress Tracking
@@ -168,10 +168,10 @@ class Enrollment(models.Model):
     class Meta:
         verbose_name = 'Enrollment'
         verbose_name_plural = 'Enrollments'
-        unique_together = ['student', 'course']
+        unique_together = ['learner', 'course']
         ordering = ['-enrollment_date']
         indexes = [
-            models.Index(fields=['student', 'status']),
+            models.Index(fields=['learner', 'status']),
             models.Index(fields=['course', 'status']),
             models.Index(fields=['enrollment_date']),
             models.Index(fields=['progress_percentage']),
@@ -183,10 +183,10 @@ class Enrollment(models.Model):
         """Validate enrollment data."""
         from django.core.exceptions import ValidationError
         
-        # Check if student is already enrolled
+        # Check if learner is already enrolled
         if self.pk is None:  # New enrollment
-            if Enrollment.objects.filter(student=self.student, course=self.course).exists():
-                raise ValidationError('Student is already enrolled in this course.')
+            if Enrollment.objects.filter(learner=self.learner, course=self.course).exists():
+                raise ValidationError('Learner is already enrolled in this course.')
         
         # Validate payment amount
         if self.amount_paid < 0:
@@ -200,13 +200,13 @@ class Enrollment(models.Model):
             raise ValidationError('Approved enrollments must have an approver.')
         
         # Validate organization matching
-        if self.approved_by and self.student.organization:
-            if self.approved_by.organization != self.course.training_partner:
+        if self.approved_by and hasattr(self.learner, 'knowledge_partner') and self.learner.knowledge_partner:
+            if self.approved_by.knowledge_partner != self.course.training_partner:
                 raise ValidationError('Approver must be from the same training partner as the course.')
         
-        # For private courses, student must be from same organization
-        if self.course.is_private and self.student.organization != self.course.training_partner:
-            raise ValidationError('Students can only enroll in private courses from their own organization.')
+        # For private courses, learner must be from same organization
+        if self.course.is_private and hasattr(self.learner, 'knowledge_partner') and self.learner.knowledge_partner != self.course.training_partner:
+            raise ValidationError('Learners can only enroll in private courses from their own organization.')
     
     def save(self, *args, **kwargs):
         """Handle status transitions and timestamps."""
@@ -254,12 +254,12 @@ class Enrollment(models.Model):
     
     @property
     def is_active(self):
-        """Check if enrollment is active (student can learn)."""
+        """Check if enrollment is active (learner can learn)."""
         return self.status in ['approved', 'active']
     
     @property
     def can_access_content(self):
-        """Check if student can access course content."""
+        """Check if learner can access course content."""
         return self.is_active and not self.is_completed
     
     @property
@@ -357,17 +357,17 @@ class Enrollment(models.Model):
                 (completed_lessons / total_lessons) * 100, 2
             )
             
-            # Update status to active if student is learning
+            # Update status to active if learner is learning
             if self.status == 'approved' and completed_lessons > 0:
                 self.status = 'active'
             
             self.save(update_fields=['progress_percentage', 'status'])
     
     @classmethod
-    def create_admin_enrollment(cls, student, course, admin_user, auto_approve=True):
+    def create_admin_enrollment(cls, learner, course, admin_user, auto_approve=True):
         """Create enrollment by admin (directly approved)."""
         enrollment = cls.objects.create(
-            student=student,
+            learner=learner,
             course=course,
             enrollment_type='admin_created',
             status='approved' if auto_approve else 'pending_approval',
@@ -378,23 +378,23 @@ class Enrollment(models.Model):
         return enrollment
     
     @classmethod
-    def create_student_request(cls, student, course):
-        """Create enrollment request by student (needs approval)."""
+    def create_learner_request(cls, learner, course):
+        """Create enrollment request by learner (needs approval)."""
         enrollment = cls.objects.create(
-            student=student,
+            learner=learner,
             course=course,
-            enrollment_type='student_requested',
+            enrollment_type='learner_requested',
             status='pending_approval'
         )
         return enrollment
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.course.title} ({self.status})"
+        return f"{self.learner.full_name} - {self.course.title} ({self.status})"
 
 
 class CourseReview(models.Model):
     """
-    Student review for a course.
+    Learner review for a course.
     """
     
     # Primary Key
@@ -446,9 +446,9 @@ class CourseReview(models.Model):
         ]
     
     @property
-    def student(self):
-        """Get the student who wrote the review."""
-        return self.enrollment.student
+    def learner(self):
+        """Get the learner who wrote the review."""
+        return self.enrollment.learner
     
     @property
     def course(self):
@@ -456,24 +456,26 @@ class CourseReview(models.Model):
         return self.enrollment.course
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.course.title} - {self.rating} stars"
+        return f"{self.learner.full_name} - {self.course.title} - {self.rating} stars"
 
 
 class CourseWishlist(models.Model):
     """
-    Student wishlist for courses.
+    Learner wishlist for courses.
     """
     
     # Primary Key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
     # Relationships
-    student = models.ForeignKey(
+    learner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='wishlist',
-        limit_choices_to={'role': 'student'},
-        help_text="Student who added to wishlist"
+        limit_choices_to={'role': 'learner'},
+        help_text="Learner who added to wishlist",
+        null=True,
+        blank=True,
     )
     course = models.ForeignKey(
         Course,
@@ -488,15 +490,15 @@ class CourseWishlist(models.Model):
     class Meta:
         verbose_name = 'Course Wishlist'
         verbose_name_plural = 'Course Wishlists'
-        unique_together = ['student', 'course']
+        unique_together = ['learner', 'course']
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['student']),
+            models.Index(fields=['learner']),
             models.Index(fields=['course']),
         ]
     
     def __str__(self):
-        return f"{self.student.full_name} - {self.course.title}"
+        return f"{self.learner.full_name} - {self.course.title}"
 
 
 class CourseNotification(models.Model):

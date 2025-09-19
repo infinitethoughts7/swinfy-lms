@@ -63,10 +63,10 @@ const StaticNavbar = () => {
   const handleDashboardClick = () => {
     if (user?.role) {
       const roleToDashboard: Record<string, string> = {
-        'learner': 'student',
+        'learner': 'learner',
         'knowledge_partner_instructor': 'instructor',
         'knowledge_partner': 'kp',
-        'student': 'student',
+        'learner': 'learner',
         'tutor': 'tutor',
         'admin': 'admin'
       };

@@ -16,7 +16,7 @@ User = get_user_model()
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     """Serializer for enrollment details."""
-    student = UserProfileSerializer(read_only=True)
+    learner = UserProfileSerializer(read_only=True)
     course = CourseListSerializer(read_only=True)
     is_completed = serializers.BooleanField(read_only=True)
     is_active = serializers.BooleanField(read_only=True)
@@ -31,7 +31,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enrollment
         fields = [
-            'id', 'student', 'course', 'enrollment_type', 'status',
+            'id', 'learner', 'course', 'enrollment_type', 'status',
             'enrollment_date', 'start_date', 'completion_date', 'last_accessed',
             'progress_percentage', 'current_module', 'current_lesson',
             'amount_paid', 'payment_status', 'payment_method', 'payment_reference',
@@ -58,10 +58,10 @@ class EnrollmentCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validate enrollment data."""
         course = data['course']
-        student = self.context['request'].user
-        
-        # Check if student is already enrolled
-        if Enrollment.objects.filter(student=student, course=course).exists():
+        learner = self.context['request'].user
+
+        # Check if learner is already enrolled
+        if Enrollment.objects.filter(learner=learner, course=course).exists():
             raise serializers.ValidationError('You are already enrolled in this course.')
         
         # Check if course is available for enrollment
@@ -75,29 +75,29 @@ class EnrollmentCreateSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        """Create enrollment with student from request."""
-        validated_data['student'] = self.context['request'].user
+        """Create enrollment with learner from request."""
+        validated_data['learner'] = self.context['request'].user
         return super().create(validated_data)
 
 
 class CourseReviewSerializer(serializers.ModelSerializer):
     """Serializer for course reviews."""
-    student = serializers.SerializerMethodField()
+    learner = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
     
     class Meta:
         model = CourseReview
         fields = [
-            'id', 'student', 'course', 'rating', 'title', 'content',
+            'id', 'learner', 'course', 'rating', 'title', 'content',
             'is_approved', 'is_anonymous', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'student', 'course', 'is_approved', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'learner', 'course', 'is_approved', 'created_at', 'updated_at']
     
-    def get_student(self, obj):
-        """Get student information."""
+    def get_learner(self, obj):
+        """Get learner information."""
         if obj.is_anonymous:
             return {'full_name': 'Anonymous', 'email': '***@***.***'}
-        return UserProfileSerializer(obj.student).data
+        return UserProfileSerializer(obj.learner).data
     
     def get_course(self, obj):
         """Get course information."""
@@ -118,17 +118,17 @@ class CourseReviewSerializer(serializers.ModelSerializer):
 
 class CourseWishlistSerializer(serializers.ModelSerializer):
     """Serializer for course wishlist."""
-    student = UserProfileSerializer(read_only=True)
+    learner = UserProfileSerializer(read_only=True)
     course = CourseListSerializer(read_only=True)
     
     class Meta:
         model = CourseWishlist
-        fields = ['id', 'student', 'course', 'created_at']
-        read_only_fields = ['id', 'student', 'created_at']
+        fields = ['id', 'learner', 'course', 'created_at']
+        read_only_fields = ['id', 'learner', 'created_at']
     
     def create(self, validated_data):
-        """Create wishlist item with student from request."""
-        validated_data['student'] = self.context['request'].user
+        """Create wishlist item with learner from request."""
+        validated_data['learner'] = self.context['request'].user
         return super().create(validated_data)
 
 
@@ -148,19 +148,19 @@ class CourseNotificationSerializer(serializers.ModelSerializer):
 class LessonProgressSerializer(serializers.ModelSerializer):
     """Serializer for lesson progress."""
     lesson = serializers.SerializerMethodField()
-    student = serializers.SerializerMethodField()
+    learner = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
     module = serializers.SerializerMethodField()
     
     class Meta:
         model = LessonProgress
         fields = [
-            'id', 'enrollment', 'lesson', 'student', 'course', 'module',
+            'id', 'enrollment', 'lesson', 'learner', 'course', 'module',
             'is_completed', 'is_started', 'started_at', 'completed_at',
             'last_accessed', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'enrollment', 'student', 'course', 'module',
+            'id', 'enrollment', 'learner', 'course', 'module',
             'started_at', 'completed_at', 'last_accessed',
             'created_at', 'updated_at'
         ]
@@ -170,9 +170,9 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         from .content_serializers import LessonSerializer
         return LessonSerializer(obj.lesson).data
     
-    def get_student(self, obj):
-        """Get student information."""
-        return UserProfileSerializer(obj.student).data
+    def get_learner(self, obj):
+        """Get learner information."""
+        return UserProfileSerializer(obj.learner).data
     
     def get_course(self, obj):
         """Get course information."""
@@ -188,7 +188,7 @@ class LessonProgressSerializer(serializers.ModelSerializer):
 
 class CourseProgressSerializer(serializers.ModelSerializer):
     """Serializer for course progress."""
-    student = serializers.SerializerMethodField()
+    learner = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
     is_completed = serializers.BooleanField(read_only=True)
     days_since_started = serializers.IntegerField(read_only=True)
@@ -198,23 +198,23 @@ class CourseProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseProgress
         fields = [
-            'id', 'enrollment', 'student', 'course', 'overall_progress',
+            'id', 'enrollment', 'learner', 'course', 'overall_progress',
             'lessons_completed', 'total_lessons', 'started_at',
             'completed_at', 'last_activity', 'is_completed',
             'days_since_started', 'days_to_complete', 'completion_rate_per_day',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'enrollment', 'student', 'course', 'overall_progress',
+            'id', 'enrollment', 'learner', 'course', 'overall_progress',
             'lessons_completed', 'total_lessons', 'started_at',
             'completed_at', 'last_activity', 'is_completed',
             'days_since_started', 'days_to_complete', 'completion_rate_per_day',
             'created_at', 'updated_at'
         ]
     
-    def get_student(self, obj):
-        """Get student information."""
-        return UserProfileSerializer(obj.student).data
+    def get_learner(self, obj):
+        """Get learner information."""
+        return UserProfileSerializer(obj.learner).data
     
     def get_course(self, obj):
         """Get course information."""

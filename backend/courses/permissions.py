@@ -44,15 +44,15 @@ class IsTutorOrAdmin(permissions.BasePermission):
         )
 
 
-class IsStudent(permissions.BasePermission):
+class IsLearner(permissions.BasePermission):
     """
-    Permission to allow only students to perform certain actions.
+    Permission to allow only learners to perform certain actions.
     """
     
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.role == 'student'
+            request.user.role == 'learner'
         )
 
 
@@ -120,11 +120,11 @@ class CanAccessCourseContent(permissions.BasePermission):
             request.user.organization == obj.training_partner):
             return True
         
-        # For students, check if they have an approved enrollment
-        if request.user.is_authenticated and request.user.role == 'student':
+        # For learners, check if they have an approved enrollment
+        if request.user.is_authenticated and request.user.role == 'learner':
             from .models import Enrollment
             try:
-                enrollment = Enrollment.objects.get(student=request.user, course=obj)
+                enrollment = Enrollment.objects.get(learner=request.user, course=obj)
                 return enrollment.can_access_content
             except Enrollment.DoesNotExist:
                 return False
@@ -177,8 +177,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         # Write permissions are only allowed to the owner of the object
         if hasattr(obj, 'user'):
             return obj.user == request.user
-        elif hasattr(obj, 'student'):  # For enrollment objects
-            return obj.student == request.user
+        elif hasattr(obj, 'learner'):  # For enrollment objects
+            return obj.learner == request.user
         return False
 
 
@@ -266,21 +266,21 @@ class OrganizationMemberOnly(permissions.BasePermission):
         )
 
 
-class StudentEnrollmentAccess(permissions.BasePermission):
+class LearnerEnrollmentAccess(permissions.BasePermission):
     """
-    Permission for students to access their own enrollment data.
+    Permission for learners to access their own enrollment data.
     """
     
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
         
-        # Students can only access their own enrollments
-        if request.user.role == 'student':
-            if hasattr(obj, 'student'):  # Enrollment object
-                return obj.student == request.user
+        # Learners can only access their own enrollments
+        if request.user.role == 'learner':
+            if hasattr(obj, 'learner'):  # Enrollment object
+                return obj.learner == request.user
             elif hasattr(obj, 'enrollment'):  # Related object
-                return obj.enrollment.student == request.user
+                return obj.enrollment.learner == request.user
         
         # Admins can access enrollments from their organization
         if request.user.role == 'admin':

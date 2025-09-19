@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-interface Student {
+interface Learner {
   id: string;
   name: string;
   email: string;
@@ -19,23 +19,23 @@ interface Student {
   };
 }
 
-interface StudentCardProps {
-  student: Student;
+interface LearnerCardProps {
+  learner: Learner;
   variant?: 'grid' | 'list';
-  onViewProfile?: (studentId: string) => void;
-  onSendMessage?: (studentId: string) => void;
-  onManage?: (studentId: string) => void;
+  onViewProfile?: (learnerId: string) => void;
+  onSendMessage?: (learnerId: string) => void;
+  onManage?: (learnerId: string) => void;
   showActions?: boolean;
 }
 
-const StudentCard = ({ 
-  student, 
+const LearnerCard = ({ 
+  learner, 
   variant = 'grid',
   onViewProfile,
   onSendMessage,
   onManage,
   showActions = true
-}: StudentCardProps) => {
+}: LearnerCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -82,17 +82,17 @@ const StudentCard = ({
           <div className="flex items-center space-x-4">
             {/* Avatar */}
             <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
-              {student.avatar ? (
+              {learner.avatar ? (
                 <Image
-                  src={student.avatar}
-                  alt={student.name}
+                  src={learner.avatar}
+                  alt={learner.name}
                   width={48}
                   height={48}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className="text-lg font-semibold text-gray-600">
-                  {student.name.charAt(0).toUpperCase()}
+                  {learner.name.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
@@ -101,32 +101,32 @@ const StudentCard = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h3 className="text-lg font-semibold text-gray-900 truncate">
-                  {student.name}
+                  {learner.name}
                 </h3>
-                {getStatusIcon(student.status)}
-                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(student.status)}`}>
-                  {student.status}
+                {getStatusIcon(learner.status)}
+                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(learner.status)}`}>
+                  {learner.status}
                 </span>
               </div>
-              <p className="text-gray-600 text-sm truncate">{student.email}</p>
+              <p className="text-gray-600 text-sm truncate">{learner.email}</p>
               <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                <span>{student.enrolledCourses} enrolled</span>
-                <span>{student.completedCourses} completed</span>
-                <span>Last active: {student.lastActive}</span>
+                <span>{learner.enrolledCourses} enrolled</span>
+                <span>{learner.completedCourses} completed</span>
+                <span>Last active: {learner.lastActive}</span>
               </div>
             </div>
 
             {/* Progress */}
             <div className="hidden md:block text-center">
-              <div className="text-lg font-semibold text-gray-900">{student.progress}%</div>
+              <div className="text-lg font-semibold text-gray-900">{learner.progress}%</div>
               <div className="text-xs text-gray-500">Progress</div>
             </div>
 
             {/* Performance */}
-            {student.performance && (
+            {learner.performance && (
               <div className="hidden lg:block text-center">
-                <div className={`text-lg font-semibold ${getPerformanceColor(student.performance.score)}`}>
-                  {student.performance.score}%
+                <div className={`text-lg font-semibold ${getPerformanceColor(learner.performance.score)}`}>
+                  {learner.performance.score}%
                 </div>
                 <div className="text-xs text-gray-500">Performance</div>
               </div>
@@ -138,7 +138,7 @@ const StudentCard = ({
             <div className="flex items-center space-x-2">
               {onSendMessage && (
                 <button
-                  onClick={() => onSendMessage(student.id)}
+                  onClick={() => onSendMessage(learner.id)}
                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   title="Send message"
                 >
@@ -149,7 +149,7 @@ const StudentCard = ({
               )}
               {onViewProfile && (
                 <button
-                  onClick={() => onViewProfile(student.id)}
+                  onClick={() => onViewProfile(learner.id)}
                   className="px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   View Profile
@@ -168,14 +168,14 @@ const StudentCard = ({
       <div className="p-6 pb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            {getStatusIcon(student.status)}
-            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(student.status)}`}>
-              {student.status}
+            {getStatusIcon(learner.status)}
+            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(learner.status)}`}>
+              {learner.status}
             </span>
           </div>
-          {student.performance?.rank && (
+          {learner.performance?.rank && (
             <div className="text-xs text-gray-500">
-              Rank #{student.performance.rank}
+              Rank #{learner.performance.rank}
             </div>
           )}
         </div>
@@ -183,20 +183,20 @@ const StudentCard = ({
         {/* Avatar and Name */}
         <div className="text-center">
           <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden mx-auto mb-3">
-            {student.avatar ? (
+            {learner.avatar ? (
               <img
-                src={student.avatar}
-                alt={student.name}
+                src={learner.avatar}
+                alt={learner.name}
                 className="w-full h-full object-cover"
               />
             ) : (
               <span className="text-xl font-bold text-gray-600">
-                {student.name.charAt(0).toUpperCase()}
+                {learner.name.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{student.name}</h3>
-          <p className="text-gray-600 text-sm truncate">{student.email}</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">{learner.name}</h3>
+          <p className="text-gray-600 text-sm truncate">{learner.email}</p>
         </div>
       </div>
 
@@ -204,11 +204,11 @@ const StudentCard = ({
       <div className="px-6 pb-4">
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{student.enrolledCourses}</div>
+            <div className="text-2xl font-bold text-blue-600">{learner.enrolledCourses}</div>
             <div className="text-xs text-gray-500">Enrolled</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{student.completedCourses}</div>
+            <div className="text-2xl font-bold text-green-600">{learner.completedCourses}</div>
             <div className="text-xs text-gray-500">Completed</div>
           </div>
         </div>
@@ -217,29 +217,29 @@ const StudentCard = ({
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-            <span className="text-sm text-gray-500">{student.progress}%</span>
+            <span className="text-sm text-gray-500">{learner.progress}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${student.progress}%` }}
+              style={{ width: `${learner.progress}%` }}
             ></div>
           </div>
         </div>
 
         {/* Performance Score */}
-        {student.performance && (
+        {learner.performance && (
           <div className="text-center mb-4">
-            <div className={`text-lg font-bold ${getPerformanceColor(student.performance.score)}`}>
-              {student.performance.score}% Performance
+            <div className={`text-lg font-bold ${getPerformanceColor(learner.performance.score)}`}>
+              {learner.performance.score}% Performance
             </div>
           </div>
         )}
 
         {/* Additional Info */}
         <div className="text-xs text-gray-500 space-y-1">
-          <div>Joined: {student.joinDate}</div>
-          <div>Last active: {student.lastActive}</div>
+          <div>Joined: {learner.joinDate}</div>
+          <div>Last active: {learner.lastActive}</div>
         </div>
       </div>
 
@@ -248,7 +248,7 @@ const StudentCard = ({
         <div className="bg-gray-50 px-6 py-4 flex space-x-2">
           {onViewProfile && (
             <button
-              onClick={() => onViewProfile(student.id)}
+              onClick={() => onViewProfile(learner.id)}
               className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             >
               View Profile
@@ -256,7 +256,7 @@ const StudentCard = ({
           )}
           {onSendMessage && (
             <button
-              onClick={() => onSendMessage(student.id)}
+              onClick={() => onSendMessage(learner.id)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Send message"
             >
@@ -267,7 +267,7 @@ const StudentCard = ({
           )}
           {onManage && (
             <button
-              onClick={() => onManage(student.id)}
+              onClick={() => onManage(learner.id)}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="Manage student"
             >
@@ -282,4 +282,4 @@ const StudentCard = ({
   );
 };
 
-export default StudentCard;
+export default LearnerCard;

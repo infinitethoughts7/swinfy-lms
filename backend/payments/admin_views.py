@@ -12,7 +12,7 @@ from .serializers import (
     PaymentVerificationSerializer,
     PaymentNotificationSerializer
 )
-from courses.permissions import IsTrainingPartnerAdmin
+from users.permissions import IsKnowledgePartnerAdmin
 
 
 class PaymentPagination(PageNumberPagination):
@@ -22,12 +22,12 @@ class PaymentPagination(PageNumberPagination):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsTrainingPartnerAdmin])
+@permission_classes([IsAuthenticated, IsKnowledgePartnerAdmin])
 def pending_payments(request):
     """Get pending payments for training partner admin"""
     
     # Get payments for courses belonging to admin's training partner
-    training_partner = request.user.organization
+    training_partner = getattr(request.user, 'knowledge_partner', None)
     
     pending_payments = Payment.objects.filter(
         enrollment__course__training_partner=training_partner,
@@ -48,7 +48,7 @@ def pending_payments(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsTrainingPartnerAdmin])
+@permission_classes([IsAuthenticated, IsKnowledgePartnerAdmin])
 def verify_payment(request, payment_id):
     """Approve or reject a payment"""
     
@@ -64,7 +64,7 @@ def verify_payment(request, payment_id):
         payment = get_object_or_404(
             Payment,
             id=payment_id,
-            enrollment__course__training_partner=request.user.organization,
+            enrollment__course__training_partner=getattr(request.user, 'knowledge_partner', None),
             status='paid'
         )
         
@@ -77,7 +77,8 @@ def verify_payment(request, payment_id):
             payment.save()
             
             # Activate enrollment
-            payment.enrollment.status = 'active'
+            payment.enrollment.status = 'approved'
+            payment.enrollment.approved_by = request.user
             payment.enrollment.save()
             
             # Create notification for user
@@ -147,11 +148,11 @@ def verify_payment(request, payment_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsTrainingPartnerAdmin])
+@permission_classes([IsAuthenticated, IsKnowledgePartnerAdmin])
 def payment_history(request):
     """Get all payments for training partner admin"""
     
-    training_partner = request.user.organization
+    training_partner = getattr(request.user, 'knowledge_partner', None)
     
     payments = Payment.objects.filter(
         enrollment__course__training_partner=training_partner
@@ -229,14 +230,14 @@ def mark_notification_read(request, notification_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsTrainingPartnerAdmin])
+@permission_classes([IsAuthenticated, IsKnowledgePartnerAdmin])
 def payment_analytics(request):
     """Get payment analytics for training partner"""
     
     from django.db.models import Count, Sum, Q
     from datetime import datetime, timedelta
     
-    training_partner = request.user.organization
+    training_partner = getattr(request.user, 'knowledge_partner', None)
     
     # Get payments for the last 30 days
     thirty_days_ago = timezone.now() - timedelta(days=30)

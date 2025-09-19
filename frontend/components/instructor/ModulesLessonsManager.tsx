@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { instructorApi, type Course, type Module, type Lesson } from '@/lib/api';
 import { 
   Plus, Video, FileText, Edit, Trash2, GripVertical, 
-  ChevronDown, ChevronRight, Play, Clock, Eye, AlertCircle
+  ChevronDown, ChevronRight, Play, Clock, Eye, AlertCircle, X
 } from 'lucide-react';
 
 interface ModulesLessonsManagerProps {
@@ -24,6 +24,7 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
   const [showAddModule, setShowAddModule] = useState(false);
   const [editingModule, setEditingModule] = useState<string | null>(null);
   const [editingLesson, setEditingLesson] = useState<string | null>(null);
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     fetchModules();
@@ -73,6 +74,31 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
           : module
       )
     );
+  };
+
+  const handlePreviewLesson = async (lesson: Lesson) => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      const res = await fetch(`${API_BASE_URL}/api/courses/instructor/lessons/${lesson.id}/`, {
+        method: 'GET',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Ensure video_file is present if available
+        setPreviewLesson({ ...lesson, ...data });
+      } else {
+        // Fallback: open modal with existing lesson data
+        setPreviewLesson(lesson);
+      }
+    } catch (e) {
+      console.error('Failed to load lesson details for preview:', e);
+      setPreviewLesson(lesson);
+    }
   };
 
   if (loading) {
@@ -126,7 +152,7 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
               <Video className="h-12 w-12 text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">No modules yet</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">Start building your course by adding your first module. Organize your content into logical sections to help students learn effectively.</p>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">Start building your course by adding your first module. Organize your content into logical sections to help learners learn effectively.</p>
             <button
               onClick={() => setShowAddModule(true)}
               className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
@@ -150,6 +176,7 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
               setEditingModule={setEditingModule}
               editingLesson={editingLesson}
               setEditingLesson={setEditingLesson}
+              onPreviewLesson={handlePreviewLesson}
             />
           ))}
         </div>
@@ -159,12 +186,18 @@ const ModulesLessonsManager = ({ course, onUpdate }: ModulesLessonsManagerProps)
       {showAddModule && (
         <AddModuleModal
           courseSlug={course.slug}
+          modules={modules}
           onClose={() => setShowAddModule(false)}
           onSuccess={() => {
             setShowAddModule(false);
             fetchModules();
           }}
         />
+      )}
+
+      {/* Lesson Video Preview */}
+      {previewLesson && (
+        <PreviewLessonModal lesson={previewLesson} onClose={() => setPreviewLesson(null)} />
       )}
     </div>
   );
@@ -180,6 +213,7 @@ interface ModuleCardProps {
   setEditingModule: (id: string | null) => void;
   editingLesson: string | null;
   setEditingLesson: (id: string | null) => void;
+  onPreviewLesson: (lesson: Lesson) => void;
 }
 
 const ModuleCard = ({ 
@@ -191,7 +225,8 @@ const ModuleCard = ({
   editingModule,
   setEditingModule,
   editingLesson,
-  setEditingLesson
+  setEditingLesson,
+  onPreviewLesson
 }: ModuleCardProps) => {
   const [showAddLesson, setShowAddLesson] = useState(false);
 
@@ -264,6 +299,18 @@ const ModuleCard = ({
         </div>
       </div>
 
+      {/* Edit Module Modal */}
+      {editingModule === module.id && (
+        <EditModuleModal
+          module={module}
+          onClose={() => setEditingModule(null)}
+          onSuccess={() => {
+            setEditingModule(null);
+            onUpdate();
+          }}
+        />
+      )}
+
       {/* Module Content */}
       {module.isExpanded && (
         <div className="p-6 space-y-6 bg-gray-50">
@@ -295,6 +342,7 @@ const ModuleCard = ({
                     onUpdate={onUpdate}
                     isEditing={editingLesson === lesson.id}
                     setEditing={setEditingLesson}
+                    onPreview={onPreviewLesson}
                   />
                 </div>
               ))}
@@ -338,6 +386,7 @@ interface LessonCardProps {
   onUpdate: () => void;
   isEditing: boolean;
   setEditing: (id: string | null) => void;
+  onPreview: (lesson: Lesson) => void;
 }
 
 const LessonCard = ({ 
@@ -347,7 +396,8 @@ const LessonCard = ({
   moduleId, 
   onUpdate, 
   isEditing, 
-  setEditing 
+  setEditing,
+  onPreview
 }: LessonCardProps) => {
   const handleDeleteLesson = async () => {
     if (!confirm('Are you sure you want to delete this lesson?')) return;
@@ -394,7 +444,10 @@ const LessonCard = ({
         >
           <Edit className="h-4 w-4" />
         </button>
-        <button className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
+        <button
+          onClick={() => onPreview(lesson)}
+          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+        >
           <Eye className="h-4 w-4" />
         </button>
         <button
@@ -409,8 +462,43 @@ const LessonCard = ({
 };
 
 // Modal Components (simplified for now)
-const AddModuleModal = ({ courseSlug, onClose, onSuccess }: {
+const getMediaUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return `${base}${url}`;
+};
+
+const PreviewLessonModal = ({ lesson, onClose }: { lesson: Lesson; onClose: () => void }) => {
+  const hasVideo = Boolean(lesson.video_file);
+  const videoSrc = getMediaUrl(lesson.video_file);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-4 w-full max-w-4xl shadow-2xl">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">{lesson.title}</h3>
+          <button onClick={onClose} className="p-2 rounded hover:bg-gray-100 text-gray-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {hasVideo ? (
+          <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
+            <video src={videoSrc} controls autoPlay className="w-full h-full" />
+          </div>
+        ) : (
+          <div className="p-6 text-center text-gray-600">
+            <p>No video available for this lesson.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const AddModuleModal = ({ courseSlug, modules, onClose, onSuccess }: {
   courseSlug: string;
+  modules: ModuleWithLessons[];
   onClose: () => void;
   onSuccess: () => void;
 }) => {
@@ -423,9 +511,12 @@ const AddModuleModal = ({ courseSlug, onClose, onSuccess }: {
 
     try {
       setLoading(true);
+      // Calculate next order number based on existing modules
+      const nextOrder = modules.length > 0 ? Math.max(...modules.map(m => m.order)) + 1 : 1;
+      
       await instructorApi.modules.create(courseSlug, {
         title: title.trim(),
-        order: 0
+        order: nextOrder
       });
       onSuccess();
     } catch (err) {
@@ -537,7 +628,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
             <Video className="h-8 w-8 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Add New Lesson</h3>
-          <p className="text-gray-600">Create engaging content for your students</p>
+          <p className="text-gray-600">Create engaging content for your learners</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -599,7 +690,7 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              placeholder="Describe what students will learn in this lesson..."
+              placeholder="Describe what learners will learn in this lesson..."
             />
           </div>
 
@@ -645,6 +736,69 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
               ) : (
                 '✨ Create Lesson'
               )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditModuleModal = ({ module, onClose, onSuccess }: {
+  module: ModuleWithLessons;
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
+  const [title, setTitle] = useState(module.title);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    try {
+      setLoading(true);
+      await instructorApi.modules.update(module.id, { title: title.trim() });
+      onSuccess();
+    } catch (err) {
+      console.error('Error updating module:', err);
+      alert('Failed to update module');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Module</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Module Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter module title"
+              required
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !title.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

@@ -145,8 +145,8 @@ class PaymentNotification(models.Model):
     ]
     
     RECIPIENT_TYPES = [
-        ('user', 'Student'),
-        ('admin', 'Training Partner Admin'),
+        ('user', 'Learner'),
+        ('admin', 'Knowledge Partner Admin'),
         ('super_admin', 'Super Admin'),
     ]
     

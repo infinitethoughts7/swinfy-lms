@@ -5,7 +5,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   confirm_password: string;
-  role: 'student' | 'tutor' | 'admin';
+  role: 'learner' | 'tutor' | 'admin';
   organization_id?: string;
   organization_details?: {
     name: string;

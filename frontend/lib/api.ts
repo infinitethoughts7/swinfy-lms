@@ -393,6 +393,32 @@ export const paymentsApi = {
     return response.json();
   },
 
+  // Admin: list paid payments awaiting verification
+  getPaidPayments: async () => {
+    const response = await authenticatedFetch('/api/payments/admin/pending/');
+    if (!response.ok) {
+      throw new Error('Failed to fetch paid payments');
+    }
+    return response.json();
+  },
+
+  // Admin: verify or reject a payment
+  adminVerify: async (
+    paymentId: string,
+    action: 'approve' | 'reject',
+    notes?: string
+  ) => {
+    const response = await authenticatedFetch(`/api/payments/admin/verify/${paymentId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ action, notes: notes || '' }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({} as any));
+      throw new Error(error.error || error.detail || 'Failed to verify payment');
+    }
+    return response.json();
+  },
+
   // Verify payment
   verifyPayment: async (paymentData: {
     razorpay_order_id: string;
@@ -446,9 +472,9 @@ export const paymentsApi = {
   },
 };
 
-// Student Dashboard API methods
-export const studentDashboardApi = {
-  // Get student's enrolled courses with progress
+// Learner Dashboard API methods
+export const learnerDashboardApi = {
+  // Get learner's enrolled courses with progress
   getMyCourses: async () => {
     const response = await authenticatedFetch('/api/courses/my-courses/');
     
@@ -459,9 +485,9 @@ export const studentDashboardApi = {
     return response.json();
   },
 
-  // Get student progress analytics
+  // Get learner progress analytics
   getProgressAnalytics: async () => {
-    const response = await authenticatedFetch('/api/courses/analytics/student-progress/');
+    const response = await authenticatedFetch('/api/courses/analytics/learner-progress/');
     
     if (!response.ok) {
       throw new Error('Failed to fetch progress analytics');
@@ -476,6 +502,17 @@ export const studentDashboardApi = {
     
     if (!response.ok) {
       throw new Error('Failed to fetch course progress');
+    }
+    
+    return response.json();
+  },
+
+  // Get detailed course information for enrolled learners
+  getCourseDetail: async (courseSlug: string) => {
+    const response = await authenticatedFetch(`/api/courses/${courseSlug}/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch course details');
     }
     
     return response.json();
@@ -572,12 +609,12 @@ export const studentDashboardApi = {
     return response.json();
   },
 
-  // Get student distribution analytics
-  getStudentDistribution: async () => {
-    const response = await authenticatedFetch('/api/courses/analytics/student-distribution/');
+  // Get learner distribution analytics
+  getLearnerDistribution: async () => {
+    const response = await authenticatedFetch('/api/courses/analytics/learner-distribution/');
     
     if (!response.ok) {
-      throw new Error('Failed to fetch student distribution data');
+      throw new Error('Failed to fetch learner distribution data');
     }
     
     return response.json();
@@ -597,19 +634,17 @@ export const adminDashboardApi = {
     return response.json();
   },
 
-  // Get pending payments for admin approval
-  getPendingPayments: async () => {
-    const response = await authenticatedFetch('/api/payments/admin/pending/');
-    
+  // Get payments by status for admin (default paid)
+  getPaymentsByStatus: async (status: 'paid' | 'verified' | 'rejected' | 'pending' = 'paid') => {
+    const response = await authenticatedFetch(`/api/payments/admin/history/?status=${status}`);
     if (!response.ok) {
-      throw new Error('Failed to fetch pending payments');
+      throw new Error('Failed to fetch payments');
     }
-    
     return response.json();
   },
 
   // Verify/approve payment
-  verifyPayment: async (paymentId: number, action: 'approve' | 'reject', notes?: string) => {
+  verifyPayment: async (paymentId: number | string, action: 'approve' | 'reject', notes?: string) => {
     const response = await authenticatedFetch(`/api/payments/admin/verify/${paymentId}/`, {
       method: 'POST',
       body: JSON.stringify({ action, notes: notes || '' }),
@@ -1278,6 +1313,143 @@ export const instructorApi = {
       if (!response.ok) {
         throw new Error('Failed to delete lesson');
       }
+    },
+  },
+
+  // Resources
+  resources: {
+    list: async (courseSlug: string) => {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/resources/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch resources');
+      }
+      const data = await response.json();
+      return data.results || data;
+    },
+
+    create: async (courseSlug: string, payload: { title: string; description?: string; resource_type: string; url?: string; is_public?: boolean; order?: number; file?: File | null; }) => {
+      const token = getAuthToken();
+
+      // Map UI resource types to backend choices
+      const mapType = (t: string) => {
+        switch (t) {
+          case 'pdf':
+          case 'document':
+          case 'reference':
+            return 'reference';
+          case 'link':
+            return 'link';
+          case 'tool':
+            return 'tool';
+          case 'syllabus':
+            return 'syllabus';
+          case 'schedule':
+            return 'schedule';
+          case 'certificate_template':
+            return 'certificate_template';
+          default:
+            return 'other';
+        }
+      };
+
+      const formData = new FormData();
+      formData.append('title', payload.title);
+      if (payload.description) formData.append('description', payload.description);
+      formData.append('resource_type', mapType(payload.resource_type));
+      if (payload.url) formData.append('url', payload.url);
+      if (payload.is_public !== undefined) formData.append('is_public', String(payload.is_public));
+      if (payload.order !== undefined) formData.append('order', String(payload.order));
+      if (payload.file) formData.append('file', payload.file);
+
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/resources/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({} as any));
+        // surface DRF field errors if available
+        const detail = err.error || err.detail || JSON.stringify(err);
+        throw new Error(detail || 'Failed to create resource');
+      }
+      return response.json();
+    },
+
+    update: async (resourceId: string, payload: Partial<{ title: string; description: string; resource_type: string; url: string; is_public: boolean; order: number; file: File | null; }>) => {
+      const token = getAuthToken();
+
+      const mapType = (t?: string) => {
+        if (!t) return undefined;
+        switch (t) {
+          case 'pdf':
+          case 'document':
+          case 'reference':
+            return 'reference';
+          case 'link':
+            return 'link';
+          case 'tool':
+            return 'tool';
+          case 'syllabus':
+            return 'syllabus';
+          case 'schedule':
+            return 'schedule';
+          case 'certificate_template':
+            return 'certificate_template';
+          default:
+            return 'other';
+        }
+      };
+
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (key === 'resource_type') {
+            const mapped = mapType(value as string);
+            if (mapped) formData.append('resource_type', mapped);
+          } else if (value instanceof File) {
+            formData.append('file', value);
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/resources/${resourceId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({} as any));
+        const detail = err.error || err.detail || JSON.stringify(err);
+        throw new Error(detail || 'Failed to update resource');
+      }
+      return response.json();
+    },
+
+    delete: async (resourceId: string) => {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/resources/${resourceId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete resource');
+      }
+      return true;
     },
   },
 };

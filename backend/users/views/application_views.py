@@ -283,7 +283,7 @@ IMPORTANT NEXT STEPS:
 WHAT YOU CAN DO:
 ✅ Create and manage courses
 ✅ Add instructors to your organization
-✅ Track student enrollments and progress
+✅ Track learner enrollments and progress
 ✅ Access detailed analytics
 ✅ Create both public and private courses
 

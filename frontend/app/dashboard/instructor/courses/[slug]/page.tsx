@@ -22,7 +22,6 @@ const CourseDetailTabs = ({ activeTab, setActiveTab }: TabProps) => {
     { id: 'overview', label: 'Overview', icon: BookOpen },
     { id: 'modules', label: 'Modules & Lessons', icon: Video },
     { id: 'resources', label: 'Resources', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
@@ -109,21 +108,18 @@ const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => 
       {/* Course Image */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-base font-semibold text-gray-900 mb-3">Course Thumbnail</h3>
-        <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center">
+        <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
           {course.thumbnail ? (
             <img 
-              src={course.thumbnail} 
+              src={(course.thumbnail?.startsWith('http://') || course.thumbnail?.startsWith('https://')) ? course.thumbnail : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${course.thumbnail}`}
               alt={course.title}
-              className="w-full h-full object-cover rounded-lg"
+              className="w-full h-full object-cover"
             />
           ) : (
             <BookOpen className="h-8 w-8 text-white" />
           )}
         </div>
-        <button className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm">
-          <Upload className="h-4 w-4 mr-2" />
-          Update Thumbnail
-        </button>
+        <UpdateThumbnailButton slug={course.slug} onUploaded={onUpdate} />
       </div>
 
       {/* Quick Stats */}
@@ -221,6 +217,43 @@ const CourseOverview = ({ course, onUpdate }: { course: Course; onUpdate: () => 
   </div>
 );
 
+// Upload thumbnail button component
+const UpdateThumbnailButton = ({ slug, onUploaded }: { slug: string; onUploaded: () => void }) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handlePick = async () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+          await instructorApi.courses.update(slug, { thumbnail: file } as any);
+          onUploaded();
+        } catch (e) {
+          console.error('Thumbnail upload failed', e);
+          alert('Failed to upload thumbnail');
+        } finally {
+          setUploading(false);
+        }
+      };
+      input.click();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <button onClick={handlePick} disabled={uploading} className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm disabled:opacity-50">
+      <Upload className="h-4 w-4 mr-2" />
+      {uploading ? 'Uploading...' : 'Update Thumbnail'}
+    </button>
+  );
+};
+
 export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -282,8 +315,6 @@ export default function CourseDetailPage() {
         return <ModulesLessonsTab course={course} onUpdate={fetchCourse} />;
       case 'resources':
         return <ResourcesTab course={course} onUpdate={fetchCourse} />;
-      case 'settings':
-        return <SettingsTab course={course} onUpdate={fetchCourse} />;
       case 'analytics':
         return <AnalyticsTab course={course} />;
       default:
@@ -333,14 +364,6 @@ const ModulesLessonsTab = ({ course, onUpdate }: { course: Course; onUpdate: () 
 
 const ResourcesTab = ({ course, onUpdate }: { course: Course; onUpdate: () => void }) => (
   <ResourcesManager course={course} onUpdate={onUpdate} />
-);
-
-const SettingsTab = ({ course, onUpdate }: { course: Course; onUpdate: () => void }) => (
-  <div className="text-center py-12">
-    <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-    <h3 className="text-lg font-semibold text-gray-900 mb-2">Course Settings</h3>
-    <p className="text-gray-600 mb-6">Configure course settings and publishing options</p>
-  </div>
 );
 
 const AnalyticsTab = ({ course }: { course: Course }) => (

@@ -247,17 +247,17 @@ export default function CoursesPage() {
             <Link
               key={course.id}
               href={`/courses/course/${course.slug || course.id}`}
-              className="group block bg-white rounded-2xl transition-all duration-300 transform hover:scale-105 hover:rounded-3xl overflow-hidden border border-gray-200"
+              className="group block bg-white rounded-xl transition-all duration-200 hover:shadow-lg overflow-hidden border border-gray-200"
             >
-              {/* Course Thumbnail Background */}
-              <div className="relative h-48 overflow-hidden">
+              {/* Course Thumbnail */}
+              <div className="relative h-40 overflow-hidden">
                 {/* Course Thumbnail - Full Background */}
                 {course.thumbnail ? (
                   <Image
                     src={course.thumbnail}
                     alt={course.title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/assets/courses/python.svg';
@@ -272,118 +272,74 @@ export default function CoursesPage() {
                   </div>
                 )}
                 
-                {/* Dark Overlay for Better Text Readability */}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
-                
-                {/* Level Badge */}
-                <div className="absolute top-4 right-4 z-10">
-                  <span className={`px-3 py-1 rounded-full text-xs font-inter font-medium backdrop-blur-sm ${
-                    course.level_display === 'Beginner' ? 'bg-green-500/90 text-white' :
-                    course.level_display === 'Intermediate' ? 'bg-yellow-500/90 text-white' :
-                    course.level_display === 'Advanced' ? 'bg-red-500/90 text-white' :
-                    'bg-blue-500/90 text-white'
-                  }`}>
-                    {course.level_display || course.level}
-                  </span>
+                {/* Badges */}
+                <div className="absolute inset-x-0 top-0 p-3 flex items-start justify-between">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
+                    course.level_display === 'Beginner' ? 'bg-green-600 text-white' :
+                    course.level_display === 'Intermediate' ? 'bg-yellow-600 text-white' :
+                    course.level_display === 'Advanced' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                  }`}>{course.level_display || course.level}</span>
                 </div>
-                
-                {/* Category Badge */}
-                <div className="absolute bottom-4 left-4 right-4">
-                  <span className="inline-block px-3 py-1 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-inter rounded-lg border border-gray-200">
+                <div className="absolute bottom-3 left-3">
+                  <span className="px-2.5 py-0.5 bg-white/95 text-gray-800 text-[10px] font-medium rounded-full border border-gray-200">
                     {course.category_display || course.category}
                   </span>
                 </div>
               </div>
               
-              <div className="p-6">
-                {/* Training Partner Name - Prominent Display */}
+              <div className="p-4">
+                {/* Organization name only */}
                 {course.training_partner && (
-                  <div className="mb-3">
-                    <div className="flex items-center mb-2">
-                      <div className="w-6 h-6 mr-2">
-                        {course.training_partner.name.toLowerCase() === 'netflix' ? (
-                          <div className="w-6 h-6 bg-gradient-to-br from-red-600 to-red-800 rounded flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">N</span>
-                          </div>
-                        ) : course.training_partner.name.toLowerCase() === 'google' ? (
-                          <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-green-600 rounded flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">G</span>
-                          </div>
-                        ) : course.training_partner.name.toLowerCase() === 'swinfy' ? (
-                          <div className="w-6 h-6 bg-gradient-to-br from-purple-600 to-purple-800 rounded flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">S</span>
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 bg-gradient-to-br from-gray-600 to-gray-800 rounded flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">
-                              {course.training_partner.name?.charAt(0)?.toUpperCase() || 'O'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-blue-600 font-inter font-semibold text-sm">
-                        {course.training_partner.name}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        ({course.training_partner.type})
-                      </span>
-                    </div>
+                  <div className="mb-1 flex items-center text-sm font-medium text-blue-600">
+                    {course.training_partner.name}
                   </div>
                 )}
                 
-                <h3 className="text-xl font-sora font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                <h3 className="text-lg font-sora font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
                   {course.title}
                 </h3>
-                <p className="text-gray-600 font-inter text-sm mb-4 line-clamp-2">
+                <p className="text-gray-600 font-inter text-xs mb-3 line-clamp-2">
                   {course.short_description}
                 </p>
                 
                 {/* Instructor Info */}
                 {course.tutor && (
-                  <div className="mb-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600">
-                      <span className="inline-flex items-center">
-                        <svg className="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-gray-500 mr-1">Instructor:</span>
-                        {course.tutor.full_name}
-                      </span>
-                    </div>
+                  <div className="mb-3 text-xs text-gray-600 inline-flex items-center px-2 py-1 bg-gray-50 rounded border border-gray-200">
+                    <svg className="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-500 mr-1">Instructor:</span>
+                    {course.tutor.full_name}
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between text-sm mb-4">
-                  <div className="flex items-center text-gray-600">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    {course.rating || 0}
+                <div className="flex items-center justify-between text-xs mb-3">
+                  <div className="flex items-center text-gray-600 gap-4">
+                    <span className="inline-flex items-center">
+                      <svg className="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      {parseFloat(course.rating || '0').toFixed(1)}
+                    </span>
+                    <span className="inline-flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {course.duration_weeks ? `${course.duration_weeks} weeks` : 'TBD'}
+                    </span>
+                    <span className="inline-flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+                      </svg>
+                      {(course.enrollment_count || 0).toLocaleString()} students
+                    </span>
                   </div>
-                  <div className="text-gray-600">
-                    {(course.enrollment_count || 0).toLocaleString()} students
-                  </div>
+                  <div className="text-green-600 font-inter font-bold text-base">₹{parseFloat(course.price).toFixed(0)}</div>
                 </div>
-                
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center text-gray-600 text-sm">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {course.duration_weeks ? `${course.duration_weeks} weeks` : 'TBD'}
-                  </div>
-                  <div className="text-green-600 font-inter font-bold text-lg">
-                    ₹{parseFloat(course.price).toFixed(0)}
-                  </div>
-                </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <div className="text-blue-600 font-inter font-medium text-sm group-hover:text-blue-700 transition-colors">
-                    View Details →
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {course.enrollment_count > 0 ? `${course.enrollment_count} enrolled` : 'New course'}
-                  </div>
+                  <span className="text-blue-600 font-medium text-sm group-hover:text-blue-700">View Details →</span>
+                  <span className="text-xs text-gray-500">{course.enrollment_count > 0 ? `${course.enrollment_count} enrolled` : 'New course'}</span>
                 </div>
               </div>
             </Link>

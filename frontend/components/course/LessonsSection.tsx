@@ -366,7 +366,7 @@ const LessonsSection = ({ modules, lessons, isEnrolled = false }: LessonsSection
         </div>
       )}
 
-      {/* Video Player Modal for Enrolled Students */}
+      {/* Video Player Modal for Enrolled learners */}
       {selectedLesson && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">

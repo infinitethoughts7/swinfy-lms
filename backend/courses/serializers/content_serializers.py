@@ -88,7 +88,7 @@ class LessonSerializer(serializers.ModelSerializer):
             from ..models import LessonProgress
             try:
                 progress = LessonProgress.objects.get(
-                    enrollment__student=request.user,
+                    enrollment__learner=request.user,
                     lesson=obj
                 )
                 return progress.is_completed

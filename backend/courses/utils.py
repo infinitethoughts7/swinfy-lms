@@ -66,7 +66,7 @@ def calculate_course_duration(modules):
 
 def get_course_progress_percentage(enrollment):
     """
-    Calculate course progress percentage for a student.
+    Calculate course progress percentage for a learner.
     
     Args:
         enrollment: Enrollment instance
@@ -309,7 +309,7 @@ def generate_course_certificate(enrollment):
     """
     # This would integrate with a certificate generation service
     # For now, we'll return a placeholder
-    logger.info(f"Generating certificate for {enrollment.student.email} - {enrollment.course.title}")
+    logger.info(f"Generating certificate for {enrollment.learner.email} - {enrollment.course.title}")
     
     # TODO: Implement actual certificate generation
     # - PDF generation

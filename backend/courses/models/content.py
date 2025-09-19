@@ -310,7 +310,7 @@ class LessonMaterial(models.Model):
     )
     is_downloadable = models.BooleanField(
         default=True,
-        help_text="Students can download this material"
+        help_text="Learners can download this material"
     )
     
     # Timestamps
@@ -400,7 +400,7 @@ class CourseResource(models.Model):
     )
     is_public = models.BooleanField(
         default=True,
-        help_text="Resource is visible to all students"
+        help_text="Resource is visible to all learners"
     )
     order = models.PositiveIntegerField(
         default=0,

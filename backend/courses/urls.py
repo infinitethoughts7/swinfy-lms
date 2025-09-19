@@ -13,7 +13,7 @@ from .views.instructor_views import (
     InstructorCourseResourceListCreateView,
     InstructorCourseResourceDetailView,
     instructor_dashboard_stats,
-    instructor_student_progress,
+    instructor_learner_progress,
     submit_course_for_approval,
     course_analytics
 )
@@ -25,7 +25,7 @@ router = DefaultRouter()
 urlpatterns = [
     # KP Instructor Management
     path('instructor/dashboard/stats/', instructor_dashboard_stats, name='instructor-dashboard-stats'),
-    path('instructor/dashboard/student-progress/', instructor_student_progress, name='instructor-student-progress'),
+    path('instructor/dashboard/learner-progress/', instructor_learner_progress, name='instructor-learner-progress'),
     path('instructor/courses/', InstructorCourseListCreateView.as_view(), name='instructor-course-list-create'),
     path('instructor/courses/<slug:slug>/', InstructorCourseDetailView.as_view(), name='instructor-course-detail'),
     path('instructor/courses/<slug:course_slug>/submit-approval/', submit_course_for_approval, name='instructor-submit-course-approval'),
@@ -48,7 +48,7 @@ urlpatterns = [
     
     # Analytics endpoints
     path('analytics/weekly-activity/', views.weekly_activity_analytics, name='weekly-activity-analytics'),
-    path('analytics/student-distribution/', views.student_distribution_analytics, name='student-distribution-analytics'),
+    path('analytics/learner-distribution/', views.learner_distribution_analytics, name='learner-distribution-analytics'),
     
     # Notifications (must be before catch-all slug pattern)
     path('notifications/', views.notification_list, name='notifications'),
@@ -81,7 +81,7 @@ urlpatterns = [
     path('<slug:slug>/resources/', views.CourseResourceView.as_view(), name='course-resources'),
     
     # Analytics Endpoints
-    path('analytics/student-progress/', views.StudentProgressAnalyticsView.as_view(), name='student-progress-analytics'),
+    path('analytics/learner-progress/', views.LearnerProgressAnalyticsView.as_view(), name='learner-progress-analytics'),
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
     
     # Knowledge partner endpoints

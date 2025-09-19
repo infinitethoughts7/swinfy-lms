@@ -60,7 +60,7 @@ class CourseFilter(django_filters.FilterSet):
     # NEW: Organization-specific filter (for private courses)
     my_organization = django_filters.BooleanFilter(method='filter_my_organization')
     
-    # NEW: Enrollment status filter (for students)
+    # NEW: Enrollment status filter (for learners)
     enrollment_status = django_filters.CharFilter(method='filter_enrollment_status')
     
     class Meta:
@@ -129,21 +129,21 @@ class CourseFilter(django_filters.FilterSet):
         if value == 'enrolled':
             # Courses user is enrolled in
             enrolled_course_ids = Enrollment.objects.filter(
-                student=user
+                learner=user
             ).values_list('course_id', flat=True)
             return queryset.filter(id__in=enrolled_course_ids)
         
         elif value == 'not_enrolled':
             # Courses user is not enrolled in
             enrolled_course_ids = Enrollment.objects.filter(
-                student=user
+                learner=user
             ).values_list('course_id', flat=True)
             return queryset.exclude(id__in=enrolled_course_ids)
         
         elif value == 'pending':
             # Courses with pending enrollment
             pending_course_ids = Enrollment.objects.filter(
-                student=user,
+                learner=user,
                 status='pending_approval'
             ).values_list('course_id', flat=True)
             return queryset.filter(id__in=pending_course_ids)
@@ -151,7 +151,7 @@ class CourseFilter(django_filters.FilterSet):
         elif value == 'approved':
             # Courses with approved/active enrollment
             approved_course_ids = Enrollment.objects.filter(
-                student=user,
+                learner=user,
                 status__in=['approved', 'active', 'completed']
             ).values_list('course_id', flat=True)
             return queryset.filter(id__in=approved_course_ids)

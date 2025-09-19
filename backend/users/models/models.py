@@ -191,7 +191,7 @@ class KPInstructorProfile(models.Model):
     )
     
     # Personal Information
-    bio = models.TextField(help_text="Professional bio for students to see")
+    bio = models.TextField(help_text="Professional bio for learners to see")
     profile_picture = models.ImageField(upload_to='profiles/instructors/', blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     
