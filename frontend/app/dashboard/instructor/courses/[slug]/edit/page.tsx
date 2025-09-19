@@ -26,9 +26,9 @@ export default function EditCoursePage() {
     short_description: '',
     price: 0,
     duration_weeks: 4,
-    category: 'programming',
+    category: 'frontend_development',
     level: 'beginner',
-    tags: '',
+    learning_outcomes: '',
     is_private: false,
     requires_admin_enrollment: false,
   });
@@ -55,7 +55,7 @@ export default function EditCoursePage() {
         duration_weeks: data.duration_weeks,
         category: data.category,
         level: data.level,
-        tags: data.tags || '',
+        learning_outcomes: data.learning_outcomes || '',
         is_private: data.is_private,
         requires_admin_enrollment: data.requires_admin_enrollment,
       });
@@ -226,12 +226,14 @@ export default function EditCoursePage() {
                       onChange={(e) => handleInputChange('category', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="programming">Programming</option>
-                      <option value="design">Design</option>
-                      <option value="business">Business</option>
-                      <option value="marketing">Marketing</option>
+                      <option value="frontend_development">Frontend Development</option>
+                      <option value="backend_development">Backend Development</option>
+                      <option value="programming_languages">Programming Languages</option>
+                      <option value="ai">Artificial Intelligence</option>
+                      <option value="ai_tools">AI Tools</option>
                       <option value="data_science">Data Science</option>
-                      <option value="other">Other</option>
+                      <option value="data_analysis">Data Analysis</option>
+                      <option value="software_engineering">Software Engineering Essentials</option>
                     </select>
                   </div>
 
@@ -280,13 +282,13 @@ export default function EditCoursePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                  <input
-                    type="text"
-                    value={formData.tags}
-                    onChange={(e) => handleInputChange('tags', e.target.value)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Learning Outcomes</label>
+                  <textarea
+                    value={formData.learning_outcomes}
+                    onChange={(e) => handleInputChange('learning_outcomes', e.target.value)}
+                    rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="python, programming, web development"
+                    placeholder="What learners will learn from this course..."
                   />
                 </div>
               </div>

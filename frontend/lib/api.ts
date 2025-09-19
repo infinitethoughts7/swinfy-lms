@@ -123,6 +123,70 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('access_token');
 };
 
+// Get refresh token from localStorage
+const getRefreshToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refresh_token');
+};
+
+// Refresh access token using refresh token
+const refreshAccessToken = async (): Promise<string | null> => {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('access_token', data.access);
+      return data.access;
+    }
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+  }
+  
+  return null;
+};
+
+// Enhanced authenticated fetch with automatic token refresh
+const authenticatedFetchWithRefresh = async (url: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  
+  const makeRequest = async (authToken: string | null) => {
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken && { Authorization: `Bearer ${authToken}` }),
+        ...options.headers,
+      },
+    };
+    
+    return fetch(`${API_BASE_URL}${url}`, config);
+  };
+  
+  // First attempt with current token
+  let response = await makeRequest(token);
+  
+  // If unauthorized and we have a refresh token, try to refresh
+  if (response.status === 401 && getRefreshToken()) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      // Retry with new token
+      response = await makeRequest(newToken);
+    }
+  }
+  
+  return response;
+};
+
 // Create authenticated fetch request
 const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
   const token = getAuthToken();
@@ -413,7 +477,7 @@ export const paymentsApi = {
       body: JSON.stringify({ action, notes: notes || '' }),
     });
     if (!response.ok) {
-      const error = await response.json().catch(() => ({} as any));
+      const error = await response.json().catch(() => ({} as Record<string, unknown>));
       throw new Error(error.error || error.detail || 'Failed to verify payment');
     }
     return response.json();
@@ -791,16 +855,12 @@ export const userApi = {
   instructors: {
     // List all instructors for KP admin
     list: async (params?: { search?: string; available?: boolean }) => {
-      const token = getAuthToken();
       const searchParams = new URLSearchParams();
       if (params?.search) searchParams.append('search', params.search);
       if (params?.available !== undefined) searchParams.append('available', params.available.toString());
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/?${searchParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/?${searchParams}`, {
+        method: 'GET',
       });
       
       if (!response.ok) {
@@ -812,14 +872,8 @@ export const userApi = {
 
     // Create new instructor
     create: async (instructorData: InstructorCreateData) => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/`, {
+      const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(instructorData),
       });
       
@@ -833,13 +887,8 @@ export const userApi = {
 
     // Get instructor details
     get: async (instructorId: string) => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/${instructorId}/`, {
+        method: 'GET',
       });
       
       if (!response.ok) {
@@ -851,14 +900,8 @@ export const userApi = {
 
     // Update instructor
     update: async (instructorId: string, updateData: Partial<InstructorUpdateData>) => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
+      const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/${instructorId}/`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(updateData),
       });
       
@@ -872,14 +915,8 @@ export const userApi = {
 
     // Delete instructor
     delete: async (instructorId: string) => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`, {
+      const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/${instructorId}/`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
       
       if (!response.ok) {
@@ -935,7 +972,6 @@ export interface CourseCreateData {
   duration_weeks: number;
   category: string;
   level: string;
-  tags?: string;
   learning_outcomes?: string;
   prerequisites?: string;
   thumbnail?: File;
@@ -966,7 +1002,6 @@ export interface Lesson {
   id: string;
   title: string;
   slug: string;
-  description: string;
   lesson_type: string;
   lesson_type_display: string;
   order: number;
@@ -986,7 +1021,6 @@ export interface Lesson {
 
 export interface LessonCreateData {
   title: string;
-  description: string;
   lesson_type: string;
   order: number;
   content?: string;
@@ -1013,14 +1047,8 @@ export interface InstructorStats {
 export const instructorApi = {
   // Dashboard
   getDashboardStats: async (): Promise<InstructorStats> => {
-    const token = getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/api/courses/instructor/dashboard/stats/`, {
+    const response = await authenticatedFetchWithRefresh('/api/courses/instructor/dashboard/stats/', {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
     });
     
     if (!response.ok) {
@@ -1033,14 +1061,8 @@ export const instructorApi = {
   // Courses
   courses: {
     list: async (): Promise<Course[]> => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/`, {
+      const response = await authenticatedFetchWithRefresh('/api/courses/instructor/courses/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
       
       if (!response.ok) {
@@ -1081,14 +1103,8 @@ export const instructorApi = {
     },
 
     get: async (courseSlug: string): Promise<Course> => {
-      const token = getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/instructor/courses/${courseSlug}/`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
       
       if (!response.ok) {
@@ -1376,7 +1392,7 @@ export const instructorApi = {
         body: formData,
       });
       if (!response.ok) {
-        const err = await response.json().catch(() => ({} as any));
+        const err = await response.json().catch(() => ({} as Record<string, unknown>));
         // surface DRF field errors if available
         const detail = err.error || err.detail || JSON.stringify(err);
         throw new Error(detail || 'Failed to create resource');
@@ -1430,7 +1446,7 @@ export const instructorApi = {
         body: formData,
       });
       if (!response.ok) {
-        const err = await response.json().catch(() => ({} as any));
+        const err = await response.json().catch(() => ({} as Record<string, unknown>));
         const detail = err.error || err.detail || JSON.stringify(err);
         throw new Error(detail || 'Failed to update resource');
       }

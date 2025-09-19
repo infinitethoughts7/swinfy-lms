@@ -65,7 +65,7 @@ class Course(models.Model):
     tags = models.TextField(
         blank=True, 
         null=True,
-        help_text="Comma-separated tags for course discovery"
+        help_text="Comma-separated tags for course discovery",
     )
     
     # NEW: Course Visibility & Access Control
