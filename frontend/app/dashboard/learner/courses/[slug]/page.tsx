@@ -677,14 +677,14 @@ export default function CourseLearningPage() {
                                 const LessonIcon = getLessonIcon(lesson.lesson_type);
                                 
                                 return (
-                                  <button
+                                  <div
                                     key={lesson.id}
-                                    onClick={() => handleCourseContentLessonClick(lesson)}
-                                    className={`w-full p-3 text-left rounded-lg transition-colors ${
+                                    className={`w-full p-3 text-left rounded-lg transition-colors cursor-pointer ${
                                       selectedLesson?.id === lesson.id
                                         ? 'bg-blue-100 border border-blue-200'
                                         : 'hover:bg-white border border-transparent'
                                     }`}
+                                    onClick={() => handleCourseContentLessonClick(lesson)}
                                   >
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center space-x-3">
@@ -727,7 +727,7 @@ export default function CourseLearningPage() {
                                         </span>
                                       </div>
                                     </div>
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
