@@ -115,6 +115,43 @@ interface CourseResource {
   created_at: string;
 }
 
+interface CourseContent {
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    thumbnail?: string;
+  };
+  modules: Array<{
+    id: string;
+    title: string;
+    description: string;
+    order: number;
+    duration_minutes: number;
+    duration_formatted: string;
+    lessons: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      lesson_type: string;
+      lesson_type_display: string;
+      duration_minutes: number;
+      duration_formatted: string;
+      video_file?: string;
+      content?: string;
+      is_preview: boolean;
+      is_mandatory: boolean;
+      is_completed: boolean;
+      order: number;
+      has_video_content: boolean;
+      materials_count: number;
+      created_at: string;
+      updated_at: string;
+    }>;
+  }>;
+}
+
 interface Enrollment {
   id: string;
   course: Course;
@@ -144,6 +181,7 @@ export default function CourseLearningPage() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
   const [courseResources, setCourseResources] = useState<CourseResource[]>([]);
+  const [courseContent, setCourseContent] = useState<CourseContent | null>(null);
   const [completingLesson, setCompletingLesson] = useState<string | null>(null);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -161,6 +199,22 @@ export default function CourseLearningPage() {
       }
     } catch (error) {
       console.error('Failed to fetch course resources:', error);
+    }
+  }, [courseSlug]);
+
+  const fetchCourseContent = useCallback(async () => {
+    try {
+      const response = await authenticatedFetch(
+        `/api/courses/${courseSlug}/learner-content/`
+      );
+      if (response.ok) {
+        const content = await response.json();
+        setCourseContent(content);
+      } else {
+        console.error('Failed to fetch course content:', response.status);
+      }
+    } catch (error) {
+      console.error('Failed to fetch course content:', error);
     }
   }, [courseSlug]);
 
@@ -187,8 +241,9 @@ export default function CourseLearningPage() {
         setExpandedModules(new Set([courseResponse.modules[0].id]));
       }
       
-      // Fetch course resources
+      // Fetch course resources and content
       await fetchCourseResources();
+      await fetchCourseContent();
       
     } catch (err: unknown) {
       console.error('Error fetching course data:', err);
@@ -202,7 +257,7 @@ export default function CourseLearningPage() {
     } finally {
       setLoading(false);
     }
-  }, [courseSlug, fetchCourseResources]);
+  }, [courseSlug, fetchCourseResources, fetchCourseContent]);
 
   useEffect(() => {
     // Check authentication on client side only
@@ -232,6 +287,44 @@ export default function CourseLearningPage() {
 
   const handleLessonClick = async (lesson: Lesson) => {
     setSelectedLesson(lesson);
+    
+    // Fetch lesson materials
+    try {
+      const response = await authenticatedFetch(
+        `/api/courses/lessons/${lesson.id}/materials/`
+      );
+      if (response.ok) {
+        const materials = await response.json();
+        setLessonMaterials(materials);
+      }
+    } catch (error) {
+      console.error('Failed to fetch lesson materials:', error);
+    }
+  };
+
+  const handleCourseContentLessonClick = async (lesson: CourseContent['modules'][0]['lessons'][0]) => {
+    // Convert course content lesson to Lesson format for compatibility
+    const lessonData: Lesson = {
+      id: lesson.id,
+      title: lesson.title,
+      slug: lesson.slug,
+      lesson_type: lesson.lesson_type as Lesson['lesson_type'],
+      lesson_type_display: lesson.lesson_type_display,
+      order: lesson.order,
+      duration_minutes: lesson.duration_minutes,
+      duration_formatted: lesson.duration_formatted,
+      is_preview: lesson.is_preview,
+      is_mandatory: lesson.is_mandatory,
+      content: lesson.content,
+      video_file: lesson.video_file,
+      materials_count: lesson.materials_count,
+      is_completed: lesson.is_completed,
+      has_video_content: lesson.has_video_content,
+      created_at: lesson.created_at,
+      updated_at: lesson.updated_at
+    };
+    
+    setSelectedLesson(lessonData);
     
     // Fetch lesson materials
     try {
@@ -342,6 +435,13 @@ export default function CourseLearningPage() {
   };
 
   const calculateModuleProgress = (module: Module) => {
+    if (!module.lessons) return 0;
+    const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
+    const totalLessons = module.lessons.length;
+    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  };
+
+  const calculateCourseContentModuleProgress = (module: CourseContent['modules'][0]) => {
     if (!module.lessons) return 0;
     const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
     const totalLessons = module.lessons.length;
@@ -529,8 +629,8 @@ export default function CourseLearningPage() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Course Content</h2>
                 
                 <div className="space-y-4">
-                  {course?.modules?.length > 0 ? course.modules.map((module) => {
-                    const moduleProgress = calculateModuleProgress(module);
+                  {courseContent && courseContent.modules && courseContent.modules.length > 0 ? courseContent.modules.map((module) => {
+                    const moduleProgress = calculateCourseContentModuleProgress(module);
                     const isExpanded = expandedModules.has(module.id);
                     const completedLessons = module.lessons?.filter(lesson => lesson.is_completed).length || 0;
                     
@@ -579,7 +679,7 @@ export default function CourseLearningPage() {
                                 return (
                                   <button
                                     key={lesson.id}
-                                    onClick={() => handleLessonClick(lesson)}
+                                    onClick={() => handleCourseContentLessonClick(lesson)}
                                     className={`w-full p-3 text-left rounded-lg transition-colors ${
                                       selectedLesson?.id === lesson.id
                                         ? 'bg-blue-100 border border-blue-200'
@@ -609,8 +709,21 @@ export default function CourseLearningPage() {
                                             Preview
                                           </span>
                                         )}
+                                        {lesson.lesson_type === 'video' && lesson.video_file && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCourseContentLessonClick(lesson);
+                                              setShowVideoPlayer(true);
+                                            }}
+                                            className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                                          >
+                                            <Play className="h-4 w-4" />
+                                            <span>Watch</span>
+                                          </button>
+                                        )}
                                         <span className="text-sm text-gray-500">
-                                          Review
+                                          {lesson.duration_formatted || 'Duration not set'}
                                         </span>
                                       </div>
                                     </div>

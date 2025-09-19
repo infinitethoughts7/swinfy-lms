@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.http import Http404
 
 from ..models import Course, CourseModule, Lesson, Enrollment, CourseProgress, LessonProgress, LessonMaterial, CourseResource, CourseNotification
 from ..serializers import (
@@ -507,6 +508,61 @@ class LearnerCourseResourceView(generics.ListAPIView):
         
         # If not enrolled or no access, return empty queryset
         return CourseResource.objects.none()
+
+
+class LearnerCourseContentView(generics.RetrieveAPIView):
+    """Get full course content (modules and lessons) for enrolled learners."""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        from ..serializers.content_serializers import CourseModuleSerializer
+        return CourseModuleSerializer
+    
+    def get_object(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        user = self.request.user
+        
+        # Check if user is enrolled in the course
+        if user.role == 'learner':
+            from ..models import Enrollment
+            try:
+                enrollment = Enrollment.objects.get(learner=user, course=course)
+                if enrollment.can_access_content:
+                    # Return the course with modules and lessons
+                    return course
+            except Enrollment.DoesNotExist:
+                pass
+        
+        # If not enrolled or no access, return 404
+        raise Http404("Course not found or access denied")
+    
+    def retrieve(self, request, *args, **kwargs):
+        course = self.get_object()
+        
+        # Get modules with lessons
+        modules = course.modules.all().prefetch_related('lessons')
+        
+        # Serialize the data
+        from ..serializers.content_serializers import CourseModuleSerializer, LessonSerializer
+        
+        modules_data = []
+        for module in modules:
+            module_data = CourseModuleSerializer(module).data
+            lessons_data = LessonSerializer(module.lessons.all(), many=True).data
+            module_data['lessons'] = lessons_data
+            modules_data.append(module_data)
+        
+        return Response({
+            'course': {
+                'id': course.id,
+                'title': course.title,
+                'slug': course.slug,
+                'description': course.description,
+                'thumbnail': course.thumbnail.url if course.thumbnail else None,
+            },
+            'modules': modules_data
+        })
 
 
 # ==================== ANALYTICS ENDPOINTS ====================

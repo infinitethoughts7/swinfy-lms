@@ -82,6 +82,7 @@ urlpatterns = [
     
     # Learner Content Access Endpoints
     path('<slug:slug>/learner-resources/', views.LearnerCourseResourceView.as_view(), name='learner-course-resources'),
+    path('<slug:slug>/learner-content/', views.LearnerCourseContentView.as_view(), name='learner-course-content'),
     
     # Analytics Endpoints
     path('analytics/learner-progress/', views.LearnerProgressAnalyticsView.as_view(), name='learner-progress-analytics'),

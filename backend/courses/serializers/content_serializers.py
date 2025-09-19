@@ -56,6 +56,7 @@ class LessonSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
     materials_count = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    lesson_type_display = serializers.SerializerMethodField()
     duration_formatted = serializers.CharField(read_only=True)
     has_video_content = serializers.BooleanField(read_only=True)
     
@@ -63,7 +64,7 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'id', 'title', 'slug', 'module', 'course',
-            'lesson_type', 'order', 'duration_minutes', 'duration_formatted',
+            'lesson_type', 'lesson_type_display', 'order', 'duration_minutes', 'duration_formatted',
             'is_preview', 'is_mandatory', 'content', 'video_file',
             'materials_count', 'is_completed', 'has_video_content',
             'created_at', 'updated_at'
@@ -95,6 +96,17 @@ class LessonSerializer(serializers.ModelSerializer):
             except LessonProgress.DoesNotExist:
                 return False
         return False
+    
+    def get_lesson_type_display(self, obj):
+        """Get human-readable lesson type."""
+        lesson_type_map = {
+            'video': 'Video',
+            'text': 'Text',
+            'quiz': 'Quiz',
+            'assignment': 'Assignment',
+            'live': 'Live Session'
+        }
+        return lesson_type_map.get(obj.lesson_type, obj.lesson_type.title())
 
 
 class LessonCreateSerializer(serializers.ModelSerializer):
