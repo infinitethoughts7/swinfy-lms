@@ -18,11 +18,14 @@ class CourseReviewListView(generics.ListAPIView):
     
     def get_queryset(self):
         """Return courses that need review by the KP admin."""
-        # Get the KP admin's organization
-        kp_admin = self.request.user
-        kp_profile = kp_admin.knowledge_partner
+        # Get the Knowledge Partner user
+        kp_user = self.request.user
         
-        if not kp_profile:
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            from users.models import KPProfile
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
             return Course.objects.none()
         
         # Return courses that are pending approval AND belong to the same KP organization
@@ -44,11 +47,14 @@ class ApprovedCoursesListView(generics.ListAPIView):
     
     def get_queryset(self):
         """Return approved courses for the KP admin."""
-        # Get the KP admin's organization
-        kp_admin = self.request.user
-        kp_profile = kp_admin.knowledge_partner
+        # Get the Knowledge Partner user
+        kp_user = self.request.user
         
-        if not kp_profile:
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            from users.models import KPProfile
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
             return Course.objects.none()
         
         # Return approved courses that belong to the same KP organization
@@ -70,11 +76,14 @@ class CourseReviewDetailView(generics.RetrieveAPIView):
     
     def get_queryset(self):
         """Return courses that can be reviewed by the KP admin."""
-        # Get the KP admin's organization
-        kp_admin = self.request.user
-        kp_profile = kp_admin.knowledge_partner
+        # Get the Knowledge Partner user
+        kp_user = self.request.user
         
-        if not kp_profile:
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            from users.models import KPProfile
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
             return Course.objects.none()
         
         # Return pending courses that belong to the same KP organization
