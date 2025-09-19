@@ -135,7 +135,7 @@ export default function CourseLearningPage() {
       console.log('Course Learning Page - Is Authenticated:', isAuthenticated());
       console.log('Course Learning Page - User:', getCurrentUser());
     }
-  }, [courseSlug]);
+  }, [courseSlug, params]);
   
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -198,11 +198,17 @@ export default function CourseLearningPage() {
   useEffect(() => {
     // Check authentication on client side only
     if (typeof window !== 'undefined') {
-      if (!isAuthenticated()) {
+      const authStatus = isAuthenticated();
+      console.log('Authentication check:', authStatus);
+      
+      if (!authStatus) {
+        console.log('User not authenticated, setting error');
         setError('Please log in to access this course');
         setLoading(false);
         return;
       }
+      
+      console.log('User is authenticated, proceeding with course data fetch');
     }
     
     if (courseSlug) {
@@ -358,7 +364,7 @@ export default function CourseLearningPage() {
     );
   }
 
-  if (error || !course) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -393,6 +399,34 @@ export default function CourseLearningPage() {
                   Back to My Courses
                 </Link>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="text-red-600 mb-4">
+              <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
+            <p className="text-gray-600 mb-4">
+              The course you are looking for does not exist or you do not have access to it.
+            </p>
+            <div className="flex space-x-4 justify-center">
+              <Link 
+                href="/dashboard/learner/courses"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Back to My Courses
+              </Link>
             </div>
           </div>
         </div>
