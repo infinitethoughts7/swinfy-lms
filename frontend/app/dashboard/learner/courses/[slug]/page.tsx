@@ -446,13 +446,6 @@ export default function CourseLearningPage() {
     );
   }
 
-  // Debug logging for enrollment status
-  console.log('Enrollment debug:', {
-    hasEnrollment: !!enrollment,
-    enrollmentStatus: enrollment?.status,
-    canAccessContent: enrollment?.can_access_content,
-    enrollmentData: enrollment
-  });
 
   if (!enrollment || !enrollment.can_access_content) {
     return (
