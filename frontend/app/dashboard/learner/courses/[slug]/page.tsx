@@ -446,6 +446,14 @@ export default function CourseLearningPage() {
     );
   }
 
+  // Debug logging for enrollment status
+  console.log('Enrollment debug:', {
+    hasEnrollment: !!enrollment,
+    enrollmentStatus: enrollment?.status,
+    canAccessContent: enrollment?.can_access_content,
+    enrollmentData: enrollment
+  });
+
   if (!enrollment || !enrollment.can_access_content) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -458,10 +466,14 @@ export default function CourseLearningPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
             <p className="text-gray-600 mb-4">
-              {enrollment?.status === 'pending' 
+              {!enrollment 
+                ? 'You need to enroll in this course to access its content.'
+                : enrollment?.status === 'pending' 
                 ? 'Your enrollment is pending approval. You will be notified once approved.'
                 : enrollment?.status === 'rejected'
                 ? 'Your enrollment has been rejected. Please contact support for more information.'
+                : !enrollment.can_access_content
+                ? 'Your enrollment is not active or you do not have access to course content.'
                 : 'You need to enroll in this course to access its content.'
               }
             </p>
