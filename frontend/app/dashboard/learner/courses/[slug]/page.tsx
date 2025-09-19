@@ -528,7 +528,7 @@ export default function CourseLearningPage() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">Course Content</h2>
                 
                 <div className="space-y-4">
-                  {course.modules.map((module) => {
+                  {course?.modules?.length > 0 ? course.modules.map((module) => {
                     const moduleProgress = calculateModuleProgress(module);
                     const isExpanded = expandedModules.has(module.id);
                     const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
@@ -621,7 +621,11 @@ export default function CourseLearningPage() {
                         )}
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No course content available yet.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

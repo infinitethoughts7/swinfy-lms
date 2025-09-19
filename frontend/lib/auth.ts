@@ -138,6 +138,10 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
       throw new Error('No valid access token available');
     }
 
+    // Prepend API base URL for relative URLs
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+
     // Build headers. If body is FormData, let the browser set the multipart boundary
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers: Record<string, string> = {
@@ -151,7 +155,7 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
       if ('Content-Type' in headers) delete headers['Content-Type'];
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(fullUrl, {
       ...options,
       headers,
     });
