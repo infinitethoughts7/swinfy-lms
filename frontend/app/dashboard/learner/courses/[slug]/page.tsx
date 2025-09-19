@@ -267,11 +267,11 @@ export default function CourseLearningPage() {
           const updatedCourse = { ...course };
           updatedCourse.modules = updatedCourse.modules.map(module => ({
             ...module,
-            lessons: module.lessons.map(lesson => 
+            lessons: module.lessons?.map(lesson => 
               lesson.id === lessonId 
                 ? { ...lesson, is_completed: true }
                 : lesson
-            )
+            ) || []
           }));
           setCourse(updatedCourse);
         }
@@ -532,7 +532,7 @@ export default function CourseLearningPage() {
                   {course?.modules?.length > 0 ? course.modules.map((module) => {
                     const moduleProgress = calculateModuleProgress(module);
                     const isExpanded = expandedModules.has(module.id);
-                    const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
+                    const completedLessons = module.lessons?.filter(lesson => lesson.is_completed).length || 0;
                     
                     return (
                       <div key={module.id} className="border border-gray-200 rounded-lg">
@@ -552,7 +552,7 @@ export default function CourseLearningPage() {
                               <div>
                                 <h3 className="font-medium text-gray-900">{module.title}</h3>
                                 <p className="text-sm text-gray-600 mt-1">
-                                  {completedLessons}/{module.lessons.length} lessons • {module.duration_formatted}
+                                  {completedLessons}/{module.lessons?.length || 0} lessons • {module.duration_formatted}
                                 </p>
                               </div>
                             </div>
@@ -573,7 +573,7 @@ export default function CourseLearningPage() {
                         {isExpanded && (
                           <div className="border-t border-gray-200 p-4 bg-gray-50">
                             <div className="space-y-2">
-                              {module.lessons.map((lesson) => {
+                              {module.lessons?.map((lesson) => {
                                 const LessonIcon = getLessonIcon(lesson.lesson_type);
                                 
                                 return (
@@ -653,12 +653,12 @@ export default function CourseLearningPage() {
                 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{course.modules.length}</div>
+                    <div className="text-2xl font-bold text-gray-900">{course.modules?.length || 0}</div>
                     <div className="text-sm text-gray-600">Modules</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900">
-                      {course.modules.reduce((total, module) => total + module.lessons.length, 0)}
+                      {course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0}
                     </div>
                     <div className="text-sm text-gray-600">Lessons</div>
                   </div>
