@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { userApi, learnerDashboardApi, paymentsApi } from '@/lib/api';
+import { getCourseThumbnailUrl } from '@/lib/image-utils';
 import { WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
 import { BookOpen, Clock, Award, TrendingUp, Users } from 'lucide-react';
 
@@ -52,11 +53,6 @@ interface LearnerDistribution {
   count: number;
 }
 
-interface StudySession {
-  id: string;
-  duration_minutes: number;
-  created_at: string;
-}
 
 interface Payment {
   id: string;
@@ -70,7 +66,6 @@ interface LearnerHomeData {
   enrolledCourses: Enrollment[];
   weeklyActivity: WeeklyActivity[];
   learnerDistribution: LearnerDistribution[];
-  studySessions: StudySession[];
   recentPayments: Payment[];
 }
 
@@ -90,14 +85,12 @@ export default function LearnerHomePage() {
           enrolledCoursesData,
           weeklyActivityData,
           learnerDistributionData,
-          studySessionsData,
           recentPaymentsData
         ] = await Promise.allSettled([
           userApi.getDashboardStats(),
           learnerDashboardApi.getMyCourses(),
           learnerDashboardApi.getWeeklyActivity(),
           learnerDashboardApi.getLearnerDistribution(),
-          learnerDashboardApi.getStudySessions(),
           paymentsApi.getPaymentHistory()
         ]);
 
@@ -106,7 +99,6 @@ export default function LearnerHomePage() {
           enrolledCourses: enrolledCoursesData.status === 'fulfilled' ? (enrolledCoursesData.value.results || enrolledCoursesData.value || []) : [],
           weeklyActivity: weeklyActivityData.status === 'fulfilled' ? weeklyActivityData.value.weekly_activity || [] : [],
           learnerDistribution: learnerDistributionData.status === 'fulfilled' ? learnerDistributionData.value.learner_distribution || [] : [],
-          studySessions: studySessionsData.status === 'fulfilled' ? (studySessionsData.value.results || studySessionsData.value || []) : [],
           recentPayments: recentPaymentsData.status === 'fulfilled' ? (recentPaymentsData.value.results || recentPaymentsData.value || []) : []
         });
       } catch (err) {
@@ -288,13 +280,13 @@ export default function LearnerHomePage() {
                     <div className="flex items-start space-x-3 mb-3">
                       {(enrollment.course?.thumbnail || '/assets/courses/default.svg').endsWith('.svg') ? (
                         <img
-                          src={enrollment.course?.thumbnail || '/assets/courses/default.svg'}
+                          src={getCourseThumbnailUrl(enrollment.course?.thumbnail)}
                           alt={enrollment.course?.title || 'Course'}
                           className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
                         />
                       ) : (
                         <Image
-                          src={enrollment.course?.thumbnail || '/assets/courses/default.svg'}
+                          src={getCourseThumbnailUrl(enrollment.course?.thumbnail)}
                           alt={enrollment.course?.title || 'Course'}
                           width={60}
                           height={60}

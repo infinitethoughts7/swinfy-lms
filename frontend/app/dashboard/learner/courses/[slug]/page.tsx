@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { learnerDashboardApi } from '@/lib/api';
 import { authenticatedFetch } from '@/lib/auth';
+import { getCourseBannerUrl, getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
 
 interface Course {
   id: string;
@@ -426,7 +427,7 @@ export default function StudentCourseDetailPage() {
             {course.banner_image && (
               <div className="relative h-64 rounded-lg overflow-hidden">
                 <Image
-                  src={course.banner_image}
+                  src={getCourseBannerUrl(course.banner_image)}
                   alt={course.title}
                   fill
                   className="object-cover"
@@ -626,7 +627,7 @@ export default function StudentCourseDetailPage() {
                       </div>
                       {resource.file ? (
                         <a
-                          href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${resource.file}`}
+                          href={getCourseResourceUrl(resource.file)}
                           download
                           className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
                         >
@@ -713,7 +714,7 @@ export default function StudentCourseDetailPage() {
                         <video
                           controls
                           className="w-full h-96 object-contain"
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${selectedLesson.video_file}`}
+                          src={getLessonVideoUrl(selectedLesson.video_file)}
                         >
                           Your browser does not support the video tag.
                         </video>
@@ -759,7 +760,7 @@ export default function StudentCourseDetailPage() {
                             </div>
                             {material.is_downloadable && (
                               <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${material.file}`}
+                                href={getLessonMaterialUrl(material.file)}
                                 download
                                 className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
                               >

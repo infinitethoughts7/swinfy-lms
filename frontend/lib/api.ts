@@ -582,16 +582,6 @@ export const learnerDashboardApi = {
     return response.json();
   },
 
-  // Get study sessions
-  getStudySessions: async () => {
-    const response = await authenticatedFetch('/api/courses/user-sessions/');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch study sessions');
-    }
-    
-    return response.json();
-  },
 
   // Get notifications
   getNotifications: async () => {
