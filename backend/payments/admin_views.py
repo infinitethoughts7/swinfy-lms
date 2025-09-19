@@ -27,7 +27,7 @@ def pending_payments(request):
     """Get pending payments for training partner admin"""
     
     # Get payments for courses belonging to admin's training partner
-    training_partner = getattr(request.user, 'knowledge_partner', None)
+    training_partner = getattr(request.user, 'kp_profile', None)
     
     pending_payments = Payment.objects.filter(
         enrollment__course__training_partner=training_partner,
@@ -64,7 +64,7 @@ def verify_payment(request, payment_id):
         payment = get_object_or_404(
             Payment,
             id=payment_id,
-            enrollment__course__training_partner=getattr(request.user, 'knowledge_partner', None),
+            enrollment__course__training_partner=getattr(request.user, 'kp_profile', None),
             status='paid'
         )
         
@@ -152,7 +152,7 @@ def verify_payment(request, payment_id):
 def payment_history(request):
     """Get all payments for training partner admin"""
     
-    training_partner = getattr(request.user, 'knowledge_partner', None)
+    training_partner = getattr(request.user, 'kp_profile', None)
     
     payments = Payment.objects.filter(
         enrollment__course__training_partner=training_partner
@@ -237,7 +237,7 @@ def payment_analytics(request):
     from django.db.models import Count, Sum, Q
     from datetime import datetime, timedelta
     
-    training_partner = getattr(request.user, 'knowledge_partner', None)
+    training_partner = getattr(request.user, 'kp_profile', None)
     
     # Get payments for the last 30 days
     thirty_days_ago = timezone.now() - timedelta(days=30)
