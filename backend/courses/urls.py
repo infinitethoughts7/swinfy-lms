@@ -67,17 +67,17 @@ urlpatterns = [
     path('<slug:slug>/enrollment-status/', views.enrollment_status, name='enrollment-status'),
     path('<slug:slug>/modules/', views.CourseModulesView.as_view(), name='course-modules'),
     path('<slug:slug>/progress/', views.CourseProgressView.as_view(), name='course-progress'),
-    path('<slug:slug>/modules/<int:module_id>/lessons/', views.ModuleLessonsView.as_view(), name='module-lessons'),
+    path('<slug:slug>/modules/<uuid:module_id>/lessons/', views.ModuleLessonsView.as_view(), name='module-lessons'),
     
     # Lesson Endpoints
-    path('lessons/<int:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
-    path('lessons/<int:lesson_id>/materials/', views.LessonMaterialsView.as_view(), name='lesson-materials'),
-    path('lessons/<int:lesson_id>/progress/', views.LessonProgressView.as_view(), name='lesson-progress'),
-    path('lessons/<int:lesson_id>/materials/upload/', views.LessonMaterialUploadView.as_view(), name='lesson-material-upload'),
+    path('lessons/<uuid:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
+    path('lessons/<uuid:lesson_id>/materials/', views.LessonMaterialsView.as_view(), name='lesson-materials'),
+    path('lessons/<uuid:lesson_id>/progress/', views.LessonProgressView.as_view(), name='lesson-progress'),
+    path('lessons/<uuid:lesson_id>/materials/upload/', views.LessonMaterialUploadView.as_view(), name='lesson-material-upload'),
     
     # Content Management Endpoints (Tutor/Admin)
     path('<slug:slug>/modules/create/', views.CourseModuleCreateView.as_view(), name='course-module-create'),
-    path('modules/<int:module_id>/lessons/create/', views.LessonCreateView.as_view(), name='lesson-create'),
+    path('modules/<uuid:module_id>/lessons/create/', views.LessonCreateView.as_view(), name='lesson-create'),
     path('<slug:slug>/resources/', views.CourseResourceView.as_view(), name='course-resources'),
     
     # Learner Content Access Endpoints

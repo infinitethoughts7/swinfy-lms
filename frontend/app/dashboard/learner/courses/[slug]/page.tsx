@@ -356,9 +356,9 @@ export default function CourseLearningPage() {
 
       if (response.ok) {
         // Update the lesson completion status in the UI
-        if (course) {
-          const updatedCourse = { ...course };
-          updatedCourse.modules = updatedCourse.modules.map(module => ({
+        if (courseContent) {
+          const updatedCourseContent = { ...courseContent };
+          updatedCourseContent.modules = updatedCourseContent.modules.map(module => ({
             ...module,
             lessons: module.lessons?.map(lesson => 
               lesson.id === lessonId 
@@ -366,7 +366,7 @@ export default function CourseLearningPage() {
                 : lesson
             ) || []
           }));
-          setCourse(updatedCourse);
+          setCourseContent(updatedCourseContent);
         }
         
         // Update selected lesson if it's the one being completed
