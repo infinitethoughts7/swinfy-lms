@@ -457,11 +457,30 @@ class UserProfileDetailView(APIView):
         """Update user profile data."""
         user = request.user
         
+        # Handle both JSON and FormData requests
+        user_data = None
+        profile_data = None
+        
+        if request.content_type == 'application/json':
+            # Handle JSON request
+            if 'user_data' in request.data:
+                user_data = request.data['user_data']
+            if 'profile_data' in request.data:
+                profile_data = request.data['profile_data']
+        else:
+            # Handle FormData request
+            if 'user_data' in request.data:
+                import json
+                user_data = json.loads(request.data['user_data'])
+            if 'profile_data' in request.data:
+                import json
+                profile_data = json.loads(request.data['profile_data'])
+        
         # Update basic user data if provided
-        if 'user_data' in request.data:
+        if user_data:
             user_serializer = UserProfileSerializer(
                 user, 
-                data=request.data['user_data'], 
+                data=user_data, 
                 partial=True
             )
             if user_serializer.is_valid():
@@ -473,7 +492,7 @@ class UserProfileDetailView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
         
         # Update role-specific profile data if provided
-        if 'profile_data' in request.data:
+        if profile_data:
             try:
                 if user.role == 'learner':
                     profile, created = user.learner_profile, False
@@ -481,9 +500,16 @@ class UserProfileDetailView(APIView):
                         profile = None
                         created = True
                     
+                    # Prepare data for serializer
+                    serializer_data = profile_data.copy()
+                    
+                    # Handle profile picture upload
+                    if 'profile_picture' in request.FILES:
+                        serializer_data['profile_picture'] = request.FILES['profile_picture']
+                    
                     if created:
                         profile_serializer = LearnerProfileSerializer(
-                            data=request.data['profile_data']
+                            data=serializer_data
                         )
                         if profile_serializer.is_valid():
                             profile_serializer.save(user=user)
@@ -495,7 +521,7 @@ class UserProfileDetailView(APIView):
                     else:
                         profile_serializer = LearnerProfileSerializer(
                             profile,
-                            data=request.data['profile_data'],
+                            data=serializer_data,
                             partial=True
                         )
                         if profile_serializer.is_valid():

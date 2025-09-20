@@ -808,7 +808,7 @@ export const adminDashboardApi = {
 export const userApi = {
   // Get user profile
   getProfile: async () => {
-    const response = await authenticatedFetch('/api/auth/profile/');
+    const response = await authenticatedFetch('/api/auth/profile/detail/');
     
     if (!response.ok) {
       throw new Error('Failed to fetch user profile');
@@ -819,9 +819,29 @@ export const userApi = {
 
   // Update user profile
   updateProfile: async (profileData: Record<string, unknown>) => {
-    const response = await authenticatedFetch('/api/auth/profile/', {
+    const response = await authenticatedFetch('/api/auth/profile/detail/', {
       method: 'PATCH',
       body: JSON.stringify(profileData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update profile');
+    }
+    
+    return response.json();
+  },
+
+  // Update user profile with file upload
+  updateProfileWithFile: async (formData: FormData) => {
+    const token = getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile/detail/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
     });
     
     if (!response.ok) {
