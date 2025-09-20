@@ -47,7 +47,7 @@ const ContactForm = () => {
           setFormData((prev) => ({ ...prev, ...parsed }));
         }
       }
-    } catch (e) {
+    } catch {
       // ignore storage errors
     }
   }, []);
@@ -81,7 +81,7 @@ const ContactForm = () => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('kpApplicationForm', JSON.stringify(next));
       }
-    } catch (_) {
+    } catch {
       // ignore storage errors
     }
     
@@ -140,16 +140,16 @@ const ContactForm = () => {
   if (submitSuccess) {
     return (
       <div className="space-y-6">
-        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-6 text-center">
-          <div className="text-green-400 text-2xl mb-4">✅</div>
-          <h4 className="text-white font-semibold text-lg mb-2">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <div className="text-green-600 text-2xl mb-4">✅</div>
+          <h4 className="text-green-800 font-semibold text-lg mb-2">
             Application Submitted Successfully!
           </h4>
-          <p className="text-green-100 text-sm mb-4">
+          <p className="text-green-700 text-sm mb-4">
             Thank you for applying to become a Knowledge Partner. We have received your application and will review it within 24-48 hours.
           </p>
-          <div className="bg-green-500/10 rounded-lg p-3">
-            <p className="text-green-200 text-sm">
+          <div className="bg-green-100 rounded-lg p-3">
+            <p className="text-green-800 text-sm">
               📞 <strong>Next Steps:</strong> We&apos;ll call you at {formData.contact_number} to discuss the partnership opportunity.
             </p>
           </div>
@@ -157,7 +157,7 @@ const ContactForm = () => {
         
         <button
           onClick={() => setSubmitSuccess(false)}
-          className="w-full bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 transition-all duration-300"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-all duration-300"
         >
           Submit Another Application
         </button>
@@ -167,21 +167,18 @@ const ContactForm = () => {
 
   return (
     <div className="space-y-6">
-      {/* Process Info Header */}
-      <div className="bg-white/10 rounded-lg p-4 mb-6">
-        <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-          <Building2 className="w-4 h-4" />
-          Knowledge Partner Application
-        </h4>
-        <p className="text-white/80 text-sm leading-relaxed mb-3">
-          Join our platform as a Knowledge Partner! Fill out the application below and we&apos;ll call you within 24-48 hours to discuss the partnership.
-        </p>
-        <div className="bg-blue-500/20 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-sm text-white">
+      {/* Process Info Header - Only show in modal context */}
+      <div className="bg-blue-50 rounded-lg p-4 mb-6">
+        <div className="flex items-center gap-2 text-blue-800 mb-3">
+          <Building2 className="w-5 h-5" />
+          <span className="font-semibold text-lg">Application Process</span>
+        </div>
+        <div className="bg-blue-100 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-sm text-blue-700 mb-2">
             <Clock className="w-4 h-4" />
             <span className="font-medium">Next Steps:</span>
           </div>
-          <ul className="text-sm text-white/90 mt-1 ml-6 space-y-1">
+          <ul className="text-sm text-blue-600 space-y-1">
             <li>• Submit this application</li>
             <li>• We&apos;ll review and call you within 24-48 hours</li>
             <li>• After approval, receive login credentials via email</li>
@@ -194,7 +191,7 @@ const ContactForm = () => {
         {/* Knowledge Partner Info */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <h5 className="text-white font-medium text-sm border-b border-white/20 pb-2">
+            <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
               Knowledge Partner Details
             </h5>
             
@@ -207,12 +204,12 @@ const ContactForm = () => {
                 autoComplete="organization"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.knowledge_partner_name ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.knowledge_partner_name ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {errors.knowledge_partner_name && (
-                <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_name[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_name[0]}</p>
               )}
             </div>
 
@@ -223,19 +220,19 @@ const ContactForm = () => {
                   value={formData.knowledge_partner_type}
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                    errors.knowledge_partner_type ? 'border-red-500' : 'border-white/30'
-                  }`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.knowledge_partner_type ? 'border-red-500' : 'border-gray-300'
+                }`}
                 >
-                  <option value="" className="bg-blue-800 text-white">Knowledge Partner Type *</option>
+                  <option value="" className="bg-gray-100 text-gray-500">Knowledge Partner Type *</option>
                   {KP_TYPE_CHOICES.map((type) => (
-                    <option key={type.value} value={type.value} className="bg-blue-800 text-white">
+                    <option key={type.value} value={type.value} className="bg-white text-gray-900">
                       {type.label}
                     </option>
                   ))}
                 </select>
                 {errors.knowledge_partner_type && (
-                  <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_type[0]}</p>
+                  <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_type[0]}</p>
                 )}
               </div>
 
@@ -248,19 +245,19 @@ const ContactForm = () => {
                   autoComplete="url"
                   onChange={handleChange}
                   required
-                  className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                    errors.website_url ? 'border-red-500' : 'border-white/30'
-                  }`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.website_url ? 'border-red-500' : 'border-gray-300'
+                }`}
                 />
                 {errors.website_url && (
-                  <p className="mt-1 text-sm text-red-400">{errors.website_url[0]}</p>
+                  <p className="mt-1 text-sm text-red-500">{errors.website_url[0]}</p>
                 )}
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h5 className="text-white font-medium text-sm border-b border-white/20 pb-2">
+            <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
               Contact Information
             </h5>
             
@@ -273,12 +270,12 @@ const ContactForm = () => {
                 autoComplete="email"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.knowledge_partner_email ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.knowledge_partner_email ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {errors.knowledge_partner_email && (
-                <p className="mt-1 text-sm text-red-400">{errors.knowledge_partner_email[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_email[0]}</p>
               )}
             </div>
 
@@ -291,24 +288,24 @@ const ContactForm = () => {
                 autoComplete="tel"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.contact_number ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.contact_number ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {errors.contact_number && (
-                <p className="mt-1 text-sm text-red-400">{errors.contact_number[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.contact_number[0]}</p>
               )}
             </div>
             
-            <div className="text-xs text-white/60 bg-white/10 p-2 rounded">
+            <div className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
               📞 <strong>Important:</strong> We&apos;ll call this number within 24-48 hours for verification
             </div>
           </div>
         </div>
 
         {/* Quick Questions */}
-        <div className="space-y-4 bg-white/5 rounded-lg p-6">
-          <h5 className="text-white font-medium text-sm border-b border-white/20 pb-2">
+        <div className="space-y-4 bg-gray-50 rounded-lg p-6">
+          <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
             Quick Questions
           </h5>
           
@@ -319,19 +316,19 @@ const ContactForm = () => {
                 value={formData.courses_interested_in}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.courses_interested_in ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.courses_interested_in ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-blue-800 text-white">Primary course category *</option>
+                <option value="" className="bg-gray-100 text-gray-500">Primary course category *</option>
                 {COURSE_CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value} className="bg-blue-800 text-white">
+                  <option key={category.value} value={category.value} className="bg-white text-gray-900">
                     {category.label}
                   </option>
                 ))}
               </select>
               {errors.courses_interested_in && (
-                <p className="mt-1 text-sm text-red-400">{errors.courses_interested_in[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.courses_interested_in[0]}</p>
               )}
             </div>
 
@@ -341,18 +338,18 @@ const ContactForm = () => {
                 value={formData.experience_years}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.experience_years ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.experience_years ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-blue-800 text-white">Years in education/training *</option>
-                <option value="0-1" className="bg-blue-800 text-white">0-1 years</option>
-                <option value="2-5" className="bg-blue-800 text-white">2-5 years</option>
-                <option value="6-10" className="bg-blue-800 text-white">6-10 years</option>
-                <option value="10+" className="bg-blue-800 text-white">10+ years</option>
+                <option value="" className="bg-gray-100 text-gray-500">Years in education/training *</option>
+                <option value="0-1" className="bg-white text-gray-900">0-1 years</option>
+                <option value="2-5" className="bg-white text-gray-900">2-5 years</option>
+                <option value="6-10" className="bg-white text-gray-900">6-10 years</option>
+                <option value="10+" className="bg-white text-gray-900">10+ years</option>
               </select>
               {errors.experience_years && (
-                <p className="mt-1 text-sm text-red-400">{errors.experience_years[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.experience_years[0]}</p>
               )}
             </div>
 
@@ -362,18 +359,18 @@ const ContactForm = () => {
                 value={formData.expected_tutors}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 ${
-                  errors.expected_tutors ? 'border-red-500' : 'border-white/30'
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                  errors.expected_tutors ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-blue-800 text-white">Expected tutors *</option>
-                <option value="1-2" className="bg-blue-800 text-white">1-2 tutors</option>
-                <option value="3-5" className="bg-blue-800 text-white">3-5 tutors</option>
-                <option value="6-10" className="bg-blue-800 text-white">6-10 tutors</option>
-                <option value="10+" className="bg-blue-800 text-white">10+ tutors</option>
+                <option value="" className="bg-gray-100 text-gray-500">Expected tutors *</option>
+                <option value="1-2" className="bg-white text-gray-900">1-2 tutors</option>
+                <option value="3-5" className="bg-white text-gray-900">3-5 tutors</option>
+                <option value="6-10" className="bg-white text-gray-900">6-10 tutors</option>
+                <option value="10+" className="bg-white text-gray-900">10+ tutors</option>
               </select>
               {errors.expected_tutors && (
-                <p className="mt-1 text-sm text-red-400">{errors.expected_tutors[0]}</p>
+                <p className="mt-1 text-sm text-red-500">{errors.expected_tutors[0]}</p>
               )}
             </div>
           </div>
@@ -387,14 +384,14 @@ const ContactForm = () => {
             rows={4}
             value={formData.partner_message}
             onChange={handleChange}
-            className={`w-full px-4 py-3 bg-white/20 border rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white/50 focus:bg-white/30 transition-all duration-300 resize-none ${
-              errors.partner_message ? 'border-red-500' : 'border-white/30'
+            className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 resize-none ${
+              errors.partner_message ? 'border-red-500' : 'border-gray-300'
             }`}
           ></textarea>
           {errors.partner_message && (
-            <p className="mt-1 text-sm text-red-400">{errors.partner_message[0]}</p>
+            <p className="mt-1 text-sm text-red-500">{errors.partner_message[0]}</p>
           )}
-          <div className="text-white/60 text-xs">
+          <div className="text-gray-600 text-xs">
             <p>💡 <strong>Optional:</strong> Share any specific requirements, goals, or questions you have</p>
           </div>
         </div>
@@ -404,7 +401,7 @@ const ContactForm = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-white text-blue-800 py-4 px-8 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px]"
+            className="bg-blue-600 text-white py-4 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px] shadow-lg hover:shadow-xl"
           >
             {isSubmitting ? (
               <>
@@ -422,27 +419,27 @@ const ContactForm = () => {
       </form>
 
       {/* Contact Fallback */}
-      <div className="mt-8 pt-6 border-t border-white/20">
-        <h4 className="text-white font-semibold mb-3 text-center">
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <h4 className="text-gray-800 font-semibold mb-3 text-center">
           Need Help?
         </h4>
         <div className="flex justify-center space-x-6">
           <a 
             href="mailto:rockyg.swinfy@gmail.com?subject=Knowledge Partner Application"
-            className="flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
           >
             <span>📧</span>
             rockyg.swinfy@gmail.com
           </a>
           <a 
             href="tel:+917981313783"
-            className="flex items-center gap-2 text-sm text-white/80 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
           >
             <span>📞</span>
             +91 7981313783
           </a>
         </div>
-        <div className="text-xs text-white/60 text-center mt-2">
+        <div className="text-xs text-gray-500 text-center mt-2">
           📞 <strong>We&apos;ll call you within 24-48 hours</strong> after form submission
         </div>
       </div>

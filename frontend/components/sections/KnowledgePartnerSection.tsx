@@ -11,12 +11,15 @@ import {
   BookOpen, 
   Shield,
   ArrowRight,
-  Star
+  Star,
+  X
 } from 'lucide-react';
+import ContactForm from '../shared/ContactForm';
 
 const KnowledgePartnerSection = () => {
   const [visibleSteps, setVisibleSteps] = useState<number[]>([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -187,7 +190,10 @@ const KnowledgePartnerSection = () => {
 
         {/* CTA Button */}
         <div className="text-center">
-          <button className="group inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+          <button 
+            onClick={() => setShowApplicationForm(true)}
+            className="group inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+          >
             Apply for Knowledge Partner
             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
@@ -196,6 +202,36 @@ const KnowledgePartnerSection = () => {
           </p>
         </div>
       </div>
+
+      {/* Application Form Modal */}
+      {showApplicationForm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-3xl font-bold mb-2">Apply as Knowledge Partner</h3>
+                  <p className="text-blue-100 text-lg">Join our network of educational institutions</p>
+                </div>
+                <button
+                  onClick={() => setShowApplicationForm(false)}
+                  className="p-3 hover:bg-white/20 rounded-full transition-all duration-300 hover:scale-110"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+              <div className="p-8">
+                <ContactForm />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fade-in-up {

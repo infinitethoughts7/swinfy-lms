@@ -222,11 +222,19 @@ class CourseProgress(models.Model):
     
     def update_progress(self):
         """Update overall course progress based on lesson completion."""
-        # Get lesson progress stats
-        lesson_progress = LessonProgress.objects.filter(enrollment=self.enrollment)
+        from .content import Lesson
         
-        self.total_lessons = lesson_progress.count()
-        self.lessons_completed = lesson_progress.filter(is_completed=True).count()
+        # Get all lessons in the course (not just those with progress records)
+        all_lessons = Lesson.objects.filter(module__course=self.enrollment.course)
+        self.total_lessons = all_lessons.count()
+        
+        # Get completed lessons
+        completed_lessons = LessonProgress.objects.filter(
+            enrollment=self.enrollment,
+            is_completed=True
+        ).values_list('lesson_id', flat=True)
+        
+        self.lessons_completed = len(completed_lessons)
         
         # Calculate overall progress
         if self.total_lessons > 0:

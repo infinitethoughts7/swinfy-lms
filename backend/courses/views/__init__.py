@@ -14,6 +14,7 @@ from .course_view import (
     ModuleLessonsView,
     CourseProgressView,
     LessonCompleteView,
+    LessonStartView,
     LessonMaterialsView,
     LessonProgressView,
     LessonMaterialUploadView,
@@ -35,6 +36,12 @@ from .course_view import (
     learner_distribution_analytics
 )
 from .training_partner_view import KnowledgePartnerListView, KnowledgePartnerDetailView, knowledge_partner_list
+from .attendance_views import (
+    AttendanceListView,
+    AttendanceMarkView,
+    instructor_courses_with_learners,
+    attendance_stats
+)
 
 __all__ = [
     'CourseListView',
@@ -52,6 +59,7 @@ __all__ = [
     'ModuleLessonsView',
     'CourseProgressView',
     'LessonCompleteView',
+    'LessonStartView',
     'LessonMaterialsView',
     'LessonProgressView',
     'LessonMaterialUploadView',
@@ -73,5 +81,9 @@ __all__ = [
     'knowledge_partner_list',
     'enrollment_status',
     'weekly_activity_analytics',
-    'learner_distribution_analytics'
+    'learner_distribution_analytics',
+    'AttendanceListView',
+    'AttendanceMarkView',
+    'instructor_courses_with_learners',
+    'attendance_stats'
 ]

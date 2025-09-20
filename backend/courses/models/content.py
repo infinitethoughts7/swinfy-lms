@@ -35,8 +35,9 @@ def detect_video_duration(video_path):
         if result.returncode == 0:
             metadata = json.loads(result.stdout)
             duration_seconds = float(metadata['format']['duration'])
-            duration_minutes = int(duration_seconds / 60)
-            logger.info(f"Video duration detected via ffprobe: {duration_minutes} minutes")
+            # Round up to at least 1 minute for videos shorter than 1 minute
+            duration_minutes = max(1, round(duration_seconds / 60))
+            logger.info(f"Video duration detected via ffprobe: {duration_minutes} minutes ({duration_seconds}s)")
             return duration_minutes
     except (subprocess.SubprocessError, FileNotFoundError, KeyError, ValueError, subprocess.TimeoutExpired) as e:
         logger.debug(f"ffprobe failed: {e}")
@@ -50,8 +51,9 @@ def detect_video_duration(video_path):
             frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
             if fps > 0 and frame_count > 0:
                 duration_seconds = frame_count / fps
-                duration_minutes = int(duration_seconds / 60)
-                logger.info(f"Video duration detected via OpenCV: {duration_minutes} minutes")
+                # Round up to at least 1 minute for videos shorter than 1 minute
+                duration_minutes = max(1, round(duration_seconds / 60))
+                logger.info(f"Video duration detected via OpenCV: {duration_minutes} minutes ({duration_seconds}s)")
             cap.release()
             return duration_minutes
     except ImportError:

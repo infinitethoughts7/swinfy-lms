@@ -9,7 +9,6 @@ import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@
 import { 
   Play, 
   CheckCircle, 
-  User, 
   Download,
   ChevronRight,
   ChevronDown,
@@ -43,17 +42,6 @@ interface Course {
     name: string;
     type: string;
     logo?: string;
-  };
-  tutor: {
-    id: string;
-    full_name: string;
-    instructor_profile?: {
-      bio: string;
-      title: string;
-      years_of_experience: number;
-      specializations: string;
-      technologies: string;
-    };
   };
   modules: Module[];
   created_at: string;
@@ -236,6 +224,19 @@ export default function CourseLearningPage() {
       const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
       setEnrollment(currentEnrollment || null);
       
+      // Fetch course progress if enrollment exists
+      if (currentEnrollment) {
+        try {
+          const progressResponse = await learnerDashboardApi.getCourseProgress(courseSlug);
+          if (progressResponse) {
+            // Update enrollment with fresh progress data
+            setEnrollment(prev => prev ? { ...prev, progress_percentage: progressResponse.overall_progress } : null);
+          }
+        } catch (progressErr) {
+          console.warn('Could not fetch course progress:', progressErr);
+        }
+      }
+      
       // Expand first module by default
       if (courseResponse?.modules?.length > 0) {
         setExpandedModules(new Set([courseResponse.modules[0].id]));
@@ -285,22 +286,6 @@ export default function CourseLearningPage() {
     }
   }, [courseSlug, fetchCourseData]);
 
-  const handleLessonClick = async (lesson: Lesson) => {
-    setSelectedLesson(lesson);
-    
-    // Fetch lesson materials
-    try {
-      const response = await authenticatedFetch(
-        `/api/courses/lessons/${lesson.id}/materials/`
-      );
-      if (response.ok) {
-        const materials = await response.json();
-        setLessonMaterials(materials);
-      }
-    } catch (error) {
-      console.error('Failed to fetch lesson materials:', error);
-    }
-  };
 
   const handleCourseContentLessonClick = async (lesson: CourseContent['modules'][0]['lessons'][0]) => {
     // Convert course content lesson to Lesson format for compatibility
@@ -434,12 +419,6 @@ export default function CourseLearningPage() {
     }
   };
 
-  const calculateModuleProgress = (module: Module) => {
-    if (!module.lessons) return 0;
-    const completedLessons = module.lessons.filter(lesson => lesson.is_completed).length;
-    const totalLessons = module.lessons.length;
-    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-  };
 
   const calculateCourseContentModuleProgress = (module: CourseContent['modules'][0]) => {
     if (!module.lessons) return 0;
@@ -449,9 +428,14 @@ export default function CourseLearningPage() {
   };
 
   const calculateTotalProgress = () => {
-    if (!course || !course.modules) return 0;
-    const totalLessons = course.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0);
-    const completedLessons = course.modules.reduce((total, module) => 
+    // Use enrollment progress percentage if available, otherwise calculate from modules
+    if (enrollment && enrollment.progress_percentage !== undefined) {
+      return Math.round(enrollment.progress_percentage);
+    }
+    
+    if (!courseContent || !courseContent.modules) return 0;
+    const totalLessons = courseContent.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0);
+    const completedLessons = courseContent.modules.reduce((total, module) => 
       total + (module.lessons?.filter(lesson => lesson.is_completed).length || 0), 0
     );
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -709,7 +693,23 @@ export default function CourseLearningPage() {
                                             Preview
                                           </span>
                                         )}
-                                        {lesson.lesson_type === 'video' && lesson.video_file && (
+                                        
+                                        {/* Show Pay button only for non-enrolled students */}
+                                        {!enrollment && !lesson.is_preview && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              // Handle payment logic here
+                                              console.log('Pay for lesson:', lesson.title);
+                                            }}
+                                            className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
+                                          >
+                                            <span>Pay to Access</span>
+                                          </button>
+                                        )}
+                                        
+                                        {/* Show Watch button for enrolled students or preview lessons */}
+                                        {enrollment && lesson.lesson_type === 'video' && lesson.video_file && (
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -722,6 +722,22 @@ export default function CourseLearningPage() {
                                             <span>Watch</span>
                                           </button>
                                         )}
+                                        
+                                        {/* Show Watch button for preview lessons (even if not enrolled) */}
+                                        {!enrollment && lesson.is_preview && lesson.lesson_type === 'video' && lesson.video_file && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleCourseContentLessonClick(lesson);
+                                              setShowVideoPlayer(true);
+                                            }}
+                                            className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                                          >
+                                            <Play className="h-4 w-4" />
+                                            <span>Watch</span>
+                                          </button>
+                                        )}
+                                        
                                         <span className="text-sm text-gray-500">
                                           {lesson.duration_formatted || 'Duration not set'}
                                         </span>
@@ -766,12 +782,12 @@ export default function CourseLearningPage() {
                 
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{course.modules?.length || 0}</div>
+                    <div className="text-2xl font-bold text-gray-900">{courseContent?.modules?.length || 0}</div>
                     <div className="text-sm text-gray-600">Modules</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900">
-                      {course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0}
+                      {courseContent?.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0}
                     </div>
                     <div className="text-sm text-gray-600">Lessons</div>
                   </div>
@@ -779,29 +795,6 @@ export default function CourseLearningPage() {
               </div>
             </div>
 
-            {/* Instructor Info */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Instructor</h3>
-              <div className="flex items-start space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{course.tutor.full_name}</h4>
-                  {course.tutor.instructor_profile && (
-                    <p className="text-sm text-gray-600">{course.tutor.instructor_profile.title}</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">
-                    {course.training_partner.name}
-                  </p>
-                  {course.tutor.instructor_profile?.bio && (
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-3">
-                      {course.tutor.instructor_profile.bio}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Course Resources */}
             {courseResources.length > 0 && (

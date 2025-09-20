@@ -367,7 +367,18 @@ class CourseProgressView(generics.RetrieveAPIView):
         course_slug = self.kwargs['slug']
         course = get_object_or_404(Course, slug=course_slug, is_published=True)
         enrollment = get_object_or_404(Enrollment, course=course, learner=self.request.user)
-        return get_object_or_404(CourseProgress, enrollment=enrollment)
+        
+        # Create CourseProgress if it doesn't exist
+        course_progress, created = CourseProgress.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'overall_progress': 0.0}
+        )
+        
+        # Update progress if it was just created
+        if created:
+            course_progress.update_progress()
+        
+        return course_progress
 
 
 class LessonCompleteView(generics.UpdateAPIView):
@@ -379,7 +390,15 @@ class LessonCompleteView(generics.UpdateAPIView):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
-        return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
+        
+        # Create LessonProgress if it doesn't exist
+        lesson_progress, created = LessonProgress.objects.get_or_create(
+            lesson=lesson,
+            enrollment=enrollment,
+            defaults={'is_completed': False, 'is_started': False}
+        )
+        
+        return lesson_progress
     
     def perform_update(self, serializer):
         serializer.save(is_completed=True, completed_at=timezone.now())
@@ -420,7 +439,53 @@ class LessonProgressView(generics.RetrieveUpdateAPIView):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
-        return get_object_or_404(LessonProgress, lesson=lesson, enrollment=enrollment)
+        
+        # Create LessonProgress if it doesn't exist
+        lesson_progress, created = LessonProgress.objects.get_or_create(
+            lesson=lesson,
+            enrollment=enrollment,
+            defaults={'is_completed': False, 'is_started': False}
+        )
+        
+        return lesson_progress
+
+
+class LessonStartView(generics.UpdateAPIView):
+    """Mark a lesson as started for a learner."""
+    serializer_class = LessonProgressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
+        
+        # Create LessonProgress if it doesn't exist
+        lesson_progress, created = LessonProgress.objects.get_or_create(
+            lesson=lesson,
+            enrollment=enrollment,
+            defaults={'is_completed': False, 'is_started': False}
+        )
+        
+        return lesson_progress
+    
+    def perform_update(self, serializer):
+        serializer.save(is_started=True, started_at=timezone.now(), last_accessed=timezone.now())
+        
+        # Update course progress
+        enrollment = self.get_object().enrollment
+        self._update_course_progress(enrollment)
+    
+    def _update_course_progress(self, enrollment):
+        """Update overall course progress."""
+        # Get course progress or create if doesn't exist
+        course_progress, created = CourseProgress.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'overall_progress': 0.0}
+        )
+        
+        # Update progress using the model method
+        course_progress.update_progress()
 
 
 # ==================== CONTENT MANAGEMENT ENDPOINTS ====================

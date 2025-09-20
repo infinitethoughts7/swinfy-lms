@@ -71,6 +71,7 @@ urlpatterns = [
     
     # Lesson Endpoints
     path('lessons/<uuid:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
+    path('lessons/<uuid:lesson_id>/start/', views.LessonStartView.as_view(), name='lesson-start'),
     path('lessons/<uuid:lesson_id>/materials/', views.LessonMaterialsView.as_view(), name='lesson-materials'),
     path('lessons/<uuid:lesson_id>/progress/', views.LessonProgressView.as_view(), name='lesson-progress'),
     path('lessons/<uuid:lesson_id>/materials/upload/', views.LessonMaterialUploadView.as_view(), name='lesson-material-upload'),
@@ -87,6 +88,12 @@ urlpatterns = [
     # Analytics Endpoints
     path('analytics/learner-progress/', views.LearnerProgressAnalyticsView.as_view(), name='learner-progress-analytics'),
     path('analytics/course-performance/', views.CoursePerformanceAnalyticsView.as_view(), name='course-performance-analytics'),
+    
+    # Attendance Endpoints
+    path('attendance/', views.AttendanceListView.as_view(), name='attendance-list'),
+    path('attendance/mark/', views.AttendanceMarkView.as_view(), name='attendance-mark'),
+    path('attendance/instructor-courses/', views.instructor_courses_with_learners, name='instructor-courses-attendance'),
+    path('attendance/stats/', views.attendance_stats, name='attendance-stats'),
     
     # Knowledge partner endpoints
     path('knowledge-partners/', views.KnowledgePartnerListView.as_view(), name='knowledge-partner-list'),

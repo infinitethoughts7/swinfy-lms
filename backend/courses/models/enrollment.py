@@ -264,6 +264,10 @@ class Enrollment(models.Model):
         if hasattr(self, 'payment') and self.payment and self.payment.status == 'paid':
             return True
         
+        # For completed courses, give lifetime access regardless of payment status
+        if self.status == 'completed':
+            return True
+        
         # For non-paid enrollments, check if active
         return self.is_active
     
@@ -346,11 +350,11 @@ class Enrollment(models.Model):
     
     def update_progress(self):
         """Update overall course progress."""
-        from .progress import LessonProgress
+        from .progress import LessonProgress, CourseProgress
+        from .content import Lesson
         
-        total_lessons = self.course.modules.aggregate(
-            total=models.Count('lessons')
-        )['total'] or 0
+        # Get all lessons in the course
+        total_lessons = Lesson.objects.filter(module__course=self.course).count()
         
         completed_lessons = LessonProgress.objects.filter(
             enrollment=self,
@@ -366,7 +370,20 @@ class Enrollment(models.Model):
             if self.status == 'approved' and completed_lessons > 0:
                 self.status = 'active'
             
-            self.save(update_fields=['progress_percentage', 'status'])
+            # Update status to completed if all lessons are done
+            if completed_lessons == total_lessons and self.status != 'completed':
+                self.status = 'completed'
+                self.completion_date = timezone.now()
+            
+            self.save(update_fields=['progress_percentage', 'status', 'completion_date'])
+        
+        # Also update CourseProgress if it exists
+        try:
+            course_progress = self.course_progress
+            course_progress.update_progress()
+        except CourseProgress.DoesNotExist:
+            # Create CourseProgress if it doesn't exist
+            CourseProgress.objects.create(enrollment=self)
     
     @classmethod
     def create_admin_enrollment(cls, learner, course, admin_user, auto_approve=True):
