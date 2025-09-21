@@ -18,20 +18,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async redirects() {
-    return [
-      {
-        source: '/dashboard/knowledge_partner',
-        destination: '/dashboard/kp',
-        permanent: false,
-      },
-      {
-        source: '/dashboard/knowledge_partner/:path*',
-        destination: '/dashboard/kp/:path*',
-        permanent: false,
-      },
-    ];
-  },
+async redirects() {
+  return [
+    {
+      source: '/dashboard/knowledge_partner_admin',
+      destination: '/dashboard/kp',
+      permanent: true, // Changed to permanent
+    },
+    {
+      source: '/dashboard/knowledge_partner_admin/:path*',
+      destination: '/dashboard/kp/:path*',  
+      permanent: true, // Changed to permanent
+    },
+  ];
+},
   // Ensure proper handling of dynamic routes in production
   trailingSlash: false,
   // Enable static optimization
