@@ -1,5 +1,35 @@
 # Production Backend Fixes Needed
 
+## 🚨 CRITICAL: Fix User Role Issue First
+
+**The main issue**: Your production database has users with role `knowledge_partner_admin` but the code expects `knowledge_partner`. This is causing the 403 Forbidden errors.
+
+### Fix Option 1: Run Management Command (Recommended)
+
+SSH into your DigitalOcean backend and run:
+
+```bash
+# Check what would be changed
+python manage.py fix_kp_admin_roles --dry-run
+
+# Apply the fix
+python manage.py fix_kp_admin_roles
+```
+
+### Fix Option 2: Run Migration
+
+```bash
+python manage.py migrate users 0022_fix_knowledge_partner_admin_role
+```
+
+### Fix Option 3: Manual Database Update (if above doesn't work)
+
+```sql
+UPDATE users_user 
+SET role = 'knowledge_partner' 
+WHERE role = 'knowledge_partner_admin';
+```
+
 ## 1. CORS Settings Update
 
 Add your Vercel domain to CORS settings in `backend/lms_backend/settings.py`:
