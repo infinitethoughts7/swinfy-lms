@@ -161,7 +161,7 @@ const HeroSection = () => {
               <div className="relative">
                 {/* Main Banner Image */}
                 <Image 
-                  src="/assets/images/banner.png" 
+                  src="/assets/banner.png" 
                   alt="LMS Platform Preview"
                   width={600}
                   height={400}
