@@ -14,7 +14,7 @@ const featuredCourses = [
     level: "Beginner to Advanced",
     rating: 4.8,
     totalReviews: 1250,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "python-programming-bootcamp"
   },
   {
@@ -25,7 +25,7 @@ const featuredCourses = [
     level: "Intermediate",
     rating: 4.9,
     totalReviews: 890,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "data-science-machine-learning"
   },
   {
@@ -36,7 +36,7 @@ const featuredCourses = [
     level: "Beginner",
     rating: 4.7,
     totalReviews: 2100,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "full-stack-web-development"
   },
   {
@@ -47,7 +47,7 @@ const featuredCourses = [
     level: "All Levels",
     rating: 4.6,
     totalReviews: 750,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "digital-marketing-mastery"
   },
   {
@@ -58,7 +58,7 @@ const featuredCourses = [
     level: "Intermediate",
     rating: 4.8,
     totalReviews: 650,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "cloud-computing-aws"
   },
   {
@@ -69,7 +69,7 @@ const featuredCourses = [
     level: "Beginner",
     rating: 4.7,
     totalReviews: 980,
-    thumbnail: "/assets/images/default.svg",
+    thumbnail: "/assets/students/default.svg",
     slug: "ui-ux-design-fundamentals"
   }
 ];
