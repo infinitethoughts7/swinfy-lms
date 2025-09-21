@@ -6,42 +6,78 @@ from django.db import migrations
 def fix_instructor_kp_references(apps, schema_editor):
     """
     Fix KPInstructorProfile records that have invalid knowledge_partner references.
-    Assign them to the first available KPProfile or create a default one.
+    This handles both NULL values and references to non-existent KPProfile records.
+    Uses raw SQL to avoid constraint violations during the fix.
     """
-    KPInstructorProfile = apps.get_model('users', 'KPInstructorProfile')
-    KPProfile = apps.get_model('users', 'KPProfile')
+    from django.db import connection
     
-    # Get all instructors with invalid knowledge_partner references
-    invalid_instructors = KPInstructorProfile.objects.filter(knowledge_partner__isnull=True)
-    
-    if invalid_instructors.exists():
-        # Get the first available KPProfile
-        first_kp = KPProfile.objects.first()
+    with connection.cursor() as cursor:
+        # First, get all valid KP IDs
+        cursor.execute("SELECT id FROM users_kpprofile")
+        valid_kp_ids = {row[0] for row in cursor.fetchall()}
         
-        if first_kp:
-            # Assign all invalid instructors to the first KP
-            invalid_instructors.update(knowledge_partner=first_kp)
-            print(f"Fixed {invalid_instructors.count()} instructor profiles by assigning them to KP: {first_kp.name}")
+        if not valid_kp_ids:
+            # No KP exists, create a default one
+            cursor.execute("""
+                INSERT INTO users_kpprofile 
+                (id, name, type, description, location, kp_admin_name, kp_admin_email, 
+                 is_active, is_verified, created_at, updated_at)
+                VALUES 
+                (gen_random_uuid(), 'Default Knowledge Partner', 'other', 
+                 'Default organization for orphaned instructors', 'Unknown', 
+                 'System Admin', 'admin@system.com', true, false, NOW(), NOW())
+            """)
+            
+            # Get the newly created KP ID
+            cursor.execute("SELECT id FROM users_kpprofile WHERE name = 'Default Knowledge Partner'")
+            default_kp_id = cursor.fetchone()[0]
+            print(f"Created default KP with ID: {default_kp_id}")
         else:
-            # If no KP exists, create a default one
-            default_kp = KPProfile.objects.create(
-                name="Default Knowledge Partner",
-                type="other",
-                description="Default organization for orphaned instructors",
-                location="Unknown",
-                kp_admin_name="System Admin",
-                kp_admin_email="admin@system.com"
-            )
-            invalid_instructors.update(knowledge_partner=default_kp)
-            print(f"Created default KP and assigned {invalid_instructors.count()} instructor profiles to it")
+            # Use the first available KP
+            default_kp_id = list(valid_kp_ids)[0]
+            print(f"Using existing KP with ID: {default_kp_id}")
+        
+        # Find and fix all instructors with invalid knowledge_partner references
+        cursor.execute("""
+            SELECT id, knowledge_partner_id 
+            FROM users_kpinstructorprofile 
+            WHERE knowledge_partner_id IS NULL 
+               OR knowledge_partner_id NOT IN %s
+        """, [tuple(valid_kp_ids)])
+        
+        invalid_instructors = cursor.fetchall()
+        
+        if invalid_instructors:
+            print(f"Found {len(invalid_instructors)} instructor profiles with invalid knowledge_partner references")
+            
+            # Update all invalid instructors to use the default KP
+            instructor_ids = [instructor[0] for instructor in invalid_instructors]
+            cursor.execute("""
+                UPDATE users_kpinstructorprofile 
+                SET knowledge_partner_id = %s 
+                WHERE id = ANY(%s)
+            """, [default_kp_id, instructor_ids])
+            
+            print(f"Fixed {len(invalid_instructors)} instructor profiles")
+        else:
+            print("No invalid instructor profiles found")
 
 
 def reverse_fix_instructor_kp_references(apps, schema_editor):
     """
     Reverse operation - set knowledge_partner to null for instructors
+    Note: This will fail if the field is NOT NULL, but it's here for completeness
     """
-    KPInstructorProfile = apps.get_model('users', 'KPInstructorProfile')
-    KPInstructorProfile.objects.update(knowledge_partner=None)
+    from django.db import connection
+    
+    with connection.cursor() as cursor:
+        # This will only work if the field allows NULL values
+        try:
+            cursor.execute("UPDATE users_kpinstructorprofile SET knowledge_partner_id = NULL")
+            print("Reversed instructor KP references (set to NULL)")
+        except Exception as e:
+            print(f"Could not reverse migration: {e}")
+            print("This is expected if knowledge_partner_id is NOT NULL")
 
 
 class Migration(migrations.Migration):
