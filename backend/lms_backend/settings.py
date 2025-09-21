@@ -131,9 +131,9 @@ if USE_S3:
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.digitaloceanspaces.com'
     
-    # Storage backends
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+    # Storage backends - CORRECTED PATHS
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
+    STATICFILES_STORAGE = 'storages.backends.s3.S3StaticStorage'
     
     # Override URLs
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
