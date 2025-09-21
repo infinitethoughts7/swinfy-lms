@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import ProductionDebugPanel from '@/components/debug/ProductionDebugPanel';
 import { getCurrentUser, isAuthenticated } from '@/lib/auth';
 import { productionDebug } from '@/lib/production-debug';
 
@@ -146,6 +147,9 @@ export default function DashboardLayout({
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
+        
+        {/* Production Debug Panel */}
+        <ProductionDebugPanel />
       </div>
     </ErrorBoundary>
   );

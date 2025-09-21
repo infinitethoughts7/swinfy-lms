@@ -9,13 +9,18 @@ export const productionDebug = {
     const accessToken = localStorage.getItem('access_token');
     const refreshToken = localStorage.getItem('refresh_token');
     
+    console.log('LocalStorage access_token:', accessToken ? `${accessToken.substring(0, 50)}...` : 'NULL');
+    console.log('LocalStorage refresh_token:', refreshToken ? `${refreshToken.substring(0, 50)}...` : 'NULL');
     console.log('Access token exists:', !!accessToken);
     console.log('Refresh token exists:', !!refreshToken);
+    console.log('Access token length:', accessToken ? accessToken.length : 0);
+    console.log('Refresh token length:', refreshToken ? refreshToken.length : 0);
     
     if (accessToken) {
       try {
         // Decode JWT token to check expiry
         const tokenParts = accessToken.split('.');
+        console.log('Token parts count:', tokenParts.length);
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
           const now = Math.floor(Date.now() / 1000);
@@ -25,10 +30,17 @@ export const productionDebug = {
           console.log('Token is expired:', payload.exp < now);
           console.log('User ID from token:', payload.user_id);
           console.log('User role from token:', payload.role);
+          console.log('Token issuer:', payload.iss);
+          console.log('Token audience:', payload.aud);
+        } else {
+          console.error('Invalid JWT format - expected 3 parts, got:', tokenParts.length);
         }
       } catch (error) {
         console.error('Error decoding token:', error);
+        console.error('Raw token (first 100 chars):', accessToken.substring(0, 100));
       }
+    } else {
+      console.log('❌ NO ACCESS TOKEN FOUND');
     }
     console.log('==================');
   },
@@ -96,8 +108,22 @@ export const productionDebug = {
 };
 
 // Auto-debug on page load in production
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+if (typeof window !== 'undefined') {
+  console.log('🔍 PRODUCTION DEBUG INITIALIZATION');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('Current URL:', window.location.href);
+  
+  // Run debug immediately and on load
+  productionDebug.debugAll();
+  
   window.addEventListener('load', () => {
+    console.log('🔍 PRODUCTION DEBUG ON LOAD');
+    productionDebug.debugAll();
+  });
+  
+  // Also debug when localStorage changes
+  window.addEventListener('storage', () => {
+    console.log('🔍 PRODUCTION DEBUG ON STORAGE CHANGE');
     productionDebug.debugAll();
   });
 }
