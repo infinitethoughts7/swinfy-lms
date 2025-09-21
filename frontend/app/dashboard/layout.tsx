@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { getCurrentUser, isAuthenticated } from '@/lib/auth';
 
 export default function DashboardLayout({
@@ -88,55 +89,57 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Desktop Sidebar - Always visible on lg+ */}
-      <div className={`hidden lg:block fixed left-0 top-0 z-40 transition-all duration-300 ${
-        sidebarCollapsed ? 'w-16' : 'w-64'
-      }`}>
-        <Sidebar
-          userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
-          isCollapsed={sidebarCollapsed}
-          onToggle={toggleSidebar}
-        />
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Desktop Sidebar - Always visible on lg+ */}
+        <div className={`hidden lg:block fixed left-0 top-0 z-40 transition-all duration-300 ${
+          sidebarCollapsed ? 'w-16' : 'w-64'
+        }`}>
+          <Sidebar
+            userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
+            isCollapsed={sidebarCollapsed}
+            onToggle={toggleSidebar}
+          />
+        </div>
+
+        {/* Mobile Sidebar - Only visible when mobileMenuOpen is true */}
+        <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <Sidebar
+            userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
+            isCollapsed={false} // Never collapsed on mobile
+            onToggle={toggleMobileMenu}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}>
+          {/* Header */}
+          <Header
+            user={user}
+            onSidebarToggle={toggleMobileMenu} // This will handle mobile menu toggle
+            showSidebarToggle={true}
+          />
+
+          {/* Main Content Area */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-3 sm:p-4 lg:p-6">
+              {children}
+            </div>
+          </main>
+        </div>
+
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
       </div>
-
-      {/* Mobile Sidebar - Only visible when mobileMenuOpen is true */}
-      <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <Sidebar
-          userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
-          isCollapsed={false} // Never collapsed on mobile
-          onToggle={toggleMobileMenu}
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-      }`}>
-        {/* Header */}
-        <Header
-          user={user}
-          onSidebarToggle={toggleMobileMenu} // This will handle mobile menu toggle
-          showSidebarToggle={true}
-        />
-
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-3 sm:p-4 lg:p-6">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-    </div>
+    </ErrorBoundary>
   );
 }

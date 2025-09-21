@@ -18,6 +18,24 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/knowledge_partner',
+        destination: '/dashboard/kp',
+        permanent: false,
+      },
+      {
+        source: '/dashboard/knowledge_partner/:path*',
+        destination: '/dashboard/kp/:path*',
+        permanent: false,
+      },
+    ];
+  },
+  // Ensure proper handling of dynamic routes in production
+  trailingSlash: false,
+  // Enable static optimization
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
