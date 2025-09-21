@@ -1,5 +1,6 @@
 // API service for backend communication
 import { getErrorMessage, parseErrorResponse, enhancedFetch } from './error-utils';
+import { productionDebug } from './production-debug';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -159,6 +160,13 @@ const refreshAccessToken = async (): Promise<string | null> => {
 const authenticatedFetchWithRefresh = async (url: string, options: RequestInit = {}) => {
   const token = getAuthToken();
   
+  // Debug logs for production
+  console.log('=== AUTHENTICATED FETCH DEBUG ===');
+  console.log('Request URL:', `${API_BASE_URL}${url}`);
+  console.log('Token available:', !!token);
+  console.log('Request method:', options.method || 'GET');
+  console.log('Request body:', options.body);
+  
   const makeRequest = async (authToken: string | null) => {
     const config: RequestInit = {
       ...options,
@@ -169,21 +177,36 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
       },
     };
     
+    // Debug the request configuration
+    productionDebug.debugApiRequest(`${API_BASE_URL}${url}`, config, authToken);
+    
     return fetch(`${API_BASE_URL}${url}`, config);
   };
   
   // First attempt with current token
+  console.log('Making first request with token:', token ? `${token.substring(0, 20)}...` : 'No token');
   let response = await makeRequest(token);
+  
+  // Debug the response
+  productionDebug.debugApiResponse(`${API_BASE_URL}${url}`, response.clone());
+  console.log('First response status:', response.status);
   
   // If unauthorized and we have a refresh token, try to refresh
   if (response.status === 401 && getRefreshToken()) {
+    console.log('Got 401, attempting token refresh...');
     const newToken = await refreshAccessToken();
     if (newToken) {
+      console.log('Token refreshed successfully, retrying request...');
       // Retry with new token
       response = await makeRequest(newToken);
+      console.log('Retry response status:', response.status);
+      productionDebug.debugApiResponse(`${API_BASE_URL}${url}`, response.clone());
+    } else {
+      console.log('Token refresh failed');
     }
   }
   
+  console.log('=== AUTHENTICATED FETCH COMPLETED ===');
   return response;
 };
 
@@ -884,17 +907,41 @@ export const userApi = {
 
     // Create new instructor
     create: async (instructorData: InstructorCreateData) => {
+      console.log('=== FRONTEND DEBUG: Instructor Creation Request ===');
+      console.log('Form data:', instructorData);
+      
+      // Add confirm_password if not present
+      const requestPayload = {
+        ...instructorData,
+        confirm_password: instructorData.confirm_password || instructorData.password,
+      };
+      
+      console.log('Request payload:', requestPayload);
+      console.log('Request URL:', `${API_BASE_URL}/api/auth/kp/instructors/`);
+      console.log('Expected backend fields: email, full_name, password, confirm_password');
+      
+      // Debug tokens before request
+      productionDebug.debugTokens();
+      
+      console.log('===============================================');
+      
       const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/`, {
         method: 'POST',
-        body: JSON.stringify(instructorData),
+        body: JSON.stringify(requestPayload),
       });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create instructor');
+        console.log('Error data:', errorData);
+        throw new Error(errorData.detail || errorData.message || 'Failed to create instructor');
       }
       
-      return response.json();
+      const responseData = await response.json();
+      console.log('Success response:', responseData);
+      return responseData;
     },
 
     // Get instructor details
