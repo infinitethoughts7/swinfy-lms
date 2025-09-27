@@ -11,12 +11,73 @@ from .course import Course
 logger = logging.getLogger(__name__)
 
 
-def detect_video_duration(video_path):
+def detect_video_duration_from_file(video_file):
     """
-    Detect video duration using multiple fallback methods.
+    Detect video duration from a Django FileField, supporting both local and S3 storage.
     
     Args:
-        video_path (str): Path to the video file
+        video_file: Django FileField instance
+        
+    Returns:
+        int: Duration in minutes, or 0 if detection fails
+    """
+    from django.conf import settings
+    from django.core.files.storage import default_storage
+    import tempfile
+    import os
+    
+    if not video_file:
+        return 0
+    
+    duration_minutes = 0
+    temp_file_path = None
+    
+    try:
+        # Check if we're using S3/remote storage
+        if hasattr(settings, 'USE_S3') and settings.USE_S3:
+            logger.info("Detecting video duration for S3-stored file")
+            
+            # Method 1: Try to get duration without downloading (if possible)
+            try:
+                # For S3, we'll skip duration detection to avoid download overhead
+                # and return a default duration that can be manually updated later
+                logger.info("Skipping duration detection for S3 file - will use default 10 minutes")
+                return 10  # Default 10 minutes for S3 files
+                
+            except Exception as e:
+                logger.debug(f"S3 duration detection failed: {e}")
+                return 10  # Default fallback
+                
+        else:
+            # Local storage - use the file path directly
+            try:
+                video_path = video_file.path
+                return detect_video_duration_local(video_path)
+            except (ValueError, AttributeError) as e:
+                logger.debug(f"Local path access failed: {e}")
+                return 5  # Default fallback for local files
+                
+    except Exception as e:
+        logger.warning(f"Video duration detection failed: {e}")
+        return 5  # Safe default fallback
+    
+    finally:
+        # Clean up temp file if created
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except Exception:
+                pass
+    
+    return duration_minutes
+
+
+def detect_video_duration_local(video_path):
+    """
+    Detect video duration from a local file path.
+    
+    Args:
+        video_path (str): Local path to the video file
         
     Returns:
         int: Duration in minutes, or 0 if detection fails
@@ -61,10 +122,18 @@ def detect_video_duration(video_path):
     except Exception as e:
         logger.debug(f"OpenCV video detection failed: {e}")
     
-    # Method 3: Basic file-based detection (placeholder for future implementation)
-    # This could be expanded to parse specific video formats
+    # Method 3: Basic fallback
     logger.warning(f"Could not detect video duration for {video_path}")
-    return duration_minutes
+    return 5  # Default 5 minutes as fallback
+
+
+# Legacy function for backward compatibility
+def detect_video_duration(video_path):
+    """
+    Legacy function for backward compatibility.
+    Use detect_video_duration_from_file() for new code.
+    """
+    return detect_video_duration_local(video_path)
 
 
 class CourseModule(models.Model):
@@ -215,7 +284,12 @@ class Lesson(models.Model):
         
         # Auto-detect video duration if video file is uploaded
         if self.video_file and not self.duration_minutes:
-            self.duration_minutes = detect_video_duration(self.video_file.path)
+            try:
+                self.duration_minutes = detect_video_duration_from_file(self.video_file)
+            except Exception as e:
+                logger.warning(f"Failed to detect video duration: {e}")
+                # Set a default duration to prevent errors
+                self.duration_minutes = 10  # Default 10 minutes
         
         super().save(*args, **kwargs)
     

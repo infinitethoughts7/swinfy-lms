@@ -155,5 +155,6 @@ dmypy.json
 # Testing and migration commands (optional deployment)
 backend/courses/management/commands/test_s3_upload.py
 backend/courses/management/commands/migrate_files_to_s3.py
+backend/courses/management/commands/update_video_durations.py
 
 .env.backup
