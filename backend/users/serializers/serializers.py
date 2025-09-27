@@ -144,11 +144,12 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class LearnerProfileSerializer(serializers.ModelSerializer):
     """Serializer for LearnerProfile with optional fields for completion flow."""
+    profile_picture_url = serializers.SerializerMethodField()
     
     class Meta:
         model = LearnerProfile
         fields = [
-            'bio', 'profile_picture', 'phone_number', 'learning_goals', 'interests'
+            'bio', 'profile_picture', 'profile_picture_url', 'phone_number', 'learning_goals', 'interests'
         ]
         extra_kwargs = {
             'bio': {'required': False},
@@ -157,15 +158,25 @@ class LearnerProfileSerializer(serializers.ModelSerializer):
             'learning_goals': {'required': False},
             'interests': {'required': False},
         }
+    
+    def get_profile_picture_url(self, obj):
+        """Get the direct profile picture URL."""
+        if not obj.profile_picture:
+            return None
+        try:
+            return obj.profile_picture.url
+        except ValueError:
+            return None
 
 
 class InstructorProfileSerializer(serializers.ModelSerializer):
     """Serializer for KPInstructorProfile with optional fields for completion flow."""
+    profile_picture_url = serializers.SerializerMethodField()
     
     class Meta:
         model = KPInstructorProfile
         fields = [
-            'bio', 'profile_picture', 'phone_number',
+            'bio', 'profile_picture', 'profile_picture_url', 'phone_number',
             'title', 'years_of_experience', 'hourly_rate',
             'highest_education', 'certifications',
             'specializations', 'technologies', 'languages_spoken',
@@ -187,6 +198,15 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
             'linkedin_url': {'required': False},
             'is_available': {'required': False},
         }
+    
+    def get_profile_picture_url(self, obj):
+        """Get the direct profile picture URL."""
+        if not obj.profile_picture:
+            return None
+        try:
+            return obj.profile_picture.url
+        except ValueError:
+            return None
 
 
 # AdminProfileSerializer removed - KPAProfile model not available in current models.py

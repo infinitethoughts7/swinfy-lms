@@ -156,5 +156,9 @@ dmypy.json
 backend/courses/management/commands/test_s3_upload.py
 backend/courses/management/commands/migrate_files_to_s3.py
 backend/courses/management/commands/update_video_durations.py
+backend/test_s3_connection.py
+backend/test_image_uploads.py
+backend/test_image_url_serializers.py
+backend/test_api_image_urls.py
 
 .env.backup

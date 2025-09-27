@@ -160,17 +160,18 @@ class LessonMaterialSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
     file_size_mb = serializers.SerializerMethodField()
     file_size_formatted = serializers.CharField(read_only=True)
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = LessonMaterial
         fields = [
             'id', 'title', 'description', 'lesson', 'course',
-            'material_type', 'file', 'file_size', 'file_size_mb', 'file_size_formatted',
+            'material_type', 'file', 'file_url', 'file_size', 'file_size_mb', 'file_size_formatted',
             'download_count', 'is_required', 'order', 'is_downloadable',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'course', 'file_size', 'file_size_mb', 'file_size_formatted',
+            'id', 'course', 'file_size', 'file_size_mb', 'file_size_formatted', 'file_url',
             'download_count', 'created_at', 'updated_at'
         ]
     
@@ -183,6 +184,15 @@ class LessonMaterialSerializer(serializers.ModelSerializer):
         if obj.file_size:
             return round(obj.file_size / (1024 * 1024), 2)
         return 0
+    
+    def get_file_url(self, obj):
+        """Get the direct file URL."""
+        if not obj.file:
+            return None
+        try:
+            return obj.file.url
+        except ValueError:
+            return None
 
 
 class LessonMaterialCreateSerializer(serializers.ModelSerializer):
@@ -216,21 +226,31 @@ class CourseResourceSerializer(serializers.ModelSerializer):
     """Serializer for course resources."""
     course = CourseListSerializer(read_only=True)
     file_size_mb = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = CourseResource
         fields = [
             'id', 'title', 'description', 'course', 'resource_type',
-            'file', 'url', 'is_public', 'order', 'file_size_mb',
+            'file', 'file_url', 'url', 'is_public', 'order', 'file_size_mb',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'course', 'file_size_mb', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'course', 'file_size_mb', 'file_url', 'created_at', 'updated_at']
     
     def get_file_size_mb(self, obj):
         """Get file size in MB."""
         if obj.file and obj.file.size:
             return round(obj.file.size / (1024 * 1024), 2)
         return 0
+    
+    def get_file_url(self, obj):
+        """Get the direct file URL."""
+        if not obj.file:
+            return None
+        try:
+            return obj.file.url
+        except ValueError:
+            return None
 
 
 class CourseResourceCreateSerializer(serializers.ModelSerializer):

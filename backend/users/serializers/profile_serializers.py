@@ -4,6 +4,7 @@ from ..models import KPProfile, User
 
 class KPProfileSerializer(serializers.ModelSerializer):
     """Serializer for KP Profile management."""
+    logo_url = serializers.SerializerMethodField()
     
     class Meta:
         model = KPProfile
@@ -18,6 +19,7 @@ class KPProfileSerializer(serializers.ModelSerializer):
             'kp_admin_email',
             'kp_admin_phone',
             'logo',
+            'logo_url',
             'linkedin_url',
             'is_active',
             'is_verified',
@@ -82,3 +84,12 @@ class KPProfileSerializer(serializers.ModelSerializer):
             instance.user.save()
         
         return super().update(instance, filtered_data)
+    
+    def get_logo_url(self, obj):
+        """Get the direct logo URL."""
+        if not obj.logo:
+            return None
+        try:
+            return obj.logo.url
+        except ValueError:
+            return None

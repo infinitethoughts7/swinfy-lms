@@ -26,15 +26,25 @@ class CourseListSerializer(serializers.ModelSerializer):
     tutor = UserProfileSerializer(read_only=True)
     category_display = serializers.CharField(read_only=True)
     level_display = serializers.CharField(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Course
         fields = [
             'id', 'title', 'slug', 'short_description', 'price', 'duration_weeks',
             'category', 'category_display', 'level', 'level_display', 'rating',
-            'total_reviews', 'enrollment_count', 'thumbnail', 'is_featured',
+            'total_reviews', 'enrollment_count', 'thumbnail', 'thumbnail_url', 'is_featured',
             'training_partner', 'tutor', 'created_at'
         ]
+    
+    def get_thumbnail_url(self, obj):
+        """Get the direct thumbnail URL."""
+        if not obj.thumbnail:
+            return None
+        try:
+            return obj.thumbnail.url
+        except ValueError:
+            return None
 
 
 class CourseCreateSerializer(serializers.ModelSerializer):
@@ -90,14 +100,17 @@ class CourseSerializer(serializers.ModelSerializer):
     can_be_published = serializers.BooleanField(read_only=True)
     visibility_display = serializers.CharField(read_only=True)
     is_enrollment_open = serializers.BooleanField(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
+    banner_image_url = serializers.SerializerMethodField()
+    demo_video_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Course
         fields = [
             'id', 'title', 'slug', 'description', 'short_description', 'price',
             'duration_weeks', 'category', 'category_display', 'level', 'level_display',
-            'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail',
-            'banner_image', 'demo_video', 'rating', 'total_reviews', 'enrollment_count',
+            'tags', 'tags_list', 'learning_outcomes', 'prerequisites', 'thumbnail', 'thumbnail_url',
+            'banner_image', 'banner_image_url', 'demo_video', 'demo_video_url', 'rating', 'total_reviews', 'enrollment_count',
             'view_count', 'is_published', 'is_featured', 'is_draft', 'approval_status',
             'is_approved_by_training_partner', 'is_fully_approved', 'can_be_published',
             'is_private', 'is_active', 'requires_admin_enrollment', 'max_enrollments',
@@ -109,6 +122,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'id', 'slug', 'rating', 'total_reviews', 'enrollment_count', 'view_count',
             'approval_status', 'is_approved_by_training_partner', 'is_fully_approved',
             'can_be_published', 'visibility_display', 'is_enrollment_open',
+            'thumbnail_url', 'banner_image_url', 'demo_video_url',
             'created_at', 'updated_at',
             'published_at', 'last_enrollment'
         ]
@@ -116,6 +130,33 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_tags_list(self, obj):
         """Get tags as a list."""
         return obj.get_tags_list()
+    
+    def get_thumbnail_url(self, obj):
+        """Get the direct thumbnail URL."""
+        if not obj.thumbnail:
+            return None
+        try:
+            return obj.thumbnail.url
+        except ValueError:
+            return None
+    
+    def get_banner_image_url(self, obj):
+        """Get the direct banner image URL."""
+        if not obj.banner_image:
+            return None
+        try:
+            return obj.banner_image.url
+        except ValueError:
+            return None
+    
+    def get_demo_video_url(self, obj):
+        """Get the direct demo video URL."""
+        if not obj.demo_video:
+            return None
+        try:
+            return obj.demo_video.url
+        except ValueError:
+            return None
 
 
 class CourseApprovalSerializer(serializers.ModelSerializer):
