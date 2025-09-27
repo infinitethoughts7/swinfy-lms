@@ -160,5 +160,6 @@ backend/test_s3_connection.py
 backend/test_image_uploads.py
 backend/test_image_url_serializers.py
 backend/test_api_image_urls.py
+frontend/test-image-urls.js
 
 .env.backup

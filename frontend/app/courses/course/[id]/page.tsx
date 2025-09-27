@@ -515,7 +515,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 modules={modules} 
                 lessons={lessons} 
                 isEnrolled={isEnrolled}
-                enrollmentStatus={enrollmentStatus}
               />
             )}
 

@@ -59,10 +59,14 @@ export default function AttendancePage() {
     try {
       setIsLoading(true);
       const response = await api.get('/courses/instructor-courses/');
-      if (response.data.success) {
-        setCourses(response.data.data);
-        if (response.data.data.length > 0) {
-          setSelectedCourse(response.data.data[0].id);
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      const data = await response.json();
+      if (data.success) {
+        setCourses(data.data);
+        if (data.data.length > 0) {
+          setSelectedCourse(data.data[0].id);
         }
       }
     } catch (error) {
@@ -78,8 +82,12 @@ export default function AttendancePage() {
     
     try {
       const response = await api.get(`/courses/attendance/?course=${selectedCourse}&date=${selectedDate}`);
-      if (response.data.success) {
-        setAttendanceRecords(response.data.data);
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance records');
+      }
+      const data = await response.json();
+      if (data.success) {
+        setAttendanceRecords(data.data);
       }
     } catch (error) {
       console.error('Error fetching attendance records:', error);
@@ -132,11 +140,18 @@ export default function AttendancePage() {
         attendance_records: attendanceData
       });
 
-      if (response.data.success) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        setMessage({ type: 'error', text: errorData.message || 'Failed to save attendance' });
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
         setMessage({ type: 'success', text: 'Attendance saved successfully!' });
         fetchAttendanceRecords(); // Refresh the data
       } else {
-        setMessage({ type: 'error', text: response.data.message || 'Failed to save attendance' });
+        setMessage({ type: 'error', text: data.message || 'Failed to save attendance' });
       }
     } catch (error: any) {
       console.error('Error saving attendance:', error);

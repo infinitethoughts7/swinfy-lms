@@ -32,10 +32,10 @@ async redirects() {
     },
   ];
 },
-  // Ensure proper handling of dynamic routes in production
-  trailingSlash: false,
   // Enable static optimization
   output: 'standalone',
+  // Ensure proper handling of dynamic routes in production
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {
@@ -59,8 +59,6 @@ async redirects() {
     // Only optimize remote images, not local static assets
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  // Ensure static assets are properly handled
-  trailingSlash: false,
 };
 
 export default nextConfig;

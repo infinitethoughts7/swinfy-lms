@@ -60,48 +60,48 @@ interface CourseSettings {
 export default function CourseSettings({ courseOutline, tutorAssignments, onSettingsComplete }: CourseSettingsProps) {
   const [settings, setSettings] = useState<CourseSettings>({
     pricing: {
-      basePrice: 299,
+      basePrice: 0,
       currency: 'USD',
       discountPercentage: 0,
-      earlyBirdPrice: 249,
+      earlyBirdPrice: 0,
       earlyBirdEndDate: '',
       groupDiscount: {
-        minStudents: 5,
-        discountPercentage: 10
+        minStudents: 0,
+        discountPercentage: 0
       }
     },
     duration: {
-      totalWeeks: 8,
-      hoursPerWeek: 5,
-      totalHours: 40,
+      totalWeeks: 0,
+      hoursPerWeek: 0,
+      totalHours: 0,
       schedule: {
         startDate: '',
         endDate: '',
-        classDays: ['Monday', 'Wednesday', 'Friday'],
-        classTime: '18:00',
+        classDays: [],
+        classTime: '',
         timezone: 'UTC+5:30'
       }
     },
     difficulty: {
-      level: 'intermediate',
+      level: 'beginner',
       prerequisites: courseOutline.prerequisites || [],
       skillsGained: [],
       certification: {
-        provided: true,
-        type: 'Certificate of Completion',
-        requirements: ['Attend 80% of classes', 'Complete all assignments', 'Pass final exam']
+        provided: false,
+        type: '',
+        requirements: []
       }
     },
     enrollment: {
-      maxStudents: 30,
-      minStudents: 5,
+      maxStudents: 0,
+      minStudents: 0,
       enrollmentDeadline: '',
-      requirements: ['Basic programming knowledge', 'Computer with internet access']
+      requirements: []
     },
     marketing: {
-      tags: ['React', 'JavaScript', 'Web Development'],
+      tags: [],
       featured: false,
-      category: 'Web Development',
+      category: '',
       language: 'English'
     }
   });
@@ -209,11 +209,37 @@ export default function CourseSettings({ courseOutline, tutorAssignments, onSett
                   <option value="INR">₹</option>
                 </select>
                 <input
-                  type="number"
-                  value={settings.pricing.basePrice}
-                  onChange={(e) => updateSettings('pricing', 'basePrice', parseInt(e.target.value) || 0)}
+                  type="text"
+                  value={settings.pricing.basePrice === 0 ? '' : settings.pricing.basePrice.toString()}
+                  onChange={(e) => {
+                    let rawValue = e.target.value.replace(/[^0-9]/g, ''); // Only allow numbers
+                    
+                    // Handle the case where user types a non-zero digit when field shows 0
+                    // If the current field value starts with 0 and user adds a non-zero digit, remove the leading zero
+                    if (rawValue.length > 1 && rawValue.startsWith('0')) {
+                      rawValue = rawValue.substring(1); // Remove the leading zero
+                    }
+                    
+                    // Remove any other leading zeros (for cases like 00123 -> 123)
+                    if (rawValue.length > 1) {
+                      rawValue = rawValue.replace(/^0+/, '');
+                    }
+                    
+                    // Update the state
+                    if (rawValue === '' || rawValue === '0') {
+                      updateSettings('pricing', 'basePrice', 0);
+                    } else {
+                      updateSettings('pricing', 'basePrice', parseInt(rawValue));
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (settings.pricing.basePrice === 0) {
+                      // Clear the field when focusing on zero value
+                      updateSettings('pricing', 'basePrice', 0);
+                    }
+                  }}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="299"
+                  placeholder="Enter amount"
                 />
               </div>
             </div>
@@ -501,6 +527,7 @@ export default function CourseSettings({ courseOutline, tutorAssignments, onSett
                 onChange={(e) => updateSettings('marketing', 'category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="">Select Category</option>
                 <option value="Web Development">Web Development</option>
                 <option value="Mobile Development">Mobile Development</option>
                 <option value="Data Science">Data Science</option>
@@ -529,39 +556,24 @@ export default function CourseSettings({ courseOutline, tutorAssignments, onSett
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tags (Disabled)</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {settings.marketing.tags.map((tag, index) => (
-                <span key={index} className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                <span key={index} className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-full">
                   {tag}
-                  <button
-                    onClick={() => removeArrayItem('marketing', 'tags', index)}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    ×
-                  </button>
                 </span>
               ))}
             </div>
             <div className="flex">
               <input
                 type="text"
-                placeholder="Add tag..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    addArrayItem('marketing', 'tags', e.currentTarget.value);
-                    e.currentTarget.value = '';
-                  }
-                }}
+                placeholder="Tags are disabled..."
+                disabled
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50 text-gray-400 cursor-not-allowed"
               />
               <button
-                onClick={(e) => {
-                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                  addArrayItem('marketing', 'tags', input.value);
-                  input.value = '';
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700"
+                disabled
+                className="px-4 py-2 bg-gray-300 text-gray-500 rounded-r-lg cursor-not-allowed"
               >
                 Add
               </button>

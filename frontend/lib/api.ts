@@ -1005,8 +1005,11 @@ export interface Course {
   learning_outcomes?: string;
   prerequisites?: string;
   thumbnail?: string;
+  thumbnail_url?: string;
   banner_image?: string;
+  banner_image_url?: string;
   demo_video?: string;
+  demo_video_url?: string;
   approval_status: string;
   approval_status_display: string;
   is_published: boolean;
@@ -1027,7 +1030,7 @@ export interface CourseCreateData {
   title: string;
   description: string;
   short_description: string;
-  price: number;
+  price?: number;
   duration_weeks: number;
   category: string;
   level: string;

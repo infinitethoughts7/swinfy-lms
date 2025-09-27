@@ -126,7 +126,7 @@ const FeaturedCoursesSlider = () => {
                       <CardHeader className="p-0">
                         <div className="relative h-40 overflow-hidden rounded-t-lg">
                           <img 
-                            src={course.thumbnail}
+                            src={course.thumbnail_url || course.thumbnail || '/assets/courses/default.svg'}
                             alt={course.title}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />

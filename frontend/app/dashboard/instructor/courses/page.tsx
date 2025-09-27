@@ -174,9 +174,9 @@ export default function CoursesPage() {
             <div key={course.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200">
               {/* Course Thumbnail */}
               <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 relative">
-                {course.thumbnail ? (
+                {(course.thumbnail_url || course.thumbnail) ? (
                   <img 
-                    src={course.thumbnail} 
+                    src={course.thumbnail_url || course.thumbnail || ''} 
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />

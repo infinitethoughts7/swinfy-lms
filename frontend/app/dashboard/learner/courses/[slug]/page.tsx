@@ -128,7 +128,6 @@ interface CourseContent {
       duration_minutes: number;
       duration_formatted: string;
       video_file?: string;
-  video_url?: string;
       video_url?: string;
       content?: string;
       is_preview: boolean;

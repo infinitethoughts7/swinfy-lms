@@ -113,9 +113,9 @@ const CourseOverview = ({ course, onUpdate, onSendForApproval }: {
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-base font-semibold text-gray-900 mb-3">Course Thumbnail</h3>
         <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-          {course.thumbnail ? (
+          {(course.thumbnail_url || course.thumbnail) ? (
             <img 
-              src={(course.thumbnail?.startsWith('http://') || course.thumbnail?.startsWith('https://')) ? course.thumbnail : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${course.thumbnail}`}
+              src={course.thumbnail_url || course.thumbnail || ''}
               alt={course.title}
               className="w-full h-full object-cover"
             />
@@ -287,9 +287,9 @@ const CoursePreviewModal = ({ course, onClose, onSendForApproval }: {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
           <div className="flex items-start space-x-3">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
-              {course.thumbnail ? (
+              {(course.thumbnail_url || course.thumbnail) ? (
                 <img 
-                  src={(course.thumbnail?.startsWith('http://') || course.thumbnail?.startsWith('https://')) ? course.thumbnail : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${course.thumbnail}`}
+                  src={course.thumbnail_url || course.thumbnail || ''}
                   alt={course.title}
                   className="w-full h-full object-cover"
                 />
@@ -435,13 +435,6 @@ const CoursePreviewModal = ({ course, onClose, onSendForApproval }: {
             >
               Close Preview
             </button>
-            <Link
-              href={`/courses/course/${course.slug}`}
-              target="_blank"
-              className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-            >
-              View Public Page
-            </Link>
           </div>
           
           {onSendForApproval && (

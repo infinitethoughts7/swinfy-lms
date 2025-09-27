@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
@@ -11,7 +11,7 @@ interface User {
   full_name?: string;
   email: string;
   avatar?: string;
-  role: 'student' | 'admin' | 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role: 'learner' | 'tutor' | 'admin' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
   role_display?: string;
 }
 
@@ -26,27 +26,26 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    title: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
+  }>>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const router = useRouter();
   
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications when component mounts or when notifications dropdown is opened
-  useEffect(() => {
-    if (user.role === 'student') {
-      fetchNotifications();
-    }
-  }, [user.role]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (loadingNotifications) return;
     
     try {
       setLoadingNotifications(true);
-      const { studentDashboardApi } = await import('@/lib/api');
-      const response = await studentDashboardApi.getNotifications();
+      const { learnerDashboardApi } = await import('@/lib/api');
+      const response = await learnerDashboardApi.getNotifications();
       setNotifications(response.results?.slice(0, 5) || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -55,7 +54,14 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
     } finally {
       setLoadingNotifications(false);
     }
-  };
+  }, [loadingNotifications]);
+
+  // Fetch notifications when component mounts or when notifications dropdown is opened
+  useEffect(() => {
+    if (user.role === 'learner') {
+      fetchNotifications();
+    }
+  }, [user.role, fetchNotifications]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -64,8 +70,8 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
     if (!searchQuery.trim()) return;
     
     // Navigate to appropriate search page based on user role
-    if (user.role === 'student') {
-      router.push(`/dashboard/student/courses?search=${encodeURIComponent(searchQuery)}`);
+    if (user.role === 'learner') {
+      router.push(`/dashboard/learner/courses?search=${encodeURIComponent(searchQuery)}`);
     } else if (user.role === 'tutor') {
       router.push(`/dashboard/tutor/courses?search=${encodeURIComponent(searchQuery)}`);
     } else if (user.role === 'admin') {
@@ -159,7 +165,7 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                 Start Session
               </button>
             )}
-            {user.role === 'student' && (
+            {user.role === 'learner' && (
               <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

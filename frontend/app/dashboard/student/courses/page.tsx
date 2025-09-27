@@ -10,6 +10,7 @@ interface Course {
   slug: string;
   title: string;
   thumbnail?: string | null;
+  thumbnail_url?: string | null;
   duration_weeks?: number;
   level_display?: string;
 }
@@ -68,8 +69,8 @@ export default function LearnerMyCoursesPage() {
           {enrollments.map((en) => (
             <div key={en.id} className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-start space-x-3 mb-3">
-                {en.course?.thumbnail ? (
-                  <Image src={en.course.thumbnail} alt={en.course.title} width={60} height={60} className="rounded-lg object-cover" />
+                {(en.course?.thumbnail_url || en.course?.thumbnail) ? (
+                  <Image src={en.course.thumbnail_url || en.course.thumbnail || ''} alt={en.course.title} width={60} height={60} className="rounded-lg object-cover" />
                 ) : (
                   <div className="w-[60px] h-[60px] rounded-lg bg-gray-200" />
                 )}

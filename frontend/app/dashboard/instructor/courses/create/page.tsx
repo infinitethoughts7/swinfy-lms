@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { instructorApi, type CourseCreateData } from '@/lib/api';
-import { ArrowLeft, Upload, Save, Eye, DollarSign, Clock, Tag, BookOpen } from 'lucide-react';
+import { ArrowLeft, Upload, Save, Eye, Clock, BookOpen } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'frontend_development', label: 'Frontend Development' },
@@ -35,15 +35,14 @@ export default function CreateCoursePage() {
     title: '',
     description: '',
     short_description: '',
-    price: 0,
+    price: undefined,
     duration_weeks: 4,
     category: 'frontend_development',
     level: 'beginner',
-    tags: '',
     learning_outcomes: '',
     prerequisites: '',
-    is_private: true,
-    requires_admin_enrollment: true,
+    is_private: false,
+    requires_admin_enrollment: false,
     max_enrollments: undefined,
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -94,7 +93,7 @@ export default function CreateCoursePage() {
       errors.short_description = 'Short description is required';
     }
 
-    if (formData.price < 0) {
+    if (formData.price !== undefined && formData.price < 0) {
       errors.price = 'Price cannot be negative';
     }
 
@@ -260,7 +259,7 @@ export default function CreateCoursePage() {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center mb-4">
             <div className="p-1.5 bg-green-100 rounded-lg mr-2">
-              <Tag className="h-4 w-4 text-green-600" />
+              <BookOpen className="h-4 w-4 text-green-600" />
             </div>
             <h2 className="text-lg font-semibold text-gray-900">Course Details</h2>
           </div>
@@ -272,16 +271,18 @@ export default function CreateCoursePage() {
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">₹</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.price}
-                  onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
-                  className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
-                    formErrors.price ? 'ring-1 ring-red-500 border-red-500' : ''
-                  }`}
-                />
+              <input
+                type="text"
+                value={formData.price || ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, ''); // Only allow numbers
+                  handleChange('price', value ? parseInt(value) : undefined);
+                }}
+                placeholder="Enter price amount"
+                className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
+                  formErrors.price ? 'ring-1 ring-red-500 border-red-500' : ''
+                }`}
+              />
               </div>
               {formErrors.price && (
                 <p className="text-red-600 text-sm mt-1">{formErrors.price}</p>
@@ -310,19 +311,6 @@ export default function CreateCoursePage() {
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Tags (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formData.tags || ''}
-                onChange={(e) => handleChange('tags', e.target.value)}
-                placeholder="e.g., React, JavaScript, Frontend, Web Development"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-              />
-              <p className="text-gray-500 text-sm mt-1">Help students find your course with relevant tags</p>
-            </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-900 mb-1">
