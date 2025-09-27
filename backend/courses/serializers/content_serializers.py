@@ -59,19 +59,20 @@ class LessonSerializer(serializers.ModelSerializer):
     lesson_type_display = serializers.SerializerMethodField()
     duration_formatted = serializers.CharField(read_only=True)
     has_video_content = serializers.BooleanField(read_only=True)
+    video_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'slug', 'module', 'course',
             'lesson_type', 'lesson_type_display', 'order', 'duration_minutes', 'duration_formatted',
-            'is_preview', 'is_mandatory', 'content', 'video_file',
+            'is_preview', 'is_mandatory', 'content', 'video_file', 'video_url',
             'materials_count', 'is_completed', 'has_video_content',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'slug', 'course', 'materials_count', 'is_completed',
-            'duration_formatted', 'has_video_content', 'created_at', 'updated_at'
+            'duration_formatted', 'has_video_content', 'video_url', 'created_at', 'updated_at'
         ]
     
     def get_course(self, obj):
@@ -107,6 +108,19 @@ class LessonSerializer(serializers.ModelSerializer):
             'live': 'Live Session'
         }
         return lesson_type_map.get(obj.lesson_type, obj.lesson_type.title())
+    
+    def get_video_url(self, obj):
+        """Get the direct video URL for streaming."""
+        if not obj.video_file:
+            return None
+        
+        # If we have the file, return its URL
+        # Django's FileField.url property handles both local and S3 URLs
+        try:
+            return obj.video_file.url
+        except ValueError:
+            # In case the file doesn't exist or URL can't be generated
+            return None
 
 
 class LessonCreateSerializer(serializers.ModelSerializer):

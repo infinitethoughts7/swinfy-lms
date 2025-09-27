@@ -105,6 +105,7 @@ interface Lesson {
   is_mandatory: boolean;
   content?: string;
   video_file?: string;
+  video_url?: string;
   has_video_content: boolean;
   materials_count: number;
   is_completed: boolean;

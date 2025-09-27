@@ -1066,6 +1066,7 @@ export interface Lesson {
   order: number;
   content?: string;
   video_file?: string;
+  video_url?: string;
   duration_minutes: number;
   duration_formatted: string;
   has_video_content: boolean;

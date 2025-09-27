@@ -73,6 +73,7 @@ urlpatterns = [
     path('lessons/<uuid:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
     path('lessons/<uuid:lesson_id>/start/', views.LessonStartView.as_view(), name='lesson-start'),
     path('lessons/<uuid:lesson_id>/materials/', views.LessonMaterialsView.as_view(), name='lesson-materials'),
+    path('lessons/<uuid:lesson_id>/video/', views.LessonVideoView.as_view(), name='lesson-video'),
     path('lessons/<uuid:lesson_id>/progress/', views.LessonProgressView.as_view(), name='lesson-progress'),
     path('lessons/<uuid:lesson_id>/materials/upload/', views.LessonMaterialUploadView.as_view(), name='lesson-material-upload'),
     

@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Avg, Count, Sum
@@ -428,6 +429,35 @@ class LessonMaterialsView(generics.ListAPIView):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
         return LessonMaterial.objects.filter(lesson=lesson).order_by('order')
+
+
+class LessonVideoView(APIView):
+    """Serve lesson video with proper headers for streaming."""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, lesson_id):
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        
+        # Check if user has access to the course
+        user = request.user
+        if user.role == 'learner':
+            from ..models import Enrollment
+            try:
+                enrollment = Enrollment.objects.get(learner=user, course=lesson.module.course)
+                if not enrollment.can_access_content:
+                    return Response({'error': 'Access denied'}, status=403)
+            except Enrollment.DoesNotExist:
+                return Response({'error': 'Not enrolled in course'}, status=403)
+        
+        if not lesson.video_file:
+            return Response({'error': 'No video file found'}, status=404)
+        
+        # Return the direct video URL for streaming
+        return Response({
+            'video_url': lesson.video_file.url,
+            'title': lesson.title,
+            'duration': lesson.duration_formatted
+        })
 
 
 class LessonProgressView(generics.RetrieveUpdateAPIView):

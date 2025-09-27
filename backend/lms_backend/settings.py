@@ -131,23 +131,59 @@ if USE_S3:
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.digitaloceanspaces.com'
     
-    # Storage backends - CORRECTED PATHS
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3.S3StaticStorage'
+    # S3 Configuration for proper file uploads
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_QUERYSTRING_AUTH = False  # Disable signed URLs for public content
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_VERIFY = True
     
-    # Override URLs
+    # Django 4.2+ STORAGES Configuration
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": AWS_ACCESS_KEY_ID,
+                "secret_key": AWS_SECRET_ACCESS_KEY,
+                "bucket_name": AWS_STORAGE_BUCKET_NAME,
+                "endpoint_url": AWS_S3_ENDPOINT_URL,
+                "region_name": AWS_S3_REGION_NAME,
+                "default_acl": AWS_DEFAULT_ACL,
+                "querystring_auth": AWS_QUERYSTRING_AUTH,
+                "file_overwrite": AWS_S3_FILE_OVERWRITE,
+                "object_parameters": AWS_S3_OBJECT_PARAMETERS,
+                "custom_domain": AWS_S3_CUSTOM_DOMAIN,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    
+    # Media URLs for DigitalOcean Spaces
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+    STATIC_URL = '/static/'
+    
 else:
     # Local development settings
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     STATIC_URL = config('STATIC_URL', default='/static/')
     MEDIA_URL = config('MEDIA_URL', default='/media/')
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_ROOT = os.path.join(BASE_DIR, config('STATIC_ROOT', default='staticfiles'))
 
-# Ensure media directory exists
-os.makedirs(MEDIA_ROOT if not USE_S3 else os.path.join(BASE_DIR, 'media'), exist_ok=True)
+# Ensure media directory exists for local development
+if not USE_S3:
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

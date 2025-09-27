@@ -71,6 +71,7 @@ interface Lesson {
   is_mandatory: boolean;
   content?: string;
   video_file?: string;
+  video_url?: string;
   has_video_content: boolean;
   materials_count: number;
   is_completed: boolean;
@@ -127,6 +128,8 @@ interface CourseContent {
       duration_minutes: number;
       duration_formatted: string;
       video_file?: string;
+  video_url?: string;
+      video_url?: string;
       content?: string;
       is_preview: boolean;
       is_mandatory: boolean;
@@ -885,13 +888,13 @@ export default function CourseLearningPage() {
                   </div>
                   
                   {/* Video Player */}
-                  {selectedLesson.video_file && (
+                  {(selectedLesson.video_url || selectedLesson.video_file) && (
                     <div className="bg-gray-900 rounded-lg overflow-hidden">
                       {showVideoPlayer ? (
                         <video
                           controls
                           className="w-full h-96 object-contain"
-                          src={getLessonVideoUrl(selectedLesson.video_file)}
+                          src={selectedLesson.video_url || getLessonVideoUrl(selectedLesson.video_file)}
                         >
                           Your browser does not support the video tag.
                         </video>

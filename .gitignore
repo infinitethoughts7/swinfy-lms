@@ -151,3 +151,9 @@ celerybeat.pid
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Testing and migration commands (optional deployment)
+backend/courses/management/commands/test_s3_upload.py
+backend/courses/management/commands/migrate_files_to_s3.py
+
+.env.backup
