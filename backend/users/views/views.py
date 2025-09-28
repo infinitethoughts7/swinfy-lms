@@ -5,11 +5,18 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from rest_framework import generics
 from django.db.models import Q
 from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
-from ..permissions import IsKnowledgePartnerAdmin  
+from ..permissions import IsKnowledgePartnerAdmin
+from ..utils import (
+    create_otp_verification, 
+    verify_otp_code, 
+    check_rate_limit, 
+    increment_rate_limit,
+    cleanup_expired_otps
+)  
 
 from ..serializers import (
     UserRegistrationSerializer, 
@@ -22,7 +29,10 @@ from ..serializers import (
     KPInstructorCreateSerializer,
     KPInstructorListSerializer,
     KPInstructorDetailSerializer,
-    KPInstructorUpdateSerializer
+    KPInstructorUpdateSerializer,
+    SendOTPSerializer,
+    VerifyOTPSerializer,
+    ResendOTPSerializer
 )
 
 
@@ -35,39 +45,54 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
     def create(self, request, *args, **kwargs):
-        """Create a new learner account."""
+        """Create a new learner account and send OTP for verification."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Create user (role automatically set to 'learner')
+        # Create user (role automatically set to 'learner', is_verified=False)
         user = serializer.save()
         
-        # Generate tokens
-        refresh = RefreshToken.for_user(user)
+        # Check rate limit for OTP requests
+        rate_limit_check = check_rate_limit(user.email, 'email_verification')
+        if not rate_limit_check['allowed']:
+            return Response({
+                'success': False,
+                'message': rate_limit_check['message'],
+                'error_code': 'RATE_LIMIT_EXCEEDED',
+                'retry_after': rate_limit_check.get('retry_after', 600)
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
-        # Send verification email (optional)
-        try:
-            self.send_verification_email(user)
-        except Exception as e:
-            # Log error but don't fail registration
-            print(f"Failed to send verification email: {e}")
+        # Create and send OTP verification
+        otp_verification = create_otp_verification(
+            user=user,
+            email=user.email,
+            purpose='email_verification',
+            expiry_minutes=10
+        )
+        
+        if not otp_verification:
+            return Response({
+                'success': False,
+                'message': 'Failed to send verification email. Please try again.',
+                'error_code': 'EMAIL_SEND_FAILED'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Increment rate limit counter
+        increment_rate_limit(user.email, 'email_verification')
         
         # Response
         response_data = {
             'success': True,
-            'message': 'Registration successful! Please check your email for verification.',
+            'message': 'Registration successful! Please check your email for the verification code.',
             'user': {
                 'id': str(user.id),
                 'email': user.email,
                 'full_name': user.full_name,
                 'role': user.role,
-                'organization': user.kp_profile.name if hasattr(user, 'kp_profile') and user.kp_profile else None,
                 'is_verified': user.is_verified,
             },
-            'tokens': {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            }
+            'otp_sent': True,
+            'expires_in_minutes': 10
         }
         
         return Response(response_data, status=status.HTTP_201_CREATED)
@@ -108,6 +133,12 @@ class LoginView(TokenObtainPairView):
         if not user.is_active:
             return Response(
                 {'error': 'Account is disabled.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if not user.is_verified:
+            return Response(
+                {'error': 'Please verify your email address before logging in. Check your email for the verification code.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -689,3 +720,185 @@ class KPInstructorDetailView(APIView):
         profile.delete()
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# =========================
+# OTP Verification Views
+# =========================
+
+class VerifyOTPView(APIView):
+    """Verify OTP code for email verification."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Verify OTP code."""
+        serializer = VerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        otp_code = serializer.validated_data['otp_code']
+        purpose = serializer.validated_data['purpose']
+        
+        # Verify OTP
+        result = verify_otp_code(email, otp_code, purpose)
+        
+        if result['success']:
+            # Generate tokens for the user
+            user = result['otp_verification'].user
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'success': True,
+                'message': result['message'],
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'role': user.role,
+                    'is_verified': user.is_verified,
+                },
+                'tokens': {
+                    'access': str(refresh.access_token),
+                    'refresh': str(refresh),
+                }
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'message': result['message'],
+                'error_code': result.get('error_code', 'VERIFICATION_FAILED'),
+                'remaining_attempts': result.get('remaining_attempts', 0)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendOTPView(APIView):
+    """Resend OTP code."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Resend OTP code."""
+        serializer = ResendOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        purpose = serializer.validated_data['purpose']
+        
+        # Check rate limit
+        rate_limit_check = check_rate_limit(email, purpose)
+        if not rate_limit_check['allowed']:
+            return Response({
+                'success': False,
+                'message': rate_limit_check['message'],
+                'error_code': 'RATE_LIMIT_EXCEEDED',
+                'retry_after': rate_limit_check.get('retry_after', 600)
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        
+        # Get user
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'No user found with this email address.',
+                'error_code': 'USER_NOT_FOUND'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Create and send new OTP
+        otp_verification = create_otp_verification(
+            user=user,
+            email=email,
+            purpose=purpose,
+            expiry_minutes=10
+        )
+        
+        if not otp_verification:
+            return Response({
+                'success': False,
+                'message': 'Failed to send verification email. Please try again.',
+                'error_code': 'EMAIL_SEND_FAILED'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Increment rate limit counter
+        increment_rate_limit(email, purpose)
+        
+        return Response({
+            'success': True,
+            'message': 'Verification code has been sent to your email.',
+            'expires_in_minutes': 10
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def send_otp(request):
+    """Send OTP for various purposes (email verification, password reset, etc.)."""
+    serializer = SendOTPSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    email = serializer.validated_data['email']
+    purpose = serializer.validated_data['purpose']
+    
+    # Check rate limit
+    rate_limit_check = check_rate_limit(email, purpose)
+    if not rate_limit_check['allowed']:
+        return Response({
+            'success': False,
+            'message': rate_limit_check['message'],
+            'error_code': 'RATE_LIMIT_EXCEEDED',
+            'retry_after': rate_limit_check.get('retry_after', 600)
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Get user
+    try:
+        user = User.objects.get(email__iexact=email)
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'No user found with this email address.',
+            'error_code': 'USER_NOT_FOUND'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Create and send OTP
+    otp_verification = create_otp_verification(
+        user=user,
+        email=email,
+        purpose=purpose,
+        expiry_minutes=10
+    )
+    
+    if not otp_verification:
+        return Response({
+            'success': False,
+            'message': 'Failed to send verification email. Please try again.',
+            'error_code': 'EMAIL_SEND_FAILED'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Increment rate limit counter
+    increment_rate_limit(email, purpose)
+    
+    return Response({
+        'success': True,
+        'message': 'Verification code has been sent to your email.',
+        'expires_in_minutes': 10
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cleanup_otps(request):
+    """Clean up expired OTPs (admin utility)."""
+    try:
+        count = cleanup_expired_otps()
+        return Response({
+            'success': True,
+            'message': f'Cleaned up {count} expired OTPs.',
+            'cleaned_count': count
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Failed to cleanup OTPs: {str(e)}',
+            'error_code': 'CLEANUP_FAILED'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

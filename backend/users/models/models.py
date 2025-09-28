@@ -259,3 +259,40 @@ class LearnerProfile(models.Model):
     class Meta:
         verbose_name = 'Learner Profile'
         verbose_name_plural = 'Learner Profiles'
+
+
+class OTPVerification(models.Model):
+    """OTP verification model for email verification."""
+    
+    PURPOSE_CHOICES = [
+        ('email_verification', 'Email Verification'),
+        ('password_reset', 'Password Reset'),
+        ('login_verification', 'Login Verification'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otp_verifications')
+    email = models.EmailField(help_text="Email address to send OTP to")
+    otp_code = models.CharField(max_length=6, help_text="6-digit OTP code")
+    purpose = models.CharField(max_length=30, choices=PURPOSE_CHOICES, default='email_verification')
+    is_verified = models.BooleanField(default=False, help_text="Whether OTP has been verified")
+    expires_at = models.DateTimeField(help_text="OTP expiration time")
+    created_at = models.DateTimeField(auto_now_add=True)
+    attempts = models.PositiveIntegerField(default=0, help_text="Number of verification attempts")
+    max_attempts = models.PositiveIntegerField(default=3, help_text="Maximum verification attempts allowed")
+    
+    def __str__(self):
+        return f"OTP for {self.email} - {self.purpose} - {'Verified' if self.is_verified else 'Pending'}"
+    
+    def is_expired(self):
+        """Check if OTP has expired."""
+        return timezone.now() > self.expires_at
+    
+    def can_attempt_verification(self):
+        """Check if user can still attempt verification."""
+        return not self.is_verified and not self.is_expired() and self.attempts < self.max_attempts
+    
+    class Meta:
+        verbose_name = 'OTP Verification'
+        verbose_name_plural = 'OTP Verifications'
+        ordering = ['-created_at']

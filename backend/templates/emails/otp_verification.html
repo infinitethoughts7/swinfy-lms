@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification - {{ site_name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .otp-container {
+            background-color: #f8fafc;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563eb;
+            letter-spacing: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .otp-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .expiry-info {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .expiry-text {
+            color: #92400e;
+            font-weight: 500;
+        }
+        .instructions {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .instructions h3 {
+            color: #0c4a6e;
+            margin-top: 0;
+            font-size: 16px;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+            color: #0c4a6e;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .support-link {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .support-link:hover {
+            text-decoration: underline;
+        }
+        .warning {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-text {
+            color: #dc2626;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">{{ site_name }}</div>
+            <h1 class="title">
+                {% if purpose == 'email_verification' %}
+                    Verify Your Email Address
+                {% elif purpose == 'password_reset' %}
+                    Reset Your Password
+                {% elif purpose == 'login_verification' %}
+                    Login Verification
+                {% else %}
+                    Verification Code
+                {% endif %}
+            </h1>
+        </div>
+
+        <p>Hello {{ user_name }},</p>
+
+        <p>
+            {% if purpose == 'email_verification' %}
+                Thank you for registering with {{ site_name }}! To complete your registration, please verify your email address using the OTP code below.
+            {% elif purpose == 'password_reset' %}
+                You requested to reset your password for your {{ site_name }} account. Use the OTP code below to proceed with password reset.
+            {% elif purpose == 'login_verification' %}
+                For security purposes, please verify your identity using the OTP code below to complete your login.
+            {% else %}
+                Please use the OTP code below to complete your verification.
+            {% endif %}
+        </p>
+
+        <div class="otp-container">
+            <div class="otp-label">Your verification code is:</div>
+            <div class="otp-code">{{ otp_code }}</div>
+        </div>
+
+        <div class="expiry-info">
+            <div class="expiry-text">
+                ⏰ This code will expire in {{ expiry_minutes }} minutes for security reasons.
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>How to use this code:</h3>
+            <ul>
+                <li>Copy the 6-digit code above</li>
+                <li>Paste it into the verification field on our website</li>
+                <li>Click "Verify" to complete the process</li>
+                <li>If you don't see a verification field, check your email for a verification link</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <div class="warning-text">
+                ⚠️ <strong>Security Notice:</strong> Never share this code with anyone. {{ site_name }} will never ask for your verification code via phone, email, or any other means.
+            </div>
+        </div>
+
+        <p>
+            If you didn't request this verification code, please ignore this email or contact our support team if you have concerns about your account security.
+        </p>
+
+        <div class="footer">
+            <p>
+                This email was sent to {{ user.email }}. If you have any questions, please contact us at 
+                <a href="mailto:{{ support_email }}" class="support-link">{{ support_email }}</a>
+            </p>
+            <p>
+                © {{ "now"|date:"Y" }} {{ site_name }}. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

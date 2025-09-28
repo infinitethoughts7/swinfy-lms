@@ -10,7 +10,10 @@ from .serializers import (
     KPInstructorCreateSerializer,
     KPInstructorListSerializer,
     KPInstructorDetailSerializer,
-    KPInstructorUpdateSerializer
+    KPInstructorUpdateSerializer,
+    SendOTPSerializer,
+    VerifyOTPSerializer,
+    ResendOTPSerializer
 )
 from .application_serializer import (
     KnowledgePartnerApplicationCreateSerializer,
@@ -32,6 +35,9 @@ __all__ = [
     'KPInstructorListSerializer',
     'KPInstructorDetailSerializer',
     'KPInstructorUpdateSerializer',
+    'SendOTPSerializer',
+    'VerifyOTPSerializer',
+    'ResendOTPSerializer',
     'KnowledgePartnerApplicationCreateSerializer',
     'KnowledgePartnerApplicationListSerializer',
     'ApplicationApprovalSerializer',

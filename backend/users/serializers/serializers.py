@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
+from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile, OTPVerification
 
 
 class KPProfileSerializer(serializers.ModelSerializer):
@@ -449,3 +449,62 @@ class KPInstructorUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+# =========================
+# OTP Verification Serializers
+# =========================
+
+class SendOTPSerializer(serializers.Serializer):
+    """Serializer for sending OTP to email."""
+    
+    email = serializers.EmailField(required=True)
+    purpose = serializers.ChoiceField(
+        choices=OTPVerification.PURPOSE_CHOICES,
+        default='email_verification'
+    )
+    
+    def validate_email(self, value):
+        """Validate email address."""
+        # Check if user exists for email verification
+        if not User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('No user found with this email address.')
+        return value.lower()
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    """Serializer for verifying OTP code."""
+    
+    email = serializers.EmailField(required=True)
+    otp_code = serializers.CharField(max_length=6, min_length=6, required=True)
+    purpose = serializers.ChoiceField(
+        choices=OTPVerification.PURPOSE_CHOICES,
+        default='email_verification'
+    )
+    
+    def validate_otp_code(self, value):
+        """Validate OTP code format."""
+        if not value.isdigit():
+            raise serializers.ValidationError('OTP code must contain only digits.')
+        return value
+    
+    def validate_email(self, value):
+        """Validate email address."""
+        return value.lower()
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    """Serializer for resending OTP."""
+    
+    email = serializers.EmailField(required=True)
+    purpose = serializers.ChoiceField(
+        choices=OTPVerification.PURPOSE_CHOICES,
+        default='email_verification'
+    )
+    
+    def validate_email(self, value):
+        """Validate email address."""
+        # Check if user exists for email verification
+        if not User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('No user found with this email address.')
+        return value.lower()

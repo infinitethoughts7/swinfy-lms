@@ -7,6 +7,8 @@ export interface ApiErrorResponse {
   details?: Record<string, string[]>;
   message?: string;
   non_field_errors?: string[];
+  // Django REST Framework validation errors
+  [key: string]: string[] | string | undefined;
 }
 
 /**
@@ -37,7 +39,29 @@ export const getErrorMessage = (error: unknown): string => {
       return formatApiError(apiError.message);
     }
 
-    // Handle validation errors
+    // Handle Django REST Framework validation errors (field: [errors])
+    const fieldErrors = Object.entries(apiError)
+      .filter(([key, value]) => 
+        key !== 'error' && 
+        key !== 'message' && 
+        key !== 'details' && 
+        key !== 'non_field_errors' &&
+        Array.isArray(value) && 
+        value.length > 0
+      );
+
+    if (fieldErrors.length > 0) {
+      const messages = fieldErrors
+        .map(([field, errors]) => {
+          const fieldName = formatFieldName(field);
+          const errorMessages = errors.map(err => formatApiError(err)).join(', ');
+          return `${fieldName}: ${errorMessages}`;
+        })
+        .join('; ');
+      return messages || 'Please check your input and try again.';
+    }
+
+    // Handle validation errors in details field
     if (apiError.details) {
       const messages = Object.entries(apiError.details)
         .map(([field, errors]) => {
@@ -94,6 +118,7 @@ const formatApiError = (message: string): string => {
     
     // Registration errors
     'User already exists': '👤 An account with this email already exists. Please try logging in instead.',
+    'User with this Email Address already exists': '👤 An account with this email already exists. Please try logging in instead.',
     'Email already registered': '📧 This email is already registered. Please try logging in or use a different email.',
     'Weak password': '🔐 Password is too weak. Please use a stronger password with letters, numbers, and symbols.',
     'Passwords do not match': '🔄 Passwords do not match. Please make sure both passwords are the same.',

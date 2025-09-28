@@ -36,7 +36,10 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     setCurrentStep('otp-verification');
   };
 
-  const handleOTPVerificationSuccess = () => {
+  const handleOTPVerificationSuccess = (user: any, tokens: any) => {
+    // Store user data and tokens for later use
+    console.log('OTP verification successful:', { user, tokens });
+    
     // If user selected an organization, show pending approval screen
     // Otherwise show regular success screen
     if (hasOrganization) {

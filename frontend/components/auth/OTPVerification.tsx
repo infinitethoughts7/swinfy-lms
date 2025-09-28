@@ -2,14 +2,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import emailjs from '@emailjs/browser';
-import { EMAILJS_CONFIG, OTP_CONFIG } from '@/lib/emailjs-config';
+import { api } from '@/lib/api';
 
 interface OTPVerificationProps {
   email: string;
-  onVerificationSuccess: () => void;
+  onVerificationSuccess: (user: any, tokens: any) => void;
   onBack: () => void;
 }
+
+const OTP_CONFIG = {
+  EXPIRY_TIME_MINUTES: 10,
+  CODE_LENGTH: 6,
+  RESEND_COOLDOWN_SECONDS: 60,
+};
 
 export default function OTPVerification({ email, onVerificationSuccess, onBack }: OTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -17,7 +22,7 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
-  const [correctOtp, setCorrectOtp] = useState('');
+  const [success, setSuccess] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Generate and send OTP on component mount
@@ -33,62 +38,31 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     }
   }, [timeLeft]);
 
-  const generateOTP = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  const sendOTPEmail = async () => {
+    try {
+      setError('');
+      setSuccess('');
+      
+      const response = await api.post('/api/auth/send-otp/', {
+        email: email,
+        purpose: 'email_verification'
+      });
+
+      if (response.data.success) {
+        setSuccess('Verification code sent to your email!');
+        setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
+      } else {
+        setError(response.data.message || 'Failed to send verification code.');
+      }
+    } catch (error: any) {
+      console.error('Failed to send OTP email:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to send verification code. Please try again.';
+      setError(errorMessage);
+    }
   };
 
   const generateAndSendOTP = async () => {
-    try {
-      const newOtp = generateOTP();
-      setCorrectOtp(newOtp);
-      
-      // Skip email sending for demo mode
-      console.log('Demo Mode: Generated OTP:', newOtp);
-      console.log('Demo Mode: You can enter any 6-digit code to proceed');
-      setError(''); // Clear any previous errors
-    } catch (error) {
-      console.error('Error generating OTP:', error);
-      setError('Failed to generate OTP. Please try again.');
-    }
-  };
-
-  const sendOTPEmail = async (otpCode: string) => {
-    try {
-      // Log configuration for debugging
-      console.log('EmailJS Config:', {
-        serviceId: EMAILJS_CONFIG.SERVICE_ID,
-        templateId: EMAILJS_CONFIG.TEMPLATE_ID,
-        publicKey: EMAILJS_CONFIG.PUBLIC_KEY?.substring(0, 10) + '...',
-      });
-
-      const templateParams = {
-        to_email: email,
-        to_name: email.split('@')[0], // Use email prefix as name
-        otp_code: otpCode,
-        expiry_time: '2 minutes',
-        company_name: 'OLLA LMS',
-        support_email: 'support@olla-lms.com'
-      };
-
-      console.log('Sending email with params:', { ...templateParams, otp_code: 'HIDDEN' });
-
-      // Using EmailJS configuration
-      const result = await emailjs.send(
-        EMAILJS_CONFIG.SERVICE_ID,
-        EMAILJS_CONFIG.TEMPLATE_ID,
-        templateParams,
-        EMAILJS_CONFIG.PUBLIC_KEY
-      );
-
-      console.log('EmailJS response:', result);
-
-      console.log('OTP email sent successfully to:', email);
-    } catch (error) {
-      console.error('Failed to send OTP email:', error);
-      // Show user-friendly error instead of demo alert
-      setError('Failed to send OTP email. Please check your email address and try again.');
-      throw error; // Re-throw to handle in calling function
-    }
+    await sendOTPEmail();
   };
 
   const handleInputChange = (index: number, value: string) => {
@@ -135,16 +109,26 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
 
     setIsVerifying(true);
     setError('');
+    setSuccess('');
 
     try {
-      // Simulate API verification delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await api.post('/api/auth/verify-otp/', {
+        email: email,
+        otp_code: enteredOtp,
+        purpose: 'email_verification'
+      });
 
-      // Demo mode: Accept any 6-digit code
-      console.log('Demo Mode: Accepting any 6-digit code');
-      onVerificationSuccess();
-    } catch (error) {
-      setError('Verification failed. Please try again.');
+      if (response.data.success) {
+        setSuccess('Email verified successfully!');
+        // Call the success callback with user data and tokens
+        onVerificationSuccess(response.data.user, response.data.tokens);
+      } else {
+        setError(response.data.message || 'Verification failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      const errorMessage = error.response?.data?.message || 'Verification failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsVerifying(false);
     }
@@ -155,14 +139,26 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     
     setIsResending(true);
     setError('');
+    setSuccess('');
     setOtp(['', '', '', '', '', '']);
     
     try {
-      await generateAndSendOTP();
-      setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS); // Reset timer
-      inputRefs.current[0]?.focus();
-    } catch (error) {
-      setError('Failed to resend OTP. Please try again.');
+      const response = await api.post('/api/auth/resend-otp/', {
+        email: email,
+        purpose: 'email_verification'
+      });
+
+      if (response.data.success) {
+        setSuccess('New verification code sent to your email!');
+        setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
+        inputRefs.current[0]?.focus();
+      } else {
+        setError(response.data.message || 'Failed to resend verification code.');
+      }
+    } catch (error: any) {
+      console.error('Failed to resend OTP:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsResending(false);
     }
@@ -188,11 +184,6 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
           We've sent a 6-digit verification code to
         </p>
         <p className="font-medium text-blue-600">{email}</p>
-        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-sm text-green-800">
-            <strong>🎮 Demo Mode:</strong> Enter any 6-digit number to proceed!
-          </p>
-        </div>
       </div>
 
       {/* OTP Input */}
@@ -220,6 +211,12 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
         {error && (
           <p className="text-center text-sm text-red-600 bg-red-50 p-2 rounded-lg">
             {error}
+          </p>
+        )}
+
+        {success && (
+          <p className="text-center text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+            {success}
           </p>
         )}
       </div>

@@ -48,6 +48,12 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
+    # OTP Verification endpoints
+    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
+    path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
+    path('send-otp/', views.send_otp, name='send_otp'),
+    path('cleanup-otps/', views.cleanup_otps, name='cleanup_otps'),
+    
     # User profile endpoints
     path('profile/', views.UserProfileView.as_view(), name='profile'),
     path('profile/complete/', views.ProfileCompletionView.as_view(), name='profile_completion'),
