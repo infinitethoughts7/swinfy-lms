@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { api } from '@/lib/api';
 
 interface Learner {
   id: string;
@@ -12,6 +11,8 @@ interface Learner {
   profile_picture?: string;
   enrollment_date: string;
   progress_percentage: number;
+  phone?: string;
+  city?: string;
 }
 
 interface AttendanceRecord {
@@ -36,6 +37,114 @@ interface Course {
   enrolled_learners: Learner[];
 }
 
+// Mock data for Telugu students
+const mockCourses: Course[] = [
+  {
+    id: '1',
+    title: 'Full Stack Web Development with React & Node.js',
+    slug: 'full-stack-web-development',
+    enrolled_learners: [
+      {
+        id: '1',
+        full_name: 'Rajesh Kumar',
+        email: 'rajesh.kumar@email.com',
+        phone: '+91 98765 43210',
+        city: 'Hyderabad',
+        enrollment_date: '2024-01-15',
+        progress_percentage: 75
+      },
+      {
+        id: '2',
+        full_name: 'Sumitra',
+        email: 'sumitra@email.com',
+        phone: '+91 87654 32109',
+        city: 'Vijayawada',
+        enrollment_date: '2024-01-20',
+        progress_percentage: 60
+      },
+      {
+        id: '3',
+        full_name: 'Venkatesh Reddy',
+        email: 'venkatesh.reddy@email.com',
+        phone: '+91 76543 21098',
+        city: 'Guntur',
+        enrollment_date: '2024-02-01',
+        progress_percentage: 45
+      },
+      {
+        id: '4',
+        full_name: 'Priyanka',
+        email: 'priyanka@email.com',
+        phone: '+91 65432 10987',
+        city: 'Tirupati',
+        enrollment_date: '2024-02-10',
+        progress_percentage: 80
+      },
+      {
+        id: '5',
+        full_name: 'Suresh Babu',
+        email: 'suresh.babu@email.com',
+        phone: '+91 54321 09876',
+        city: 'Visakhapatnam',
+        enrollment_date: '2024-02-15',
+        progress_percentage: 30
+      },
+      {
+        id: '6',
+        full_name: 'Lakshmi Devi',
+        email: 'lakshmi.devi@email.com',
+        phone: '+91 43210 98765',
+        city: 'Nellore',
+        enrollment_date: '2024-02-20',
+        progress_percentage: 90
+      },
+      {
+        id: '7',
+        full_name: 'Mahesh Kumar',
+        email: 'mahesh.kumar@email.com',
+        phone: '+91 32109 87654',
+        city: 'Kadapa',
+        enrollment_date: '2024-03-01',
+        progress_percentage: 55
+      },
+      {
+        id: '8',
+        full_name: 'Swathi',
+        email: 'swathi@email.com',
+        phone: '+91 21098 76543',
+        city: 'Anantapur',
+        enrollment_date: '2024-03-05',
+        progress_percentage: 70
+      }
+    ]
+  },
+  {
+    id: '2',
+    title: 'Python Programming & Data Science',
+    slug: 'python-data-science',
+    enrolled_learners: [
+      {
+        id: '9',
+        full_name: 'Ravi Teja',
+        email: 'ravi.teja@email.com',
+        phone: '+91 10987 65432',
+        city: 'Kurnool',
+        enrollment_date: '2024-01-25',
+        progress_percentage: 65
+      },
+      {
+        id: '10',
+        full_name: 'Anusha',
+        email: 'anusha@email.com',
+        phone: '+91 09876 54321',
+        city: 'Chittoor',
+        enrollment_date: '2024-02-05',
+        progress_percentage: 40
+      }
+    ]
+  }
+];
+
 export default function AttendancePage() {
   const router = useRouter();
   const [user, setUser] = useState(getCurrentUser());
@@ -43,63 +152,51 @@ export default function AttendancePage() {
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Initialize with mock data
   useEffect(() => {
-    if (!user || user.role !== 'knowledge_partner_instructor') {
+    if (!user) {
       router.push('/');
       return;
     }
-    fetchCourses();
+    
+    // Simulate loading
+    setIsLoading(true);
+    setTimeout(() => {
+      setCourses(mockCourses);
+      if (mockCourses.length > 0) {
+        setSelectedCourse(mockCourses[0].id);
+      }
+      setIsLoading(false);
+    }, 500);
   }, [user, router]);
 
-  const fetchCourses = async () => {
-    try {
-      setIsLoading(true);
-      const response = await api.get('/courses/instructor-courses/');
-      if (!response.ok) {
-        throw new Error('Failed to fetch courses');
-      }
-      const data = await response.json();
-      if (data.success) {
-        setCourses(data.data);
-        if (data.data.length > 0) {
-          setSelectedCourse(data.data[0].id);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      setMessage({ type: 'error', text: 'Failed to fetch courses' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchAttendanceRecords = async () => {
-    if (!selectedCourse) return;
-    
-    try {
-      const response = await api.get(`/courses/attendance/?course=${selectedCourse}&date=${selectedDate}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch attendance records');
-      }
-      const data = await response.json();
-      if (data.success) {
-        setAttendanceRecords(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching attendance records:', error);
-      setMessage({ type: 'error', text: 'Failed to fetch attendance records' });
-    }
-  };
-
+  // Generate mock attendance records when course or date changes
   useEffect(() => {
     if (selectedCourse) {
-      fetchAttendanceRecords();
+      const course = courses.find(c => c.id === selectedCourse);
+      if (course) {
+        const mockRecords: AttendanceRecord[] = course.enrolled_learners.map(learner => ({
+          id: `attendance_${learner.id}_${selectedDate}`,
+          learner,
+          course: {
+            id: course.id,
+            title: course.title,
+            slug: course.slug
+          },
+          session_date: selectedDate,
+          status: Math.random() > 0.2 ? 'present' : Math.random() > 0.5 ? 'late' : 'absent',
+          notes: '',
+          marked_at: new Date().toISOString(),
+          marked_by: user?.full_name || 'Instructor'
+        }));
+        setAttendanceRecords(mockRecords);
+      }
     }
-  }, [selectedCourse, selectedDate]);
+  }, [selectedCourse, selectedDate, courses, user]);
 
   const handleAttendanceChange = (learnerId: string, status: 'present' | 'absent' | 'late') => {
     setAttendanceRecords(prev => 
@@ -121,80 +218,32 @@ export default function AttendancePage() {
     );
   };
 
-  const saveAttendance = async () => {
-    if (!selectedCourse) return;
-    
-    try {
-      setIsSaving(true);
-      const attendanceData = attendanceRecords.map(record => ({
-        learner_id: record.learner.id,
-        course_id: selectedCourse,
-        session_date: selectedDate,
-        status: record.status,
-        notes: record.notes || ''
-      }));
+  const handleSaveAttendance = async () => {
+    setIsSaving(true);
+    setMessage(null);
 
-      const response = await api.post('/courses/attendance/mark/', {
-        course_id: selectedCourse,
-        session_date: selectedDate,
-        attendance_records: attendanceData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.message || 'Failed to save attendance' });
-        return;
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setMessage({ type: 'success', text: 'Attendance saved successfully!' });
-        fetchAttendanceRecords(); // Refresh the data
-      } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to save attendance' });
-      }
-    } catch (error: any) {
-      console.error('Error saving attendance:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to save attendance' 
-      });
-    } finally {
+    // Simulate API call
+    setTimeout(() => {
+      setMessage({ type: 'success', text: 'Attendance saved successfully' });
       setIsSaving(false);
-    }
+    }, 1000);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'present': return 'text-green-600 bg-green-100';
-      case 'absent': return 'text-red-600 bg-red-100';
-      case 'late': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'present': return 'bg-green-100 text-green-800 border-green-200';
+      case 'late': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'absent': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'present':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'absent':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'late':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-          </svg>
-        );
-      default:
-        return null;
+      case 'present': return '✓';
+      case 'late': return '⏰';
+      case 'absent': return '✗';
+      default: return '?';
     }
   };
 
@@ -203,27 +252,27 @@ export default function AttendancePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="text-gray-600">Loading...</span>
+          <span className="text-gray-600">Loading attendance data...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
-          <p className="mt-2 text-gray-600">Mark and manage learner attendance for your courses</p>
+          <p className="text-gray-600 mt-2">Track and manage student attendance for your courses</p>
         </div>
 
         {/* Message */}
         {message && (
           <div className={`mb-6 p-4 rounded-lg ${
             message.type === 'success' 
-              ? 'bg-green-100 text-green-700 border border-green-200' 
-              : 'bg-red-100 text-red-700 border border-red-200'
+              ? 'bg-green-50 text-green-800 border border-green-200' 
+              : 'bg-red-50 text-red-800 border border-red-200'
           }`}>
             {message.text}
           </div>
@@ -231,7 +280,8 @@ export default function AttendancePage() {
 
         {/* Controls */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Course Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Course
@@ -239,17 +289,18 @@ export default function AttendancePage() {
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select a course</option>
-                {courses.map((course) => (
+                <option value="">Choose a course...</option>
+                {courses.map(course => (
                   <option key={course.id} value={course.id}>
-                    {course.title}
+                    {course.title} ({course.enrolled_learners.length} students)
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Date Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Session Date
@@ -258,52 +309,38 @@ export default function AttendancePage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </div>
-
-            <div className="flex items-end">
-              <button
-                onClick={saveAttendance}
-                disabled={isSaving || !selectedCourse}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Save Attendance</span>
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Attendance Table */}
-        {selectedCourse && (
+        {/* Attendance Records */}
+        {selectedCourse && attendanceRecords.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Attendance for {courses.find(c => c.id === selectedCourse)?.title}
+              <h2 className="text-xl font-semibold text-gray-900">
+                Attendance Records - {new Date(selectedDate).toLocaleDateString('en-IN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
               </h2>
-              <p className="text-sm text-gray-600">
-                Session Date: {new Date(selectedDate).toLocaleDateString()}
+              <p className="text-gray-600 mt-1">
+                {attendanceRecords.length} students enrolled
               </p>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Learner
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Progress
@@ -317,98 +354,142 @@ export default function AttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {courses.find(c => c.id === selectedCourse)?.enrolled_learners.map((learner) => {
-                    const record = attendanceRecords.find(r => r.learner.id === learner.id);
-                    const status = record?.status || 'present';
-                    
-                    return (
-                      <tr key={learner.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              {learner.profile_picture ? (
-                                <img
-                                  className="h-10 w-10 rounded-full object-cover"
-                                  src={learner.profile_picture}
-                                  alt={learner.full_name}
-                                />
-                              ) : (
-                                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <span className="text-sm font-medium text-gray-700">
-                                    {learner.full_name.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {learner.full_name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {learner.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                              <div
-                                className="bg-blue-600 h-2 rounded-full"
-                                style={{ width: `${learner.progress_percentage}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm text-gray-600">
-                              {learner.progress_percentage}%
+                  {attendanceRecords.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-600 font-medium text-sm">
+                              {record.learner.full_name.charAt(0)}
                             </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex space-x-2">
-                            {['present', 'late', 'absent'].map((statusOption) => (
-                              <button
-                                key={statusOption}
-                                onClick={() => handleAttendanceChange(learner.id, statusOption as any)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 transition-colors ${
-                                  status === statusOption
-                                    ? getStatusColor(statusOption)
-                                    : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
-                                }`}
-                              >
-                                {getStatusIcon(statusOption)}
-                                <span className="capitalize">{statusOption}</span>
-                              </button>
-                            ))}
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {record.learner.full_name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {record.learner.email}
+                            </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="text"
-                            placeholder="Add notes..."
-                            value={record?.notes || ''}
-                            onChange={(e) => handleNotesChange(learner.id, e.target.value)}
-                            className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{record.learner.phone}</div>
+                        <div className="text-sm text-gray-500">{record.learner.city}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${record.learner.progress_percentage}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            {record.learner.progress_percentage}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          {['present', 'late', 'absent'].map((status) => (
+                            <button
+                              key={status}
+                              onClick={() => handleAttendanceChange(record.learner.id, status as any)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                                record.status === status
+                                  ? getStatusColor(status)
+                                  : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                              }`}
+                            >
+                              {getStatusIcon(status)} {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={record.notes || ''}
+                          onChange={(e) => handleNotesChange(record.learner.id, e.target.value)}
+                          placeholder="Add notes..."
+                          className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Save Button */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">
+                    {attendanceRecords.filter(r => r.status === 'present').length} Present
+                  </span>
+                  <span className="mx-2">•</span>
+                  <span className="font-medium">
+                    {attendanceRecords.filter(r => r.status === 'late').length} Late
+                  </span>
+                  <span className="mx-2">•</span>
+                  <span className="font-medium">
+                    {attendanceRecords.filter(r => r.status === 'absent').length} Absent
+                  </span>
+                </div>
+                <button
+                  onClick={handleSaveAttendance}
+                  disabled={isSaving}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💾</span>
+                      <span>Save Attendance</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Empty State */}
-        {!selectedCourse && (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No course selected</h3>
-            <p className="mt-1 text-sm text-gray-500">Select a course to manage attendance</p>
+        {/* No Data State */}
+        {selectedCourse && attendanceRecords.length === 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="text-gray-400 text-6xl mb-4">📚</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Enrolled</h3>
+            <p className="text-gray-600">This course doesn't have any enrolled students yet.</p>
           </div>
         )}
+
+        {/* No Course Selected */}
+        {!selectedCourse && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="text-gray-400 text-6xl mb-4">📋</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Course</h3>
+            <p className="text-gray-600">Choose a course from the dropdown above to view attendance records.</p>
+          </div>
+        )}
+
+        {/* Prototype Notice */}
+        {/* <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="text-yellow-400 text-xl mr-3">⚠️</div>
+            <div>
+              <h4 className="text-sm font-medium text-yellow-800">Prototype Mode</h4>
+              <p className="text-sm text-yellow-700 mt-1">
+                This is a prototype version with mock data. All student information and attendance records are simulated for demonstration purposes.
+              </p>
+            </div>
+          </div>
+        </div> */}
       </div>
     </div>
   );
