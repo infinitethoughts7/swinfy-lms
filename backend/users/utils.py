@@ -82,7 +82,10 @@ def send_otp_email(user, otp_code, purpose='email_verification', email=None):
         return True
         
     except Exception as e:
-        # Log error silently
+        # Log error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"send_otp_email error for {email_address}: {str(e)}")
         return False
 
 
@@ -172,7 +175,10 @@ def create_otp_verification(user, email, purpose='email_verification', expiry_mi
             return None
             
     except Exception as e:
-        # Log error silently
+        # Log error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"create_otp_verification error for {email}: {str(e)}")
         return None
 
 

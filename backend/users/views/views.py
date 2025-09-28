@@ -85,19 +85,32 @@ class RegisterView(APIView):
         }
         
         # Create OTP verification with temporary user data
-        otp_verification = create_otp_verification(
-            user=None,  # No user object yet
-            email=email,
-            purpose='email_verification',
-            expiry_minutes=10,
-            temp_user_data=temp_user_data
-        )
-        
-        if not otp_verification:
+        try:
+            otp_verification = create_otp_verification(
+                user=None,  # No user object yet
+                email=email,
+                purpose='email_verification',
+                expiry_minutes=10,
+                temp_user_data=temp_user_data
+            )
+            
+            if not otp_verification:
+                return Response({
+                    'success': False,
+                    'message': 'Failed to send verification email. Please try again.',
+                    'error_code': 'EMAIL_SEND_FAILED'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            # Log the error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Registration error for {email}: {str(e)}")
+            
             return Response({
                 'success': False,
-                'message': 'Failed to send verification email. Please try again.',
-                'error_code': 'EMAIL_SEND_FAILED'
+                'message': 'Registration failed due to a server error. Please try again.',
+                'error_code': 'REGISTRATION_ERROR'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Increment rate limit counter
