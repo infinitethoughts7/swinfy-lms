@@ -249,7 +249,7 @@ class ProfileCompletionSerializer(serializers.Serializer):
         skip_profile = validated_data.get('skip_profile', False)
         
         if skip_profile:
-            return {'profile_created': False, 'message': 'Profile completion skipped'}
+            return {'profile_created': False, 'message': 'Profile completion skipped. You can complete your profile later from your dashboard.'}
         
         # Create profile based on user role
         if user.role == 'learner' and 'learner_profile' in validated_data:
@@ -278,7 +278,7 @@ class ProfileCompletionSerializer(serializers.Serializer):
             
         # Admin profile creation removed - KPAProfile model not available
         
-        return {'profile_created': True, 'message': 'Profile completed successfully'}
+        return {'profile_created': True, 'message': '🎉 Profile completed successfully! Welcome to Swinfy LMS. You can now access all features and start your learning journey.'}
 
 
 # =========================
@@ -503,8 +503,5 @@ class ResendOTPSerializer(serializers.Serializer):
     )
     
     def validate_email(self, value):
-        """Validate email address."""
-        # Check if user exists for email verification
-        if not User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError('No user found with this email address.')
+        """Validate email address format."""
         return value.lower()

@@ -25,22 +25,31 @@ def generate_otp(length=6):
     return ''.join(random.choices(string.digits, k=length))
 
 
-def send_otp_email(user, otp_code, purpose='email_verification'):
+def send_otp_email(user, otp_code, purpose='email_verification', email=None):
     """
     Send OTP code via email using Django's email system.
     
     Args:
-        user (User): User instance
+        user (User): User instance (can be None for pending registrations)
         otp_code (str): OTP code to send
         purpose (str): Purpose of the OTP (email_verification, password_reset, etc.)
+        email (str): Email address (used when user is None)
     
     Returns:
         bool: True if email sent successfully, False otherwise
     """
     try:
+        # Determine email address and user name
+        if user:
+            email_address = user.email
+            user_name = user.full_name
+        else:
+            email_address = email
+            user_name = "User"  # Default name for pending registrations
+        
         # Email context
         context = {
-            'user_name': user.full_name,
+            'user_name': user_name,
             'otp_code': otp_code,
             'purpose': purpose,
             'expiry_minutes': 10,  # OTP expires in 10 minutes
@@ -65,7 +74,7 @@ def send_otp_email(user, otp_code, purpose='email_verification'):
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
+            recipient_list=[email_address],
             html_message=html_message,
             fail_silently=False,
         )
@@ -73,7 +82,7 @@ def send_otp_email(user, otp_code, purpose='email_verification'):
         return True
         
     except Exception as e:
-        print(f"Failed to send OTP email: {e}")
+        # Log error silently
         return False
 
 
@@ -123,15 +132,16 @@ def cleanup_expired_otps():
     return count
 
 
-def create_otp_verification(user, email, purpose='email_verification', expiry_minutes=10):
+def create_otp_verification(user, email, purpose='email_verification', expiry_minutes=10, temp_user_data=None):
     """
     Create a new OTP verification record and send the OTP via email.
     
     Args:
-        user (User): User instance
+        user (User): User instance (can be None for pending registrations)
         email (str): Email address to send OTP to
         purpose (str): Purpose of the OTP
         expiry_minutes (int): OTP expiry time in minutes
+        temp_user_data (dict): Temporary user data for pending registrations
     
     Returns:
         OTPVerification: Created OTP verification instance or None if failed
@@ -150,10 +160,11 @@ def create_otp_verification(user, email, purpose='email_verification', expiry_mi
             otp_code=otp_code,
             purpose=purpose,
             expires_at=expires_at,
+            temp_user_data=temp_user_data,
         )
         
         # Send OTP via email
-        if send_otp_email(user, otp_code, purpose):
+        if send_otp_email(user, otp_code, purpose, email):
             return otp_verification
         else:
             # If email sending failed, delete the OTP record
@@ -161,7 +172,7 @@ def create_otp_verification(user, email, purpose='email_verification', expiry_mi
             return None
             
     except Exception as e:
-        print(f"Failed to create OTP verification: {e}")
+        # Log error silently
         return None
 
 
@@ -178,18 +189,19 @@ def verify_otp_code(email, otp_code, purpose='email_verification'):
         dict: Result dictionary with success status and message
     """
     try:
-        # Find the most recent unverified OTP for this email and purpose
+        # Find an unverified OTP for this email and purpose that matches the code
         otp_verification = OTPVerification.objects.filter(
             email=email,
             purpose=purpose,
-            is_verified=False
+            is_verified=False,
+            otp_code=otp_code
         ).order_by('-created_at').first()
         
         if not otp_verification:
             return {
                 'success': False,
-                'message': 'No OTP found for this email and purpose.',
-                'error_code': 'OTP_NOT_FOUND'
+                'message': 'Invalid OTP code. Please check the code and try again.',
+                'error_code': 'INVALID_OTP'
             }
         
         # Check if OTP is still valid
@@ -222,8 +234,8 @@ def verify_otp_code(email, otp_code, purpose='email_verification'):
             otp_verification.is_verified = True
             otp_verification.save()
             
-            # Mark user as verified if this is email verification
-            if purpose == 'email_verification':
+            # Mark user as verified if this is email verification and user exists
+            if purpose == 'email_verification' and otp_verification.user:
                 user = otp_verification.user
                 user.is_verified = True
                 user.save()
@@ -254,7 +266,7 @@ def verify_otp_code(email, otp_code, purpose='email_verification'):
                 }
                 
     except Exception as e:
-        print(f"Failed to verify OTP: {e}")
+        # Log error silently
         return {
             'success': False,
             'message': 'An error occurred during verification. Please try again.',

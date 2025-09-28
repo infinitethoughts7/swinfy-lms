@@ -13,7 +13,7 @@ interface OTPVerificationProps {
 const OTP_CONFIG = {
   EXPIRY_TIME_MINUTES: 10,
   CODE_LENGTH: 6,
-  RESEND_COOLDOWN_SECONDS: 60,
+  RESEND_COOLDOWN_SECONDS: 120, // Increased to 2 minutes
 };
 
 export default function OTPVerification({ email, onVerificationSuccess, onBack }: OTPVerificationProps) {
@@ -23,12 +23,21 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Generate and send OTP on component mount
-  useEffect(() => {
-    generateAndSendOTP();
-  }, []);
+  // Debug logging function
+  const addDebugLog = (message: string, data?: any) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(logMessage, data);
+    setDebugLogs(prev => [...prev.slice(-9), logMessage]); // Keep last 10 logs
+  };
+
+  // OTP is already sent during registration, no need to send again
+  // useEffect(() => {
+  //   generateAndSendOTP();
+  // }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -38,32 +47,7 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     }
   }, [timeLeft]);
 
-  const sendOTPEmail = async () => {
-    try {
-      setError('');
-      setSuccess('');
-      
-      const response = await api.post('/api/auth/send-otp/', {
-        email: email,
-        purpose: 'email_verification'
-      });
-
-      if (response.data.success) {
-        setSuccess('Verification code sent to your email!');
-        setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
-      } else {
-        setError(response.data.message || 'Failed to send verification code.');
-      }
-    } catch (error: any) {
-      console.error('Failed to send OTP email:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to send verification code. Please try again.';
-      setError(errorMessage);
-    }
-  };
-
-  const generateAndSendOTP = async () => {
-    await sendOTPEmail();
-  };
+  // OTP is already sent during registration, no need for send functions
 
   const handleInputChange = (index: number, value: string) => {
     if (value.length > 1) return; // Only allow single digit
@@ -111,6 +95,13 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     setError('');
     setSuccess('');
 
+    // Debug logging
+    console.log('🔍 OTP Verification Debug:', {
+      email: email,
+      enteredOtp: enteredOtp,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       const response = await api.post('/api/auth/verify-otp/', {
         email: email,
@@ -118,15 +109,50 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
         purpose: 'email_verification'
       });
 
-      if (response.data.success) {
+      // Debug logging
+      addDebugLog('🔍 API Response Debug', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      // Check if response exists
+      if (!response) {
+        addDebugLog('❌ No response received from API');
+        setError('No response received from server. Please try again.');
+        return;
+      }
+
+      // Parse JSON response
+      let data;
+      try {
+        data = await response.json();
+        addDebugLog('📄 Parsed response data', data);
+      } catch (parseError) {
+        addDebugLog('❌ Failed to parse JSON response', parseError);
+        setError('Invalid response from server. Please try again.');
+        return;
+      }
+
+      if (response.ok && data.success) {
+        addDebugLog('✅ OTP verification successful', data);
         setSuccess('Email verified successfully!');
         // Call the success callback with user data and tokens
-        onVerificationSuccess(response.data.user, response.data.tokens);
+        onVerificationSuccess(data.user, data.tokens);
       } else {
-        setError(response.data.message || 'Verification failed. Please try again.');
+        addDebugLog('❌ OTP verification failed', data);
+        setError(data.message || 'Verification failed. Please try again.');
       }
     } catch (error: any) {
-      console.error('OTP verification error:', error);
+      console.error('❌ OTP verification error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
+      
       const errorMessage = error.response?.data?.message || 'Verification failed. Please try again.';
       setError(errorMessage);
     } finally {
@@ -142,21 +168,52 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     setSuccess('');
     setOtp(['', '', '', '', '', '']);
     
+    // Debug logging
+    console.log('🔄 Resending OTP Debug:', {
+      email: email,
+      purpose: 'email_verification',
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       const response = await api.post('/api/auth/resend-otp/', {
         email: email,
         purpose: 'email_verification'
       });
 
-      if (response.data.success) {
+      // Parse JSON response
+      let data;
+      try {
+        data = await response.json();
+        addDebugLog('🔄 Resend OTP Response', {
+          status: response.status,
+          data: data
+        });
+      } catch (parseError) {
+        addDebugLog('❌ Failed to parse resend OTP response', parseError);
+        setError('Invalid response from server. Please try again.');
+        return;
+      }
+
+      if (response.ok && data && data.success) {
+        addDebugLog('✅ OTP resent successfully');
         setSuccess('New verification code sent to your email!');
         setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
         inputRefs.current[0]?.focus();
       } else {
-        setError(response.data.message || 'Failed to resend verification code.');
+        addDebugLog('❌ OTP resend failed', data);
+        setError(data?.message || 'Failed to resend verification code.');
       }
     } catch (error: any) {
-      console.error('Failed to resend OTP:', error);
+      console.error('❌ Failed to resend OTP:', error);
+      console.error('❌ Resend OTP Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
+      
       const errorMessage = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
       setError(errorMessage);
     } finally {
@@ -277,6 +334,30 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
           Check your spam folder if you don't see the email in your inbox
         </p>
       </div>
+
+      {/* Debug Panel - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-6 p-4 bg-gray-100 rounded-lg border">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">🐛 Debug Logs</h4>
+          <div className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
+            {debugLogs.length === 0 ? (
+              <p className="text-gray-400">No debug logs yet...</p>
+            ) : (
+              debugLogs.map((log, index) => (
+                <div key={index} className="font-mono">
+                  {log}
+                </div>
+              ))
+            )}
+          </div>
+          <button
+            onClick={() => setDebugLogs([])}
+            className="mt-2 text-xs text-blue-600 hover:text-blue-800"
+          >
+            Clear Logs
+          </button>
+        </div>
+      )}
     </div>
   );
 }

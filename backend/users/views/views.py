@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError, PermissionDenied
 from rest_framework import generics
 from django.db.models import Q
-from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
+from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile, OTPVerification
 from ..permissions import IsKnowledgePartnerAdmin
 from ..utils import (
     create_otp_verification, 
@@ -37,23 +37,34 @@ from ..serializers import (
 
 
 
-class RegisterView(generics.CreateAPIView):
-    """User registration endpoint - learners only."""
+class RegisterView(APIView):
+    """User registration endpoint - learners only. Creates OTP verification without creating user."""
     
-    queryset = User.objects.all()
-    serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
     
-    def create(self, request, *args, **kwargs):
-        """Create a new learner account and send OTP for verification."""
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request, *args, **kwargs):
+        """Validate registration data and send OTP for verification."""
+        serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Create user (role automatically set to 'learner', is_verified=False)
-        user = serializer.save()
+        email = serializer.validated_data['email']
+        full_name = serializer.validated_data['full_name']
+        password = serializer.validated_data['password']
+        
+        # Check if user with this email already exists and is verified
+        try:
+            existing_user = User.objects.get(email=email)
+            if existing_user.is_verified:
+                return Response({
+                    'success': False,
+                    'message': 'User with this Email Address already exists.',
+                    'error_code': 'EMAIL_EXISTS'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            pass  # Email doesn't exist, proceed with registration
         
         # Check rate limit for OTP requests
-        rate_limit_check = check_rate_limit(user.email, 'email_verification')
+        rate_limit_check = check_rate_limit(email, 'email_verification')
         if not rate_limit_check['allowed']:
             return Response({
                 'success': False,
@@ -62,12 +73,24 @@ class RegisterView(generics.CreateAPIView):
                 'retry_after': rate_limit_check.get('retry_after', 600)
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
-        # Create and send OTP verification
+        # Store user data temporarily in OTPVerification
+        temp_user_data = {
+            'email': email,
+            'full_name': full_name,
+            'password': password,  # Will be hashed when user is created
+            'role': 'learner',
+            'is_verified': False,
+            'is_approved': True,  # Learners are auto-approved
+            'is_active': True,
+        }
+        
+        # Create OTP verification with temporary user data
         otp_verification = create_otp_verification(
-            user=user,
-            email=user.email,
+            user=None,  # No user object yet
+            email=email,
             purpose='email_verification',
-            expiry_minutes=10
+            expiry_minutes=10,
+            temp_user_data=temp_user_data
         )
         
         if not otp_verification:
@@ -78,19 +101,13 @@ class RegisterView(generics.CreateAPIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Increment rate limit counter
-        increment_rate_limit(user.email, 'email_verification')
+        increment_rate_limit(email, 'email_verification')
         
         # Response
         response_data = {
             'success': True,
             'message': 'Registration successful! Please check your email for the verification code.',
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'full_name': user.full_name,
-                'role': user.role,
-                'is_verified': user.is_verified,
-            },
+            'email': email,
             'otp_sent': True,
             'expires_in_minutes': 10
         }
@@ -732,7 +749,7 @@ class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
     
     def post(self, request):
-        """Verify OTP code."""
+        """Verify OTP code and create user if this is a registration."""
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -744,8 +761,39 @@ class VerifyOTPView(APIView):
         result = verify_otp_code(email, otp_code, purpose)
         
         if result['success']:
+            otp_verification = result['otp_verification']
+            user = otp_verification.user
+            
+            # If this is a registration (no user exists yet), create the user
+            if not user and purpose == 'email_verification' and otp_verification.temp_user_data:
+                try:
+                    # Create the user from temporary data
+                    temp_data = otp_verification.temp_user_data
+                    
+                    user = User.objects.create_user(
+                        email=temp_data['email'],
+                        full_name=temp_data['full_name'],
+                        password=temp_data['password'],  # Will be hashed automatically
+                        role=temp_data['role'],
+                        is_verified=True,  # Mark as verified since OTP is confirmed
+                        is_approved=temp_data['is_approved'],
+                        is_active=temp_data['is_active'],
+                    )
+                    
+                    # Update the OTP verification to link it to the user
+                    otp_verification.user = user
+                    otp_verification.save()
+                    
+                    # User created successfully - profile can be updated later
+                    
+                except Exception as e:
+                    return Response({
+                        'success': False,
+                        'message': f'Failed to create user account: {str(e)}',
+                        'error_code': 'USER_CREATION_FAILED'
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
             # Generate tokens for the user
-            user = result['otp_verification'].user
             refresh = RefreshToken.for_user(user)
             
             return Response({
@@ -795,23 +843,63 @@ class ResendOTPView(APIView):
                 'retry_after': rate_limit_check.get('retry_after', 600)
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
-        # Get user
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
-            return Response({
-                'success': False,
-                'message': 'No user found with this email address.',
-                'error_code': 'USER_NOT_FOUND'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        # Create and send new OTP
-        otp_verification = create_otp_verification(
-            user=user,
-            email=email,
-            purpose=purpose,
-            expiry_minutes=10
-        )
+        # For email verification, check if there's a pending OTP with temp data
+        if purpose == 'email_verification':
+            try:
+                # Look for existing OTP verification with temp data
+                existing_otp = OTPVerification.objects.filter(
+                    email=email,
+                    purpose=purpose,
+                    is_verified=False,
+                    temp_user_data__isnull=False
+                ).order_by('-created_at').first()
+                
+                if existing_otp:
+                    # Resend OTP with existing temp data
+                    otp_verification = create_otp_verification(
+                        user=None,
+                        email=email,
+                        purpose=purpose,
+                        expiry_minutes=10,
+                        temp_user_data=existing_otp.temp_user_data
+                    )
+                    
+                    if not otp_verification:
+                        return Response({
+                            'success': False,
+                            'message': 'Failed to create new OTP. Please try again.',
+                            'error_code': 'OTP_CREATION_FAILED'
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response({
+                        'success': False,
+                        'message': 'No pending registration found for this email address.',
+                        'error_code': 'NO_PENDING_REGISTRATION'
+                    }, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'message': f'Failed to resend OTP: {str(e)}',
+                    'error_code': 'RESEND_FAILED'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            # For other purposes (password reset, etc.), user must exist
+            try:
+                user = User.objects.get(email__iexact=email)
+            except User.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'message': 'No user found with this email address.',
+                    'error_code': 'USER_NOT_FOUND'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Create and send new OTP
+            otp_verification = create_otp_verification(
+                user=user,
+                email=email,
+                purpose=purpose,
+                expiry_minutes=10
+            )
         
         if not otp_verification:
             return Response({

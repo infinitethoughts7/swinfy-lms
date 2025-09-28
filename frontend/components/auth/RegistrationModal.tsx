@@ -79,18 +79,18 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
             </div>
           )}
           
-          {(currentStep === 'registration' || currentStep === 'otp-verification') && (
-            <>
-                        <DialogTitle className="text-2xl font-bold text-gray-900">
-                          {currentStep === 'registration' && 'Create Your Learner Account'}
-                          {currentStep === 'otp-verification' && 'Email Verification'}
-                        </DialogTitle>
-                        <DialogDescription className="text-gray-600">
-                          {currentStep === 'registration' && 'Join thousands of learners and start your personalized learning journey'}
-                          {currentStep === 'otp-verification' && 'We need to verify your email address to complete registration'}
-                        </DialogDescription>
-            </>
-          )}
+          <DialogTitle className="text-2xl font-bold text-gray-900">
+            {currentStep === 'registration' && 'Create Your Learner Account'}
+            {currentStep === 'otp-verification' && 'Email Verification'}
+            {currentStep === 'success' && 'Registration Successful'}
+            {currentStep === 'pending-approval' && 'Registration Pending'}
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            {currentStep === 'registration' && 'Join thousands of learners and start your personalized learning journey'}
+            {currentStep === 'otp-verification' && 'We need to verify your email address to complete registration'}
+            {currentStep === 'success' && 'Welcome to Swinfy LMS! Your account has been created successfully.'}
+            {currentStep === 'pending-approval' && 'Your registration is being reviewed by our team.'}
+          </DialogDescription>
           </DialogHeader>
 
           <div>

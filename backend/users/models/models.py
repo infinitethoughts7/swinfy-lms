@@ -271,7 +271,7 @@ class OTPVerification(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otp_verifications')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otp_verifications', null=True, blank=True, help_text="User object (null for pending registrations)")
     email = models.EmailField(help_text="Email address to send OTP to")
     otp_code = models.CharField(max_length=6, help_text="6-digit OTP code")
     purpose = models.CharField(max_length=30, choices=PURPOSE_CHOICES, default='email_verification')
@@ -280,6 +280,9 @@ class OTPVerification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     attempts = models.PositiveIntegerField(default=0, help_text="Number of verification attempts")
     max_attempts = models.PositiveIntegerField(default=3, help_text="Maximum verification attempts allowed")
+    
+    # Temporary user data for pending registrations
+    temp_user_data = models.JSONField(null=True, blank=True, help_text="Temporary user data for pending registrations")
     
     def __str__(self):
         return f"OTP for {self.email} - {self.purpose} - {'Verified' if self.is_verified else 'Pending'}"
