@@ -28,6 +28,14 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
+  // Forgot password states
+  const [forgotPasswordStep, setForgotPasswordStep] = useState<'email' | 'otp' | 'new-password' | null>(null);
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -84,6 +92,139 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     setIsLoading(false);
   };
 
+  // Forgot password functions
+  const handleForgotPassword = () => {
+    setForgotPasswordStep('email');
+    setError('');
+  };
+
+  const handleSendOTP = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await authApi.forgotPassword({ email });
+      setOtpSent(true);
+      setForgotPasswordStep('otp');
+      setTimeLeft(300); // 5 minutes
+      setError('');
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      setError(error.message || 'Failed to send reset code. Please try again.');
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleVerifyOTP = async () => {
+    const otp = otpCode.join('');
+    if (otp.length !== 6) {
+      setError('Please enter the complete 6-digit code');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await authApi.verifyResetOTP({ email, otp_code: otp });
+      setForgotPasswordStep('new-password');
+      setError('');
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      setError(error.message || 'Invalid verification code. Please try again.');
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      setError('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await authApi.resetPassword({ 
+        email, 
+        otp_code: otpCode.join(''), 
+        new_password: newPassword 
+      });
+      
+      // Reset all states
+      setForgotPasswordStep(null);
+      setEmail('');
+      setPassword('');
+      setOtpCode(['', '', '', '', '', '']);
+      setNewPassword('');
+      setConfirmPassword('');
+      setOtpSent(false);
+      setTimeLeft(0);
+      setError('');
+      
+      // Close modal
+      onOpenChange(false);
+      
+    } catch (error: any) {
+      console.error('Password update error:', error);
+      setError(error.message || 'Failed to update password. Please try again.');
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleBackToLogin = () => {
+    setForgotPasswordStep(null);
+    setEmail('');
+    setPassword('');
+    setOtpCode(['', '', '', '', '', '']);
+    setNewPassword('');
+    setConfirmPassword('');
+    setOtpSent(false);
+    setTimeLeft(0);
+    setError('');
+  };
+
+  const handleOTPInputChange = (index: number, value: string) => {
+    if (value.length > 1) return;
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtp = [...otpCode];
+    newOtp[index] = value;
+    setOtpCode(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleOTPKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl w-[95vw] max-h-[95vh] overflow-y-auto bg-white/95 backdrop-blur-md border-0 shadow-2xl p-0">
@@ -95,16 +236,178 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
             </div>
             
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Welcome Back!
+              {!forgotPasswordStep && 'Welcome Back!'}
+              {forgotPasswordStep === 'email' && 'Reset Your Password'}
+              {forgotPasswordStep === 'otp' && 'Verify Your Email'}
+              {forgotPasswordStep === 'new-password' && 'Create New Password'}
             </DialogTitle>
             <DialogDescription className="text-gray-600">
-              Sign in to your account to continue learning
+              {!forgotPasswordStep && 'Sign in to your account to continue learning'}
+              {forgotPasswordStep === 'email' && 'Enter your email address to receive a reset code'}
+              {forgotPasswordStep === 'otp' && 'Enter the 6-digit code sent to your email'}
+              {forgotPasswordStep === 'new-password' && 'Enter your new password to complete the reset'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 max-w-lg mx-auto">
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Step 1: Email Input for Forgot Password */}
+            {forgotPasswordStep === 'email' && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    placeholder="Enter your email address"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    className="flex-1 py-2.5 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Back to Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendOTP}
+                    disabled={isLoading}
+                    className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? 'Sending...' : 'Send Reset Code'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: OTP Verification */}
+            {forgotPasswordStep === 'otp' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Enter 6-digit code
+                  </label>
+                  <div className="flex space-x-2 justify-center">
+                    {otpCode.map((digit, index) => (
+                      <input
+                        key={index}
+                        id={`otp-${index}`}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOTPInputChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOTPKeyDown(index, e)}
+                        className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 text-center">
+                    Code sent to {email}
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    className="flex-1 py-2.5 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Back to Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleVerifyOTP}
+                    disabled={isLoading || otpCode.join('').length !== 6}
+                    className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: New Password */}
+            {forgotPasswordStep === 'new-password' && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    placeholder="Enter new password"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    placeholder="Confirm new password"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    className="flex-1 py-2.5 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Back to Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUpdatePassword}
+                    disabled={isLoading}
+                    className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Login Form - Only show when not in forgot password flow */}
+            {!forgotPasswordStep && (
+              <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -161,7 +464,11 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
                 <input type="checkbox" className="rounded text-blue-600" />
                 <span className="ml-2 text-sm text-gray-600">Remember me</span>
               </label>
-              <button type="button" className="text-sm text-blue-600 hover:text-blue-800">
+              <button 
+                type="button" 
+                onClick={handleForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
                 Forgot password?
               </button>
             </div>
@@ -191,6 +498,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
               </button>
             </div>
           </form>
+            )}
           </div>
 
           {/* Register link */}

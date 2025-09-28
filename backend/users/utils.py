@@ -189,15 +189,15 @@ def verify_otp_code(email, otp_code, purpose='email_verification'):
         dict: Result dictionary with success status and message
     """
     try:
-        # Find an unverified OTP for this email and purpose that matches the code
+        # Find the most recent OTP for this email and purpose
         otp_verification = OTPVerification.objects.filter(
             email=email,
             purpose=purpose,
-            is_verified=False,
-            otp_code=otp_code
+            is_verified=False
         ).order_by('-created_at').first()
         
-        if not otp_verification:
+        # Check if the OTP code matches
+        if not otp_verification or otp_verification.otp_code != otp_code:
             return {
                 'success': False,
                 'message': 'Invalid OTP code. Please check the code and try again.',
@@ -239,6 +239,9 @@ def verify_otp_code(email, otp_code, purpose='email_verification'):
                 user = otp_verification.user
                 user.is_verified = True
                 user.save()
+            
+            # For password reset, keep it verified so it can be used for password reset
+            # The reset password view will handle marking it as used
             
             return {
                 'success': True,

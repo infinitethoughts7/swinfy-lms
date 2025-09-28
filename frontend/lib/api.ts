@@ -268,6 +268,66 @@ export const authApi = {
     }
   },
 
+  // Forgot password - send OTP
+  forgotPassword: async (data: { email: string }): Promise<{ message: string }> => {
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/forgot-password/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
+  // Verify reset OTP
+  verifyResetOTP: async (data: { email: string; otp_code: string }): Promise<{ message: string }> => {
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/verify-reset-otp/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
+  // Reset password
+  resetPassword: async (data: { email: string; otp_code: string; new_password: string }): Promise<{ message: string }> => {
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/reset-password/`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  },
+
   // Refresh token
   refreshToken: async (refreshToken: string): Promise<{ access: string }> => {
     const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {

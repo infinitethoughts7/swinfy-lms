@@ -42,6 +42,13 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
   const fetchNotifications = useCallback(async () => {
     if (loadingNotifications) return;
     
+    // Check if user is authenticated before making API call
+    const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token');
+    if (!isAuthenticated) {
+      console.log('User not authenticated, skipping notifications fetch');
+      return;
+    }
+    
     try {
       setLoadingNotifications(true);
       const { learnerDashboardApi } = await import('@/lib/api');
@@ -58,7 +65,9 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
 
   // Fetch notifications when component mounts or when notifications dropdown is opened
   useEffect(() => {
-    if (user.role === 'learner') {
+    // Only fetch notifications if user is authenticated (has token) and is a learner
+    const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token');
+    if (user.role === 'learner' && isAuthenticated) {
       fetchNotifications();
     }
   }, [user.role, fetchNotifications]);

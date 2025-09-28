@@ -820,6 +820,221 @@ class VerifyOTPView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ForgotPasswordView(APIView):
+    """Send OTP for password reset."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Send OTP for password reset."""
+        email = request.data.get('email')
+        
+        if not email:
+            return Response({
+                'success': False,
+                'message': 'Email address is required.',
+                'error_code': 'EMAIL_REQUIRED'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if user exists
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'No account found with this email address. Please register first.',
+                'error_code': 'USER_NOT_FOUND'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check rate limit
+        rate_limit_check = check_rate_limit(email, 'password_reset')
+        if not rate_limit_check['allowed']:
+            return Response({
+                'success': False,
+                'message': rate_limit_check['message'],
+                'error_code': 'RATE_LIMIT_EXCEEDED',
+                'retry_after': rate_limit_check.get('retry_after', 600)
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        
+        # Create and send OTP
+        otp_verification = create_otp_verification(
+            user=user,
+            email=email,
+            purpose='password_reset',
+            expiry_minutes=10
+        )
+        
+        if not otp_verification:
+            return Response({
+                'success': False,
+                'message': 'Failed to send reset code. Please try again.',
+                'error_code': 'EMAIL_SEND_FAILED'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Increment rate limit counter
+        increment_rate_limit(email, 'password_reset')
+        
+        return Response({
+            'success': True,
+            'message': 'Password reset code sent to your email.',
+            'email': email,
+            'expires_in_minutes': 10
+        }, status=status.HTTP_200_OK)
+
+
+class VerifyResetOTPView(APIView):
+    """Verify OTP for password reset."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Verify OTP for password reset."""
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        
+        if not email or not otp_code:
+            return Response({
+                'success': False,
+                'message': 'Email and OTP code are required.',
+                'error_code': 'MISSING_FIELDS'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Find the most recent OTP for password reset
+        try:
+            otp_verification = OTPVerification.objects.filter(
+                email__iexact=email,
+                purpose='password_reset',
+                is_verified=False
+            ).order_by('-created_at').first()
+            
+            if not otp_verification:
+                return Response({
+                    'success': False,
+                    'message': 'No reset code found for this email. Please request a new one.',
+                    'error_code': 'NO_OTP_FOUND'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Check if OTP code matches
+            if otp_verification.otp_code != otp_code:
+                # Increment attempt count
+                otp_verification.attempts += 1
+                otp_verification.save()
+                
+                remaining_attempts = otp_verification.max_attempts - otp_verification.attempts
+                
+                if remaining_attempts > 0:
+                    return Response({
+                        'success': False,
+                        'message': f'Invalid OTP code. {remaining_attempts} attempts remaining.',
+                        'error_code': 'INVALID_OTP',
+                        'remaining_attempts': remaining_attempts
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({
+                        'success': False,
+                        'message': 'Invalid OTP code. Maximum attempts exceeded. Please request a new OTP.',
+                        'error_code': 'MAX_ATTEMPTS_EXCEEDED'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if OTP is still valid
+            if otp_verification.is_expired():
+                return Response({
+                    'success': False,
+                    'message': 'OTP has expired. Please request a new one.',
+                    'error_code': 'OTP_EXPIRED'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if otp_verification.attempts >= otp_verification.max_attempts:
+                return Response({
+                    'success': False,
+                    'message': 'Maximum verification attempts exceeded. Please request a new OTP.',
+                    'error_code': 'MAX_ATTEMPTS_EXCEEDED'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Mark OTP as verified
+            otp_verification.is_verified = True
+            otp_verification.save()
+            
+            return Response({
+                'success': True,
+                'message': 'OTP verified successfully. You can now reset your password.',
+                'email': email
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Failed to verify OTP. Please try again.',
+                'error_code': 'VERIFICATION_ERROR'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResetPasswordView(APIView):
+    """Reset password with OTP verification."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        """Reset password with OTP verification."""
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        new_password = request.data.get('new_password')
+        
+        if not all([email, otp_code, new_password]):
+            return Response({
+                'success': False,
+                'message': 'Email, OTP code, and new password are required.',
+                'error_code': 'MISSING_FIELDS'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Find the verified OTP for password reset
+        try:
+            otp_verification = OTPVerification.objects.filter(
+                email__iexact=email,
+                purpose='password_reset',
+                is_verified=True,
+                otp_code=otp_code
+            ).order_by('-created_at').first()
+            
+            if not otp_verification:
+                return Response({
+                    'success': False,
+                    'message': 'Invalid or expired reset code. Please request a new one.',
+                    'error_code': 'INVALID_OTP'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': 'Failed to verify reset code.',
+                'error_code': 'VERIFICATION_ERROR'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Get user and update password
+        try:
+            user = User.objects.get(email__iexact=email)
+            user.set_password(new_password)
+            user.save()
+            
+            return Response({
+                'success': True,
+                'message': 'Password updated successfully. You can now login with your new password.'
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'User not found.',
+                'error_code': 'USER_NOT_FOUND'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': f'Failed to update password: {str(e)}',
+                'error_code': 'PASSWORD_UPDATE_FAILED'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class ResendOTPView(APIView):
     """Resend OTP code."""
     
