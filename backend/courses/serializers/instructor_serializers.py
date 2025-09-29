@@ -62,6 +62,7 @@ class InstructorCourseListSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     level_display = serializers.CharField(source='get_level_display', read_only=True)
     approval_status_display = serializers.CharField(source='get_approval_status_display', read_only=True)
+    tutor = serializers.SerializerMethodField()
     
     class Meta:
         model = Course
@@ -70,7 +71,7 @@ class InstructorCourseListSerializer(serializers.ModelSerializer):
             'category', 'category_display', 'level', 'level_display', 'thumbnail',
             'approval_status', 'approval_status_display', 'is_published', 'is_active',
             'modules_count', 'lessons_count', 'total_duration_minutes', 'enrollment_count',
-            'created_at', 'updated_at'
+            'tutor', 'created_at', 'updated_at'
         ]
     
     def get_modules_count(self, obj):
@@ -85,6 +86,15 @@ class InstructorCourseListSerializer(serializers.ModelSerializer):
             for lesson in module.lessons.all():
                 total_minutes += lesson.duration_minutes
         return total_minutes
+    
+    def get_tutor(self, obj):
+        if obj.tutor:
+            return {
+                'id': obj.tutor.id,
+                'full_name': obj.tutor.full_name,
+                'email': obj.tutor.email
+            }
+        return None
 
 
 class InstructorCourseDetailSerializer(serializers.ModelSerializer):
