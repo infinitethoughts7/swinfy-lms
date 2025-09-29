@@ -124,7 +124,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [error, setError] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<'not_enrolled' | 'pending' | 'payment_verification' | 'active' | 'completed'>('not_enrolled');
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'not_enrolled' | 'active' | 'payment_verification'>('not_enrolled');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'failed' | 'refunded' | 'partial'>('pending');
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -173,10 +174,19 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           try {
             const enrollmentData = await paymentsApi.checkEnrollment(courseData.slug);
             setEnrollmentStatus(enrollmentData.status);
-            setIsEnrolled(['active', 'completed', 'pending'].includes(enrollmentData.status));
+            setPaymentStatus(enrollmentData.payment_status || 'pending');
             
-            // Only fetch modules and lessons if user is enrolled
-            if (['active', 'completed'].includes(enrollmentData.status)) {
+            // For students, only payment status matters
+            if (enrollmentData.payment_status === 'paid') {
+              setEnrollmentStatus('active'); // If paid, they own the course
+              setIsEnrolled(true);
+            } else {
+              setEnrollmentStatus('not_enrolled');
+              setIsEnrolled(false);
+            }
+            
+            // Only fetch modules and lessons if payment is made
+            if (enrollmentData.payment_status === 'paid') {
               // Fetch course modules
               const modulesData = await coursesApi.getCourseModules(id);
               setModules(modulesData);
@@ -235,6 +245,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       setShowLoginModal(true);
       return;
     }
+    
+    // Check if payment is already made (should not allow enrollment again)
+    if (paymentStatus === 'paid') {
+      return; // Button should be disabled
+    }
 
     setShowPaymentModal(true);
   };
@@ -247,8 +262,16 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     if (course) {
       paymentsApi.checkEnrollment(course.slug)
         .then(enrollmentData => {
-          setEnrollmentStatus(enrollmentData.status);
-          setIsEnrolled(['active', 'completed'].includes(enrollmentData.status));
+          setPaymentStatus(enrollmentData.payment_status || 'pending');
+          
+          // For students, only payment status matters
+          if (enrollmentData.payment_status === 'paid') {
+            setEnrollmentStatus('active'); // If paid, they own the course
+            setIsEnrolled(true);
+          } else {
+            setEnrollmentStatus('not_enrolled');
+            setIsEnrolled(false);
+          }
         })
         .catch(() => {
           setEnrollmentStatus('not_enrolled');
@@ -649,16 +672,31 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               
               {/* Pricing Section */}
               <div className="text-center mb-6">
-                <div className="text-3xl font-sora font-black text-blue-600 mb-1">
-                  ₹{parseFloat(course.price).toLocaleString()}
-                </div>
-                <p className="text-sm text-gray-600 font-inter">
-                  Own this course forever
-                </p>
+                {paymentStatus !== 'paid' && (
+                  <>
+                    <div className="text-3xl font-sora font-black text-blue-600 mb-1">
+                      ₹{parseFloat(course.price).toLocaleString()}
+                    </div>
+                    <p className="text-sm text-gray-600 font-inter">
+                      Own this course forever
+                    </p>
+                  </>
+                )}
+                
+                {paymentStatus === 'paid' && (
+                  <>
+                    <div className="text-2xl font-sora font-bold text-green-600 mb-1">
+                      🎉 You Own This Course!
+                    </div>
+                    <p className="text-sm text-gray-600 font-inter">
+                      Lifetime access to all materials
+                    </p>
+                  </>
+                )}
               </div>
               
-              {/* Enroll Button */}
-              {enrollmentStatus === 'not_enrolled' && (
+              {/* Enroll Button - Only show if payment not made */}
+              {paymentStatus !== 'paid' && (
                 <div className="space-y-3 mb-4">
                   <button 
                     onClick={handleEnrollClick}
@@ -672,51 +710,16 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 </div>
               )}
               
-              {enrollmentStatus === 'pending' && (
-                <div className="space-y-3 mb-4">
-                  <div className="w-full bg-orange-100 border-2 border-orange-300 text-orange-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center flex items-center justify-center">
-                    <svg className="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    ⏳ Enrollment Pending
-                  </div>
-                  <p className="text-xs text-gray-600 text-center">Your enrollment request is being reviewed</p>
-                </div>
-              )}
-              
-              {enrollmentStatus === 'payment_verification' && (
-                <div className="space-y-3 mb-4">
-                  <div className="w-full bg-yellow-100 border-2 border-yellow-400 text-yellow-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center flex items-center justify-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                    </svg>
-                    💳 Payment Under Review
-                  </div>
-                  <p className="text-xs text-gray-600 text-center">Payment received - awaiting admin approval</p>
-                </div>
-              )}
-              
-              {enrollmentStatus === 'active' && (
+              {/* Course Owned - Show if payment made */}
+              {paymentStatus === 'paid' && (
                 <div className="space-y-3 mb-4">
                   <div className="w-full bg-green-100 border-2 border-green-400 text-green-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center flex items-center justify-center">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    ✅ Enrolled - Full Access
+                    ✅ Course Owned - Full Access
                   </div>
-                  <p className="text-xs text-gray-600 text-center">You have full access to all course materials</p>
-                </div>
-              )}
-              
-              {enrollmentStatus === 'completed' && (
-                <div className="space-y-3 mb-4">
-                  <div className="w-full bg-purple-100 border-2 border-purple-400 text-purple-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center flex items-center justify-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                    🎓 Course Completed
-                  </div>
-                  <p className="text-xs text-gray-600 text-center">Congratulations on completing this course!</p>
+                  <p className="text-xs text-gray-600 text-center">You have lifetime access to all course materials</p>
                 </div>
               )}
               

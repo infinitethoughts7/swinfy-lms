@@ -102,11 +102,13 @@ export default function KPApplicationsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to approve application');
+        throw new Error(errorData.message || errorData.error || 'Failed to approve application');
       }
 
       const result = await response.json();
-      alert(`Application approved successfully!\n\nKP Admin Email: ${result.kp_admin_email}\nDefault Password: ${result.default_password}\n\nPlease send these credentials to the Knowledge Partner.`);
+      
+      // Show success message with updated information
+      alert(`🎉 ${result.message}\n\n📧 Admin Email: ${result.admin_email}\n🔑 Password: LearnWin8\n🌐 Login URL: ${result.login_url}\n\n✅ Congratulatory email has been sent automatically!\n\nThe Knowledge Partner can now login immediately.`);
       
       setShowModal(false);
       setSelectedApplication(null);

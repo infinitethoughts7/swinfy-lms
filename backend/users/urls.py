@@ -52,6 +52,10 @@ urlpatterns = [
     path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
     
+    # Contact Form OTP endpoints (no user account required)
+    path('send-contact-form-otp/', views.send_contact_form_otp, name='send_contact_form_otp'),
+    path('verify-contact-form-otp/', views.verify_contact_form_otp, name='verify_contact_form_otp'),
+    
     # Password reset endpoints
     path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('verify-reset-otp/', views.VerifyResetOTPView.as_view(), name='verify_reset_otp'),

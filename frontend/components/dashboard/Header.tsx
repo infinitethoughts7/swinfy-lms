@@ -34,14 +34,13 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
     created_at: string;
   }>>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const notificationsFetchedRef = useRef(false);
   const router = useRouter();
   
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
-    if (loadingNotifications) return;
-    
     // Check if user is authenticated before making API call
     const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token');
     if (!isAuthenticated) {
@@ -49,19 +48,29 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
       return;
     }
     
+    // Prevent multiple simultaneous requests
+    if (loadingNotifications || notificationsFetchedRef.current) return;
+    
     try {
+      notificationsFetchedRef.current = true;
       setLoadingNotifications(true);
+      console.log('🔔 Fetching notifications...');
       const { learnerDashboardApi } = await import('@/lib/api');
       const response = await learnerDashboardApi.getNotifications();
       setNotifications(response.results?.slice(0, 5) || []);
+      console.log('✅ Notifications fetched successfully');
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('❌ Error fetching notifications:', error);
       // Fallback to empty array
       setNotifications([]);
     } finally {
       setLoadingNotifications(false);
+      // Reset the ref after a delay to allow future fetches if needed
+      setTimeout(() => {
+        notificationsFetchedRef.current = false;
+      }, 1000);
     }
-  }, [loadingNotifications]);
+  }, []); // Remove loadingNotifications from dependencies to prevent infinite loop
 
   // Fetch notifications when component mounts or when notifications dropdown is opened
   useEffect(() => {

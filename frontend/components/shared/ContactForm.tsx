@@ -1,7 +1,8 @@
 // File: components/shared/ContactForm.tsx (Client Component)
 "use client";
 import { useEffect, useState } from 'react';
-import { Send, Building2, Clock } from 'lucide-react';
+import { Send, Building2, Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import OTPVerification from './OTPVerification';
 
 interface FormData {
   knowledge_partner_name: string;
@@ -35,6 +36,11 @@ const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ApiError>({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  
+  // Email verification state
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showOTPSection, setShowOTPSection] = useState(false);
+  const [emailVerificationError, setEmailVerificationError] = useState('');
 
   // Load previously saved details for auto-fill (dev UX)
   useEffect(() => {
@@ -72,10 +78,58 @@ const ContactForm = () => {
     { value: 'other', label: 'Other' }
   ];
 
+  // OTP API methods for contact form (doesn't require existing user)
+  const sendOTPForEmail = async (email: string): Promise<void> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-contact-form-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: email,
+        purpose: 'email_verification'
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to send OTP');
+    }
+  };
+
+  const verifyOTPForEmail = async (email: string, otpCode: string): Promise<void> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-contact-form-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: email,
+        otp_code: otpCode,
+        purpose: 'email_verification'
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'OTP verification failed');
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const next = { ...formData, [name]: value };
     setFormData(next);
+    
+    // Reset email verification if email changed
+    if (name === 'knowledge_partner_email' && value !== formData.knowledge_partner_email) {
+      setIsEmailVerified(false);
+      setShowOTPSection(false);
+      setEmailVerificationError('');
+    }
+    
     // Persist as-you-type to enable auto-fill next time
     try {
       if (typeof window !== 'undefined') {
@@ -94,10 +148,31 @@ const ContactForm = () => {
     }
   };
 
+  const handleEmailVerified = () => {
+    setIsEmailVerified(true);
+    setShowOTPSection(false);
+    setEmailVerificationError('');
+  };
+
+  const handleSendOTP = () => {
+    if (formData.knowledge_partner_email) {
+      setShowOTPSection(true);
+      setEmailVerificationError('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if email is verified before allowing submission
+    if (!isEmailVerified) {
+      setEmailVerificationError('Please verify your email address before submitting the application.');
+      return;
+    }
+    
     setIsSubmitting(true);
     setErrors({});
+    setEmailVerificationError('');
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -166,102 +241,96 @@ const ContactForm = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Process Info Header - Only show in modal context */}
-      <div className="bg-blue-50 rounded-lg p-4 mb-6">
-        <div className="flex items-center gap-2 text-blue-800 mb-3">
-          <Building2 className="w-5 h-5" />
-          <span className="font-semibold text-lg">Application Process</span>
+    <div className="space-y-4">
+      {/* Compact Process Info Header */}
+      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+        <div className="flex items-center gap-2 text-blue-800 mb-2">
+          <Building2 className="w-4 h-4" />
+          <span className="font-medium text-sm">Quick Application Process</span>
         </div>
-        <div className="bg-blue-100 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-sm text-blue-700 mb-2">
-            <Clock className="w-4 h-4" />
-            <span className="font-medium">Next Steps:</span>
-          </div>
-          <ul className="text-sm text-blue-600 space-y-1">
-            <li>• Submit this application</li>
-            <li>• We&apos;ll review and call you within 24-48 hours</li>
-            <li>• After approval, receive login credentials via email</li>
-            <li>• Access your Knowledge Partner dashboard</li>
-          </ul>
-        </div>
+        <p className="text-xs text-blue-600">
+          📧 Verify email → Submit application → Get callback within 24-48 hours → Receive dashboard access
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Knowledge Partner Info */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
-              Knowledge Partner Details
-            </h5>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Compact Knowledge Partner Info */}
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h5 className="text-gray-800 font-medium text-sm flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Organization Details
+          </h5>
             
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <input
                 type="text"
                 name="knowledge_partner_name"
-                placeholder="Knowledge Partner Name *"
+                placeholder="Organization Name *"
                 value={formData.knowledge_partner_name}
                 autoComplete="organization"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_name ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {errors.knowledge_partner_name && (
-                <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_name[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.knowledge_partner_name[0]}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <select 
-                  name="knowledge_partner_type"
-                  value={formData.knowledge_partner_type}
-                  onChange={handleChange}
-                  required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+            <div>
+              <select 
+                name="knowledge_partner_type"
+                value={formData.knowledge_partner_type}
+                onChange={handleChange}
+                required
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_type ? 'border-red-500' : 'border-gray-300'
                 }`}
-                >
-                  <option value="" className="bg-gray-100 text-gray-500">Knowledge Partner Type *</option>
-                  {KP_TYPE_CHOICES.map((type) => (
-                    <option key={type.value} value={type.value} className="bg-white text-gray-900">
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.knowledge_partner_type && (
-                  <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_type[0]}</p>
-                )}
-              </div>
-
-              <div>
-                <input
-                  type="url"
-                  name="website_url"
-                  placeholder="Website URL *"
-                  value={formData.website_url}
-                  autoComplete="url"
-                  onChange={handleChange}
-                  required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
-                  errors.website_url ? 'border-red-500' : 'border-gray-300'
-                }`}
-                />
-                {errors.website_url && (
-                  <p className="mt-1 text-sm text-red-500">{errors.website_url[0]}</p>
-                )}
-              </div>
+              >
+                <option value="">Organization Type *</option>
+                {KP_TYPE_CHOICES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              {errors.knowledge_partner_type && (
+                <p className="mt-1 text-xs text-red-500">{errors.knowledge_partner_type[0]}</p>
+              )}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
-              Contact Information
-            </h5>
+          <div>
+            <input
+              type="url"
+              name="website_url"
+              placeholder="Official Website URL *"
+              value={formData.website_url}
+              autoComplete="url"
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
+                errors.website_url ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.website_url && (
+              <p className="mt-1 text-xs text-red-500">{errors.website_url[0]}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Email Verification Section */}
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h5 className="text-gray-800 font-medium text-sm flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Contact & Verification
+          </h5>
             
-            <div>
+          <div className="space-y-3">
+            <div className="relative">
               <input
                 type="email"
                 name="knowledge_partner_email"
@@ -270,14 +339,56 @@ const ContactForm = () => {
                 autoComplete="email"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${isEmailVerified ? 'border-green-500 bg-green-50' : ''}`}
               />
+              {isEmailVerified && (
+                <div className="absolute right-3 top-2 text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+              )}
               {errors.knowledge_partner_email && (
-                <p className="mt-1 text-sm text-red-500">{errors.knowledge_partner_email[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.knowledge_partner_email[0]}</p>
               )}
             </div>
+
+            {/* Email Verification Status */}
+            {!isEmailVerified && formData.knowledge_partner_email && (
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={handleSendOTP}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  Send verification code
+                </button>
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Email verification required
+                </span>
+              </div>
+            )}
+
+            {isEmailVerified && (
+              <div className="flex items-center gap-2 text-green-600 text-xs">
+                <CheckCircle className="w-3 h-3" />
+                <span>Email verified successfully</span>
+              </div>
+            )}
+
+            {/* OTP Verification Component */}
+            {showOTPSection && (
+              <div className="bg-white rounded-md border border-blue-200 p-3">
+                <OTPVerification
+                  email={formData.knowledge_partner_email}
+                  onVerified={handleEmailVerified}
+                  onSendOTP={sendOTPForEmail}
+                  onVerifyOTP={verifyOTPForEmail}
+                  isVerified={isEmailVerified}
+                />
+              </div>
+            )}
 
             <div>
               <input
@@ -288,47 +399,43 @@ const ContactForm = () => {
                 autoComplete="tel"
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.contact_number ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {errors.contact_number && (
-                <p className="mt-1 text-sm text-red-500">{errors.contact_number[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.contact_number[0]}</p>
               )}
-            </div>
-            
-            <div className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
-              📞 <strong>Important:</strong> We&apos;ll call this number within 24-48 hours for verification
             </div>
           </div>
         </div>
 
         {/* Quick Questions */}
-        <div className="space-y-4 bg-gray-50 rounded-lg p-6">
-          <h5 className="text-gray-800 font-medium text-sm border-b border-gray-200 pb-2">
+        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+          <h5 className="text-gray-800 font-medium text-sm">
             Quick Questions
           </h5>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <select 
                 name="courses_interested_in"
                 value={formData.courses_interested_in}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.courses_interested_in ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-gray-100 text-gray-500">Primary course category *</option>
+                <option value="">Course category *</option>
                 {COURSE_CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value} className="bg-white text-gray-900">
+                  <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
                 ))}
               </select>
               {errors.courses_interested_in && (
-                <p className="mt-1 text-sm text-red-500">{errors.courses_interested_in[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.courses_interested_in[0]}</p>
               )}
             </div>
 
@@ -338,18 +445,18 @@ const ContactForm = () => {
                 value={formData.experience_years}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.experience_years ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-gray-100 text-gray-500">Years in education/training *</option>
-                <option value="0-1" className="bg-white text-gray-900">0-1 years</option>
-                <option value="2-5" className="bg-white text-gray-900">2-5 years</option>
-                <option value="6-10" className="bg-white text-gray-900">6-10 years</option>
-                <option value="10+" className="bg-white text-gray-900">10+ years</option>
+                <option value="">Experience *</option>
+                <option value="0-1">0-1 years</option>
+                <option value="2-5">2-5 years</option>
+                <option value="6-10">6-10 years</option>
+                <option value="10+">10+ years</option>
               </select>
               {errors.experience_years && (
-                <p className="mt-1 text-sm text-red-500">{errors.experience_years[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.experience_years[0]}</p>
               )}
             </div>
 
@@ -359,58 +466,67 @@ const ContactForm = () => {
                 value={formData.expected_tutors}
                 onChange={handleChange}
                 required
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.expected_tutors ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="" className="bg-gray-100 text-gray-500">Expected tutors *</option>
-                <option value="1-2" className="bg-white text-gray-900">1-2 tutors</option>
-                <option value="3-5" className="bg-white text-gray-900">3-5 tutors</option>
-                <option value="6-10" className="bg-white text-gray-900">6-10 tutors</option>
-                <option value="10+" className="bg-white text-gray-900">10+ tutors</option>
+                <option value="">Expected tutors *</option>
+                <option value="1-2">1-2 tutors</option>
+                <option value="3-5">3-5 tutors</option>
+                <option value="6-10">6-10 tutors</option>
+                <option value="10+">10+ tutors</option>
               </select>
               {errors.expected_tutors && (
-                <p className="mt-1 text-sm text-red-500">{errors.expected_tutors[0]}</p>
+                <p className="mt-1 text-xs text-red-500">{errors.expected_tutors[0]}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Message */}
-        <div className="space-y-2">
+        <div>
           <textarea
             name="partner_message"
-            placeholder="Tell us more about your organization and goals... (optional)"
-            rows={4}
+            placeholder="Additional message (optional)"
+            rows={3}
             value={formData.partner_message}
             onChange={handleChange}
-            className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all duration-300 resize-none ${
+            className={`w-full px-3 py-2 bg-gray-50 border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all resize-none ${
               errors.partner_message ? 'border-red-500' : 'border-gray-300'
             }`}
           ></textarea>
           {errors.partner_message && (
-            <p className="mt-1 text-sm text-red-500">{errors.partner_message[0]}</p>
+            <p className="mt-1 text-xs text-red-500">{errors.partner_message[0]}</p>
           )}
-          <div className="text-gray-600 text-xs">
-            <p>💡 <strong>Optional:</strong> Share any specific requirements, goals, or questions you have</p>
-          </div>
         </div>
 
+        {/* Email Verification Error */}
+        {emailVerificationError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-500" />
+            <p className="text-red-700 text-sm">{emailVerificationError}</p>
+          </div>
+        )}
+
         {/* Submit Button */}
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-2">
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-600 text-white py-4 px-8 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px] shadow-lg hover:shadow-xl"
+            disabled={isSubmitting || !isEmailVerified}
+            className={`py-3 px-6 rounded-md font-medium text-sm flex items-center justify-center gap-2 min-w-[180px] transition-all ${
+              isEmailVerified 
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-800"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800"></div>
                 Submitting...
               </>
             ) : (
               <>
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
                 Submit Application
               </>
             )}
@@ -418,29 +534,22 @@ const ContactForm = () => {
         </div>
       </form>
 
-      {/* Contact Fallback */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <h4 className="text-gray-800 font-semibold mb-3 text-center">
-          Need Help?
-        </h4>
-        <div className="flex justify-center space-x-6">
+      {/* Compact Contact Fallback */}
+      <div className="mt-4 pt-3 border-t border-gray-200 text-center">
+        <p className="text-xs text-gray-500 mb-2">Need help?</p>
+        <div className="flex justify-center space-x-4 text-xs">
           <a 
             href="mailto:rockyg.swinfy@gmail.com?subject=Knowledge Partner Application"
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-blue-600 hover:text-blue-800"
           >
-            <span>📧</span>
-            rockyg.swinfy@gmail.com
+            📧 Email Support
           </a>
           <a 
             href="tel:+917981313783"
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-blue-600 hover:text-blue-800"
           >
-            <span>📞</span>
-            +91 7981313783
+            📞 Call Support
           </a>
-        </div>
-        <div className="text-xs text-gray-500 text-center mt-2">
-          📞 <strong>We&apos;ll call you within 24-48 hours</strong> after form submission
         </div>
       </div>
     </div>

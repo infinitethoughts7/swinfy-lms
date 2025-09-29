@@ -1202,6 +1202,103 @@ def send_otp(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def send_contact_form_otp(request):
+    """Send OTP for contact form email verification - doesn't require existing user."""
+    email = request.data.get('email')
+    purpose = request.data.get('purpose', 'email_verification')
+    
+    if not email:
+        return Response({
+            'success': False,
+            'message': 'Email address is required.',
+            'error_code': 'EMAIL_REQUIRED'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate email format
+    try:
+        from django.core.validators import validate_email
+        validate_email(email)
+    except:
+        return Response({
+            'success': False,
+            'message': 'Invalid email address format.',
+            'error_code': 'INVALID_EMAIL'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check rate limit
+    rate_limit_check = check_rate_limit(email, purpose)
+    if not rate_limit_check['allowed']:
+        return Response({
+            'success': False,
+            'message': rate_limit_check['message'],
+            'error_code': 'RATE_LIMIT_EXCEEDED',
+            'retry_after': rate_limit_check.get('retry_after', 600)
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Create and send OTP (no user required for contact form verification)
+    otp_verification = create_otp_verification(
+        user=None,  # No user required for contact form
+        email=email,
+        purpose=purpose,
+        expiry_minutes=10
+    )
+    
+    if not otp_verification:
+        return Response({
+            'success': False,
+            'message': 'Failed to send verification email. Please try again.',
+            'error_code': 'EMAIL_SEND_FAILED'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Increment rate limit counter
+    increment_rate_limit(email, purpose)
+    
+    return Response({
+        'success': True,
+        'message': 'Verification code has been sent to your email.',
+        'expires_in_minutes': 10
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def verify_contact_form_otp(request):
+    """Verify OTP for contact form email verification - doesn't require existing user."""
+    email = request.data.get('email')
+    otp_code = request.data.get('otp_code')
+    purpose = request.data.get('purpose', 'email_verification')
+    
+    if not email or not otp_code:
+        return Response({
+            'success': False,
+            'message': 'Email and OTP code are required.',
+            'error_code': 'MISSING_FIELDS'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verify OTP
+    result = verify_otp_code(email, otp_code, purpose)
+    
+    if result['success']:
+        return Response({
+            'success': True,
+            'message': 'Email verified successfully.',
+        }, status=status.HTTP_200_OK)
+    else:
+        status_code = status.HTTP_400_BAD_REQUEST
+        if result.get('error_code') == 'OTP_EXPIRED':
+            status_code = status.HTTP_410_GONE
+        elif result.get('error_code') == 'MAX_ATTEMPTS_EXCEEDED':
+            status_code = status.HTTP_429_TOO_MANY_REQUESTS
+            
+        return Response({
+            'success': False,
+            'message': result['message'],
+            'error_code': result.get('error_code')
+        }, status=status_code)
+
+
+@api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def cleanup_otps(request):
     """Clean up expired OTPs (admin utility)."""

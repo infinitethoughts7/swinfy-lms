@@ -6,6 +6,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 from ..models.models import User, KPProfile, LearnerProfile, KPInstructorProfile
 from ..models.kp_application import KnowledgePartnerApplication
@@ -116,82 +117,90 @@ class UserListView(generics.ListAPIView):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsSuperAdmin])
 def approve_kp_application(request, application_id):
-    """Approve a KP application and create KP Admin user."""
+    """Approve a KP application and create KP Admin user with enhanced email notification."""
     
     try:
-        application = KnowledgePartnerApplication.objects.get(id=application_id)
+        from django.db import transaction
+        from .application_views import send_congratulations_email
+        
+        application = get_object_or_404(KnowledgePartnerApplication, id=application_id)
         
         if application.status != 'pending':
-            return Response(
-                {'error': 'Application is not pending'},
-                status=status.HTTP_400_BAD_REQUEST
+            return Response({
+                'success': False,
+                'message': f'Application is not pending. Current status: {application.get_status_display()}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        with transaction.atomic():
+            # Check if email already exists
+            if User.objects.filter(email=application.knowledge_partner_email).exists():
+                return Response({
+                    'success': False,
+                    'message': f'A user with email {application.knowledge_partner_email} already exists.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create admin user account with inspirational password
+            inspirational_password = "LearnWin8"  # 8 characters, inspirational, easy to remember
+            
+            admin_user = User.objects.create_user(
+                email=application.knowledge_partner_email,
+                full_name=f"{application.knowledge_partner_name} Admin",
+                password=inspirational_password,
+                role='knowledge_partner',
+                is_verified=True,
+                is_approved=True
             )
-        
-        # Check if email already exists
-        if User.objects.filter(email=application.knowledge_partner_email).exists():
-            return Response(
-                {'error': f'User with email {application.knowledge_partner_email} already exists'},
-                status=status.HTTP_400_BAD_REQUEST
+
+            # Create Knowledge Partner Profile and link to admin user
+            knowledge_partner = KPProfile.objects.create(
+                user=admin_user,
+                name=application.knowledge_partner_name,
+                type=application.knowledge_partner_type,
+                description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
+                location="To be updated",
+                website=application.website_url,
+                kp_admin_name=admin_user.full_name,
+                kp_admin_email=application.knowledge_partner_email,
+                kp_admin_phone=application.contact_number,
+                is_verified=True,
+                is_active=True
             )
-        
-        # Check if Knowledge Partner name already exists
-        if KPProfile.objects.filter(name=application.knowledge_partner_name).exists():
-            return Response(
-                {'error': f'Knowledge Partner with name "{application.knowledge_partner_name}" already exists'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Create KP Admin User Account with default password
-        kp_admin_user = User.objects.create_user(
-            email=application.knowledge_partner_email,
-            password='rockyg07',  # Default password as requested
-            full_name=f"{application.knowledge_partner_name} Admin",
-            role='knowledge_partner',
-            is_verified=True,
-            is_approved=True,
-        )
-        
-        # Create KPProfile linked to the user
-        kp_profile = KPProfile.objects.create(
-            user=kp_admin_user,
-            name=application.knowledge_partner_name,
-            type=application.knowledge_partner_type,
-            description=application.partner_message or f'{application.knowledge_partner_name} - Knowledge Partner',
-            location='',  # Can be updated later by KP Admin
-            website=application.website_url or '',
-            kp_admin_name=f"{application.knowledge_partner_name} Admin",
-            kp_admin_email=application.knowledge_partner_email,
-            kp_admin_phone='',  # Can be updated later
-            is_active=True,
-            is_verified=False,  # Will be verified by super admin later
-        )
-        
-        # Update Application Status
-        application.status = 'approved'
-        application.reviewed_by = request.user
-        application.reviewed_at = timezone.now()
-        application.created_knowledge_partner = kp_profile
-        application.created_admin_user = kp_admin_user
-        application.save()
-        
-        return Response({
-            'message': 'Application approved successfully',
-            'kp_admin_email': application.knowledge_partner_email,
-            'default_password': 'rockyg07',
-            'kp_profile_id': str(kp_profile.id),
-            'admin_user_id': str(kp_admin_user.id),
-        })
+
+            # Update application
+            application.status = 'approved'
+            application.reviewed_by = request.user
+            application.reviewed_at = timezone.now()
+            application.created_knowledge_partner = knowledge_partner
+            application.created_admin_user = admin_user
+            application.save()
+
+            # Send congratulatory email with credentials
+            try:
+                send_congratulations_email(application, admin_user, knowledge_partner, inspirational_password)
+            except Exception as e:
+                # Log error but don't fail the approval
+                print(f"Failed to send congratulations email: {e}")
+
+            return Response({
+                'success': True,
+                'message': f'🎉 Application approved successfully! {knowledge_partner.name} has been created and credentials have been sent to {admin_user.email}.',
+                'application_id': application.id,
+                'knowledge_partner_id': knowledge_partner.id,
+                'knowledge_partner_name': knowledge_partner.name,
+                'admin_email': admin_user.email,
+                'login_url': 'http://localhost:3000/auth/login'
+            }, status=status.HTTP_200_OK)
         
     except KnowledgePartnerApplication.DoesNotExist:
-        return Response(
-            {'error': 'Application not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({
+            'success': False,
+            'message': 'Application not found'
+        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({
+            'success': False,
+            'message': f'Error approving application: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

@@ -381,7 +381,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
         {/* Organization Association Section */}
         <div className="space-y-4">
           <div className="border-t border-gray-200 pt-4">
-            <div className="flex items-center space-x-3">
+            {/* <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
                 id="wants_kp_association"
@@ -392,7 +392,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
               <label htmlFor="wants_kp_association" className="text-sm font-medium text-gray-700">
                 Join a Knowledge Partner organization
               </label>
-            </div>
+            </div> */}
             
             {formData.wants_kp_association && (
               <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -442,7 +442,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
             </div>
           </div>
         )}
-
         {/* Submit Error */}
         {errors.submit && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -453,7 +452,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
               <p className="text-sm text-red-600">{errors.submit}</p>
             </div>
           </div>
-        )}
+        )} 
 
         {/* Submit Button */}
         <div className="pt-4">

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 
-from ..models import KnowledgePartnerApplication
+from ..models import KnowledgePartnerApplication, User, KPProfile
 from ..serializers import (
     KnowledgePartnerApplicationCreateSerializer,
     KnowledgePartnerApplicationListSerializer,
@@ -184,30 +184,63 @@ def approve_application(request, application_id):
             if not request.user.is_superuser:
                 return Response({'success': False, 'message': 'Only superusers can approve applications.'}, status=status.HTTP_403_FORBIDDEN)
 
-            # Create Knowledge Partner only (no admin user creation)
+            # Check if user with this email already exists
+            if User.objects.filter(email=application.knowledge_partner_email).exists():
+                return Response({
+                    'success': False,
+                    'message': f'A user with email {application.knowledge_partner_email} already exists.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create admin user account with inspirational password
+            inspirational_password = "LearnWin8"  # 8 characters, inspirational, easy to remember
+            
+            admin_user = User.objects.create_user(
+                email=application.knowledge_partner_email,
+                full_name=f"{application.knowledge_partner_name} Admin",
+                password=inspirational_password,
+                role='knowledge_partner',
+                is_verified=True,
+                is_approved=True
+            )
+
+            # Create Knowledge Partner Profile and link to admin user
             knowledge_partner = KPProfile.objects.create(
+                user=admin_user,
                 name=application.knowledge_partner_name,
                 type=application.knowledge_partner_type,
                 description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
                 location="To be updated",
                 website=application.website_url,
-                email=application.knowledge_partner_email,
-                phone=application.contact_number,
+                kp_admin_name=admin_user.full_name,
+                kp_admin_email=application.knowledge_partner_email,
+                kp_admin_phone=application.contact_number,
                 is_verified=True,
+                is_active=True
             )
 
+            # Update application
             application.status = 'approved'
             application.reviewed_by = request.user
             application.reviewed_at = timezone.now()
             application.created_knowledge_partner = knowledge_partner
+            application.created_admin_user = admin_user
             application.save()
+
+            # Send congratulatory email with credentials
+            try:
+                send_congratulations_email(application, admin_user, knowledge_partner, inspirational_password)
+            except Exception as e:
+                # Log error but don't fail the approval
+                print(f"Failed to send congratulations email: {e}")
 
             return Response({
                 'success': True,
-                'message': f'Application approved successfully! {knowledge_partner.name} has been created.',
+                'message': f'🎉 Application approved successfully! {knowledge_partner.name} has been created and credentials have been sent to {admin_user.email}.',
                 'application_id': application.id,
                 'knowledge_partner_id': knowledge_partner.id,
                 'knowledge_partner_name': knowledge_partner.name,
+                'admin_email': admin_user.email,
+                'login_url': 'http://localhost:3000/auth/login'
             }, status=status.HTTP_200_OK)
             
     except Exception as e:
@@ -257,42 +290,79 @@ def reject_application(request, application_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def send_welcome_email(admin_user, knowledge_partner, temp_password):
-    """Send welcome email with login credentials to new Knowledge Partner Admin."""
-    subject = f"Welcome to Knowledge Partner Platform - {knowledge_partner.name}"
+def send_congratulations_email(application, admin_user, knowledge_partner, password):
+    """Send congratulatory email with login credentials to approved Knowledge Partner."""
+    subject = f"🎉 Congratulations! Welcome to Swinfy Learning Platform - {knowledge_partner.name}"
     message = f"""
+🎉 CONGRATULATIONS! YOUR APPLICATION HAS BEEN APPROVED! 🎉
+
 Dear {knowledge_partner.name} Team,
 
-Congratulations! Your Knowledge Partner application has been approved.
+We are thrilled to welcome you to the Swinfy Learning Platform family! 
 
-Your organization "{knowledge_partner.name}" is now part of our learning platform!
+Your Knowledge Partner application has been successfully approved, and we're excited to have you join our mission of transforming education and empowering learners worldwide.
 
-LOGIN CREDENTIALS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 YOUR LOGIN CREDENTIALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 📧 Email: {admin_user.email}
-🔑 Temporary Password: {temp_password}
+🔑 Password: {password}
+🌐 Login URL: https://olla.co.in/
 
-🔗 Login URL: http://localhost:3000/login
+⚠️ IMPORTANT: Please change your password after your first login for security.
 
-IMPORTANT NEXT STEPS:
-1. Login with the credentials above
-2. Change your password immediately
-3. Complete your organization profile (logo, description, etc.)
-4. Update your personal admin profile
-5. Start creating your first course!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 NEXT STEPS TO GET STARTED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-WHAT YOU CAN DO:
-✅ Create and manage courses
-✅ Add instructors to your organization
-✅ Track learner enrollments and progress
-✅ Access detailed analytics
-✅ Create both public and private courses
+1️⃣ Login to your Knowledge Partner Dashboard
+2️⃣ Complete your organization profile (add logo, description, etc.)
+3️⃣ Update your personal admin profile
+4️⃣ Create your first course and start making an impact!
+5️⃣ Create instructors to join your organization
 
-Need help? Contact us:
-📧 rockyg.swinfy@gmail.com
-📞 +91 7981313783
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ WHAT YOU CAN DO NOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Welcome aboard!
-Knowledge Partnership Team
+🎓 Create and manage unlimited courses
+👨‍🏫 Add instructors to your organization  
+📊 Track learner enrollments and progress
+📈 Access detailed performance analytics
+🌟 Create both public and private courses
+💼 Manage your organization's learning ecosystem
+🏆 Build your reputation as a quality education provider
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 YOUR ORGANIZATION DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 Organization: {knowledge_partner.name}
+🔗 Website: {knowledge_partner.website}
+📧 Contact Email: {knowledge_partner.kp_admin_email}
+📱 Phone: {knowledge_partner.kp_admin_phone}
+🎯 Focus Area: {application.get_courses_interested_in_display()}
+⭐ Experience: {application.get_experience_years_display()}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤝 NEED HELP? WE'RE HERE FOR YOU!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📧 Email Support: rockyg.swinfy@gmail.com
+📞 Phone Support: +91 7981313783
+💬 We're here to help you succeed!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Welcome to the future of learning! Together, we'll create amazing educational experiences that will impact thousands of learners.
+
+Let's make learning accessible, engaging, and transformative! 🌟
+
+With warm regards and excitement,
+The Swinfy Learning Platform Team
+
+P.S. We can't wait to see the incredible courses you'll create! 🚀
     """
     
     send_mail(
@@ -315,7 +385,7 @@ Thank you for your interest in becoming a Knowledge Partner with our platform.
 After careful review, we regret to inform you that we cannot approve your application at this time.
 
 Reason for decision:
-{application.admin_notes}
+{application.admin_notes or 'Please contact us for more details.'}
 
 We encourage you to:
 - Address the concerns mentioned above
@@ -336,6 +406,6 @@ Knowledge Partnership Team
         subject=subject,
         message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[application.organization_email],
+        recipient_list=[application.knowledge_partner_email],
         fail_silently=False,
     )

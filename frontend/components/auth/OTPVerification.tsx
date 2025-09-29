@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 
 interface OTPVerificationProps {
   email: string;
-  onVerificationSuccess: (user: any, tokens: any) => void;
+  onVerificationSuccess: (user?: unknown, tokens?: unknown, data?: unknown) => void;
   onBack: () => void;
+  purpose?: 'email_verification' | 'password_reset' | 'login_verification';
+  title?: string;
+  description?: string;
+  autoSendOTP?: boolean; // Whether to send OTP automatically on mount
+  showBackButton?: boolean;
 }
 
 const OTP_CONFIG = {
@@ -16,28 +21,105 @@ const OTP_CONFIG = {
   RESEND_COOLDOWN_SECONDS: 120, // Increased to 2 minutes
 };
 
-export default function OTPVerification({ email, onVerificationSuccess, onBack }: OTPVerificationProps) {
+export default function OTPVerification({ 
+  email, 
+  onVerificationSuccess, 
+  onBack,
+  purpose = 'email_verification',
+  title,
+  description,
+  autoSendOTP = false,
+  showBackButton = true
+}: OTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timeLeft, setTimeLeft] = useState(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [otpSent, setOtpSent] = useState(!autoSendOTP); // If autoSend is false, assume OTP already sent
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Debug logging function
-  const addDebugLog = (message: string, data?: any) => {
+  const addDebugLog = useCallback((message: string, data?: unknown) => {
     const timestamp = new Date().toLocaleTimeString();
     const logMessage = `[${timestamp}] ${message}`;
     console.log(logMessage, data);
     setDebugLogs(prev => [...prev.slice(-9), logMessage]); // Keep last 10 logs
-  };
+  }, []);
 
-  // OTP is already sent during registration, no need to send again
-  // useEffect(() => {
-  //   generateAndSendOTP();
-  // }, []);
+  // Function to send OTP initially
+  const handleSendOTP = useCallback(async () => {
+    setIsSending(true);
+    setError('');
+    setSuccess('');
+    setOtp(['', '', '', '', '', '']);
+    
+    addDebugLog(`🚀 Sending OTP for ${purpose}`, { email, purpose });
+    
+    try {
+      let response;
+      
+      // Different API endpoints based on purpose
+      if (purpose === 'password_reset') {
+        response = await api.post('/api/auth/forgot-password/', { email });
+      } else if (purpose === 'email_verification') {
+        response = await api.post('/api/auth/resend-otp/', {
+          email: email,
+          purpose: 'email_verification'
+        });
+      } else {
+        // Default to resend-otp endpoint
+        response = await api.post('/api/auth/resend-otp/', {
+          email: email,
+          purpose: purpose
+        });
+      }
+
+      let data;
+      try {
+        data = await response.json();
+        addDebugLog('📤 Send OTP Response', {
+          status: response.status,
+          data: data
+        });
+      } catch (parseError) {
+        addDebugLog('❌ Failed to parse send OTP response', parseError);
+        setError('Invalid response from server. Please try again.');
+        return;
+      }
+
+      if (response.ok && data && data.success) {
+        addDebugLog('✅ OTP sent successfully');
+        setSuccess('Verification code sent to your email!');
+        setTimeLeft(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
+        setOtpSent(true);
+        inputRefs.current[0]?.focus();
+      } else {
+        addDebugLog('❌ OTP send failed', data);
+        setError(data?.message || 'Failed to send verification code.');
+      }
+    } catch (error: unknown) {
+      console.error('❌ Failed to send OTP:', error);
+      addDebugLog('❌ Send OTP Error', error);
+      
+      const errorMessage = error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response && 'data' in error.response && typeof error.response.data === 'object' && error.response.data && 'message' in error.response.data 
+        ? (error.response.data as { message?: string }).message 
+        : 'Failed to send OTP. Please try again.';
+      setError(errorMessage || 'Failed to send OTP. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
+  }, [email, purpose, addDebugLog]);
+
+  // Send OTP automatically if autoSendOTP is true
+  useEffect(() => {
+    if (autoSendOTP && !otpSent) {
+      handleSendOTP();
+    }
+  }, [autoSendOTP, otpSent, handleSendOTP]);
 
   // Timer countdown
   useEffect(() => {
@@ -47,7 +129,6 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     }
   }, [timeLeft]);
 
-  // OTP is already sent during registration, no need for send functions
 
   const handleInputChange = (index: number, value: string) => {
     if (value.length > 1) return; // Only allow single digit
@@ -103,11 +184,21 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     });
 
     try {
-      const response = await api.post('/api/auth/verify-otp/', {
-        email: email,
-        otp_code: enteredOtp,
-        purpose: 'email_verification'
-      });
+      let response;
+      
+      // Different API endpoints based on purpose
+      if (purpose === 'password_reset') {
+        response = await api.post('/api/auth/verify-reset-otp/', {
+          email: email,
+          otp_code: enteredOtp
+        });
+      } else {
+        response = await api.post('/api/auth/verify-otp/', {
+          email: email,
+          otp_code: enteredOtp,
+          purpose: purpose
+        });
+      }
 
       // Debug logging
       addDebugLog('🔍 API Response Debug', {
@@ -136,25 +227,29 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
 
       if (response.ok && data.success) {
         addDebugLog('✅ OTP verification successful', data);
-        setSuccess('Email verified successfully!');
-        // Call the success callback with user data and tokens
-        onVerificationSuccess(data.user, data.tokens);
+        
+        // Different success messages based on purpose
+        if (purpose === 'password_reset') {
+          setSuccess('OTP verified! You can now reset your password.');
+        } else if (purpose === 'email_verification') {
+          setSuccess('Email verified successfully!');
+        } else {
+          setSuccess('Verification successful!');
+        }
+        
+        // Call the success callback with appropriate data
+        onVerificationSuccess(data.user, data.tokens, data);
       } else {
         addDebugLog('❌ OTP verification failed', data);
         setError(data.message || 'Verification failed. Please try again.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ OTP verification error:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        stack: error.stack
-      });
       
-      const errorMessage = error.response?.data?.message || 'Verification failed. Please try again.';
-      setError(errorMessage);
+      const errorMessage = error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response && 'data' in error.response && typeof error.response.data === 'object' && error.response.data && 'message' in error.response.data 
+        ? (error.response.data as { message?: string }).message 
+        : 'Verification failed. Please try again.';
+      setError(errorMessage || 'Verification failed. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -168,18 +263,20 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     setSuccess('');
     setOtp(['', '', '', '', '', '']);
     
-    // Debug logging
-    console.log('🔄 Resending OTP Debug:', {
-      email: email,
-      purpose: 'email_verification',
-      timestamp: new Date().toISOString()
-    });
+    addDebugLog(`🔄 Resending OTP for ${purpose}`, { email, purpose });
     
     try {
-      const response = await api.post('/api/auth/resend-otp/', {
-        email: email,
-        purpose: 'email_verification'
-      });
+      let response;
+      
+      // Different API endpoints based on purpose
+      if (purpose === 'password_reset') {
+        response = await api.post('/api/auth/forgot-password/', { email });
+      } else {
+        response = await api.post('/api/auth/resend-otp/', {
+          email: email,
+          purpose: purpose
+        });
+      }
 
       // Parse JSON response
       let data;
@@ -204,18 +301,14 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
         addDebugLog('❌ OTP resend failed', data);
         setError(data?.message || 'Failed to resend verification code.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Failed to resend OTP:', error);
-      console.error('❌ Resend OTP Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        stack: error.stack
-      });
+      addDebugLog('❌ Resend OTP Error', error);
       
-      const errorMessage = error.response?.data?.message || 'Failed to resend OTP. Please try again.';
-      setError(errorMessage);
+      const errorMessage = error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response && 'data' in error.response && typeof error.response.data === 'object' && error.response.data && 'message' in error.response.data 
+        ? (error.response.data as { message?: string }).message 
+        : 'Failed to resend OTP. Please try again.';
+      setError(errorMessage || 'Failed to resend OTP. Please try again.');
     } finally {
       setIsResending(false);
     }
@@ -227,6 +320,33 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Dynamic content based on purpose
+  const getHeaderContent = () => {
+    if (title && description) {
+      return { title, description };
+    }
+    
+    switch (purpose) {
+      case 'password_reset':
+        return {
+          title: 'Reset Password',
+          description: "We've sent a 6-digit verification code to"
+        };
+      case 'email_verification':
+        return {
+          title: 'Verify Your Email',
+          description: "We've sent a 6-digit verification code to"
+        };
+      default:
+        return {
+          title: 'Enter Verification Code',
+          description: "We've sent a 6-digit verification code to"
+        };
+    }
+  };
+
+  const headerContent = getHeaderContent();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -236,102 +356,155 @@ export default function OTPVerification({ email, onVerificationSuccess, onBack }
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">Verify Your Email</h2>
-        <p className="text-gray-600">
-          We've sent a 6-digit verification code to
-        </p>
-        <p className="font-medium text-blue-600">{email}</p>
-      </div>
-
-      {/* OTP Input */}
-      <div className="space-y-4">
-        <div className="flex justify-center space-x-3">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => (inputRefs.current[index] = el)}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleInputChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={index === 0 ? handlePaste : undefined}
-              className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
-                error ? 'border-red-500 focus:border-red-500' : digit ? 'border-green-500 focus:border-green-600' : 'border-gray-300'
-              }`}
-              placeholder="0"
-            />
-          ))}
-        </div>
-
-        {error && (
-          <p className="text-center text-sm text-red-600 bg-red-50 p-2 rounded-lg">
-            {error}
+        <h2 className="text-2xl font-bold text-gray-900">{headerContent.title}</h2>
+        {!otpSent ? (
+          <p className="text-gray-600">
+            Enter your email address to receive a verification code
           </p>
-        )}
-
-        {success && (
-          <p className="text-center text-sm text-green-600 bg-green-50 p-2 rounded-lg">
-            {success}
-          </p>
+        ) : (
+          <>
+            <p className="text-gray-600">
+              {headerContent.description}
+            </p>
+            <p className="font-medium text-blue-600">{email}</p>
+          </>
         )}
       </div>
 
-      {/* Timer and Resend */}
-      <div className="text-center space-y-3">
-        <div className="flex items-center justify-center space-x-2">
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className={`text-sm font-medium ${timeLeft > 0 ? 'text-gray-600' : 'text-red-600'}`}>
-            {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : 'Code expired'}
-          </span>
-        </div>
+      {/* Send OTP Button - Show when OTP not sent yet */}
+      {!otpSent && (
+        <div className="space-y-4">
+          <Button
+            onClick={handleSendOTP}
+            disabled={isSending}
+            className="w-full"
+          >
+            {isSending ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Sending Code...</span>
+              </div>
+            ) : (
+              'Send Verification Code'
+            )}
+          </Button>
+          
+          {/* Error and Success messages for sending OTP */}
+          {error && (
+            <p className="text-center text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+              {error}
+            </p>
+          )}
 
-        <button
-          onClick={handleResendOTP}
-          disabled={timeLeft > 0 || isResending}
-          className={`text-sm font-medium transition-colors ${
-            timeLeft > 0 
-              ? 'text-gray-400 cursor-not-allowed' 
-              : 'text-blue-600 hover:text-blue-700 cursor-pointer'
-          }`}
-        >
-          {isResending ? 'Resending...' : "Didn't receive the code? Resend"}
-        </button>
-      </div>
+          {success && (
+            <p className="text-center text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+              {success}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* OTP Input - Show when OTP has been sent */}
+      {otpSent && (
+        <div className="space-y-4">
+          <div className="flex justify-center space-x-3">
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleInputChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={index === 0 ? handlePaste : undefined}
+                className={`w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+                  error ? 'border-red-500 focus:border-red-500' : digit ? 'border-green-500 focus:border-green-600' : 'border-gray-300'
+                }`}
+                placeholder="0"
+              />
+            ))}
+          </div>
+
+          {error && (
+            <p className="text-center text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+              {error}
+            </p>
+          )}
+
+          {success && (
+            <p className="text-center text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+              {success}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Timer and Resend - Only show when OTP has been sent */}
+      {otpSent && (
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center space-x-2">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className={`text-sm font-medium ${timeLeft > 0 ? 'text-gray-600' : 'text-red-600'}`}>
+              {timeLeft > 0 ? `Expires in ${formatTime(timeLeft)}` : 'Code expired'}
+            </span>
+          </div>
+
+          <button
+            onClick={handleResendOTP}
+            disabled={timeLeft > 0 || isResending}
+            className={`text-sm font-medium transition-colors underline ${
+              timeLeft > 0 
+                ? 'text-gray-400 cursor-not-allowed' 
+                : 'text-blue-600 hover:text-blue-700 cursor-pointer'
+            }`}
+          >
+            {isResending ? 'Resending...' : "Didn't receive the code? Resend"}
+          </button>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          onClick={handleVerifyOTP}
-          disabled={otp.some(digit => !digit) || isVerifying}
-          className="w-full"
-        >
-          {isVerifying ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Verifying...</span>
-            </div>
-          ) : (
-            'Verify Email'
-          )}
-        </Button>
+        {/* Verify Button - Only show when OTP has been sent */}
+        {otpSent && (
+          <Button
+            onClick={handleVerifyOTP}
+            disabled={otp.some(digit => !digit) || isVerifying}
+            className="w-full"
+          >
+            {isVerifying ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Verifying...</span>
+              </div>
+            ) : (
+              purpose === 'password_reset' ? 'Verify & Continue' : 'Verify Email'
+            )}
+          </Button>
+        )}
 
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="w-full"
-        >
-          ← Back to Registration
-        </Button>
+        {/* Back Button - Show conditionally */}
+        {showBackButton && (
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="w-full"
+          >
+            ← Back
+          </Button>
+        )}
       </div>
 
       {/* Help Text */}
       <div className="text-center">
         <p className="text-xs text-gray-500">
-          Check your spam folder if you don't see the email in your inbox
+          Check your spam folder if you don&apos;t see the email in your inbox
         </p>
       </div>
 

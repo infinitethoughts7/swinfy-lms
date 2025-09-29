@@ -178,7 +178,7 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
     };
     
     // Debug the request configuration
-    productionDebug.debugApiRequest(`${API_BASE_URL}${url}`, config, authToken);
+    productionDebug.debugApiRequest(`${API_BASE_URL}${url}`, config, authToken || undefined);
     
     return fetch(`${API_BASE_URL}${url}`, config);
   };
