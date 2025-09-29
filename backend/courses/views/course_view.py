@@ -798,9 +798,17 @@ def enrollment_status(request, slug):
         ).first()
         
         if enrollment:
+            # Get payment status from related payment if exists
+            payment_status = 'pending'  # Default
+            if hasattr(enrollment, 'payment'):
+                payment_status = enrollment.payment.status
+            elif enrollment.payment_status:
+                payment_status = enrollment.payment_status
+            
             return Response({
                 'enrolled': True,
                 'status': enrollment.status,
+                'payment_status': payment_status,
                 'enrolled_at': enrollment.created_at,
                 'course_title': course.title,
                 'course_slug': course.slug
@@ -809,6 +817,7 @@ def enrollment_status(request, slug):
             return Response({
                 'enrolled': False,
                 'status': 'not_enrolled',
+                'payment_status': 'pending',
                 'course_title': course.title,
                 'course_slug': course.slug
             })

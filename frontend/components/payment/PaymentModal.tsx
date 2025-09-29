@@ -79,17 +79,25 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
       const data = await paymentsApi.createOrder(course.slug);
       setOrderData(data);
       return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Payment order error:', err);
       
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      
       // Check if it's an authentication error
-      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
         setError('Please log in to enroll in this course.');
         // Close payment modal and trigger auth required callback
         onClose();
         if (onAuthRequired) {
           onAuthRequired();
         }
+        return;
+      }
+      
+      // Check if payment is already completed
+      if (errorMessage.includes('Payment already completed') || errorMessage.includes('already completed')) {
+        setError('You have already paid for this course. Please refresh the page to see your enrollment status.');
         return;
       }
       

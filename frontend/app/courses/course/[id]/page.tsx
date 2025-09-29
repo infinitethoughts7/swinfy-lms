@@ -125,7 +125,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<'not_enrolled' | 'active' | 'payment_verification'>('not_enrolled');
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'failed' | 'refunded' | 'partial'>('pending');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'verified' | 'failed' | 'refunded' | 'partial'>('pending');
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -176,8 +176,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             setEnrollmentStatus(enrollmentData.status);
             setPaymentStatus(enrollmentData.payment_status || 'pending');
             
-            // For students, only payment status matters
-            if (enrollmentData.payment_status === 'paid') {
+            // For students, check payment status - consider 'paid' and 'verified' as paid
+            if (enrollmentData.payment_status === 'paid' || enrollmentData.payment_status === 'verified') {
               setEnrollmentStatus('active'); // If paid, they own the course
               setIsEnrolled(true);
             } else {
@@ -186,7 +186,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             }
             
             // Only fetch modules and lessons if payment is made
-            if (enrollmentData.payment_status === 'paid') {
+            if (enrollmentData.payment_status === 'paid' || enrollmentData.payment_status === 'verified') {
               // Fetch course modules
               const modulesData = await coursesApi.getCourseModules(id);
               setModules(modulesData);
@@ -247,7 +247,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     }
     
     // Check if payment is already made (should not allow enrollment again)
-    if (paymentStatus === 'paid') {
+    if (paymentStatus === 'paid' || paymentStatus === 'verified') {
       return; // Button should be disabled
     }
 
@@ -264,8 +264,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         .then(enrollmentData => {
           setPaymentStatus(enrollmentData.payment_status || 'pending');
           
-          // For students, only payment status matters
-          if (enrollmentData.payment_status === 'paid') {
+          // For students, check payment status - consider 'paid' and 'verified' as paid
+          if (enrollmentData.payment_status === 'paid' || enrollmentData.payment_status === 'verified') {
             setEnrollmentStatus('active'); // If paid, they own the course
             setIsEnrolled(true);
           } else {
@@ -672,7 +672,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               
               {/* Pricing Section */}
               <div className="text-center mb-6">
-                {paymentStatus !== 'paid' && (
+                {(paymentStatus !== 'paid' && paymentStatus !== 'verified') && (
                   <>
                     <div className="text-3xl font-sora font-black text-blue-600 mb-1">
                       ₹{parseFloat(course.price).toLocaleString()}
@@ -683,7 +683,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   </>
                 )}
                 
-                {paymentStatus === 'paid' && (
+                {(paymentStatus === 'paid' || paymentStatus === 'verified') && (
                   <>
                     <div className="text-2xl font-sora font-bold text-green-600 mb-1">
                       🎉 You Own This Course!
@@ -696,7 +696,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
               
               {/* Enroll Button - Only show if payment not made */}
-              {paymentStatus !== 'paid' && (
+              {(paymentStatus !== 'paid' && paymentStatus !== 'verified') && (
                 <div className="space-y-3 mb-4">
                   <button 
                     onClick={handleEnrollClick}
@@ -711,7 +711,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               )}
               
               {/* Course Owned - Show if payment made */}
-              {paymentStatus === 'paid' && (
+              {(paymentStatus === 'paid' || paymentStatus === 'verified') && (
                 <div className="space-y-3 mb-4">
                   <div className="w-full bg-green-100 border-2 border-green-400 text-green-800 font-sora font-semibold text-base py-3 px-6 rounded-xl text-center flex items-center justify-center">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
