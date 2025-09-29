@@ -51,8 +51,6 @@ export default function CreateCoursePage() {
 
   const handleChange = (field: keyof CourseCreateData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error for this field
     if (formErrors[field]) {
       setFormErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -62,7 +60,6 @@ export default function CreateCoursePage() {
     if (file) {
       setFormData(prev => ({ ...prev, [field]: file }));
       
-      // Create preview for images
       if (field === 'thumbnail' || field === 'banner_image') {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -131,42 +128,35 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-        <div className="flex items-center space-x-4">
+    <div className="w-full">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
           <Link
             href="/dashboard/instructor/courses"
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Course</h1>
-              <p className="text-gray-600 text-sm">Build an engaging learning experience for your students</p>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Create New Course</h1>
+            <p className="text-gray-600 text-sm">Build an engaging learning experience</p>
           </div>
         </div>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {/* Basic Information */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center mb-4">
-            <div className="p-1.5 bg-blue-100 rounded-lg mr-2">
-              <BookOpen className="h-4 w-4 text-blue-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+          <div className="flex items-center space-x-2 mb-3 pb-2 border-b border-gray-200">
+            <BookOpen className="h-4 w-4 text-blue-600" />
+            <h2 className="text-base font-semibold text-gray-900">Basic Information</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Course Title *
               </label>
               <input
@@ -174,23 +164,21 @@ export default function CreateCoursePage() {
                 value={formData.title}
                 onChange={(e) => handleChange('title', e.target.value)}
                 placeholder="e.g., Complete React Development Course"
-                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
-                  formErrors.title ? 'ring-1 ring-red-500 border-red-500' : ''
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
+                  formErrors.title ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {formErrors.title && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.title}</p>
+                <p className="text-red-600 text-xs mt-1">{formErrors.title}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Category *
-              </label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Category *</label>
               <select
                 value={formData.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -199,13 +187,11 @@ export default function CreateCoursePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Difficulty Level *
-              </label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Level *</label>
               <select
                 value={formData.level}
                 onChange={(e) => handleChange('level', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
               >
                 {LEVELS.map(level => (
                   <option key={level.value} value={level.value}>{level.label}</option>
@@ -214,42 +200,42 @@ export default function CreateCoursePage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Short Description *
               </label>
               <textarea
                 value={formData.short_description}
                 onChange={(e) => handleChange('short_description', e.target.value)}
-                placeholder="Brief description for course cards (max 300 characters)"
+                placeholder="Brief description (max 300 characters)"
                 rows={2}
                 maxLength={300}
-                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none ${
-                  formErrors.short_description ? 'ring-1 ring-red-500 border-red-500' : ''
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
+                  formErrors.short_description ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               <div className="flex justify-between mt-1">
                 {formErrors.short_description && (
-                  <p className="text-red-600 text-sm">{formErrors.short_description}</p>
+                  <p className="text-red-600 text-xs">{formErrors.short_description}</p>
                 )}
-                <p className="text-gray-500 text-sm ml-auto">{formData.short_description.length}/300</p>
+                <p className="text-gray-500 text-xs ml-auto">{formData.short_description.length}/300</p>
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Full Description *
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Detailed course description, what students will learn, course structure..."
-                rows={4}
-                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none ${
-                  formErrors.description ? 'ring-1 ring-red-500 border-red-500' : ''
+                placeholder="Detailed course description..."
+                rows={3}
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
+                  formErrors.description ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
               {formErrors.description && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.description}</p>
+                <p className="text-red-600 text-xs mt-1">{formErrors.description}</p>
               )}
             </div>
           </div>
@@ -257,105 +243,87 @@ export default function CreateCoursePage() {
 
         {/* Course Details */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center mb-4">
-            <div className="p-1.5 bg-green-100 rounded-lg mr-2">
-              <BookOpen className="h-4 w-4 text-green-600" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">Course Details</h2>
+          <div className="flex items-center space-x-2 mb-3 pb-2 border-b border-gray-200">
+            <Clock className="h-4 w-4 text-green-600" />
+            <h2 className="text-base font-semibold text-gray-900">Course Details</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Price (₹) *
-              </label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Price (₹) *</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">₹</span>
-              <input
-                type="text"
-                value={formData.price || ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, ''); // Only allow numbers
-                  handleChange('price', value ? parseInt(value) : undefined);
-                }}
-                placeholder="Enter price amount"
-                className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
-                  formErrors.price ? 'ring-1 ring-red-500 border-red-500' : ''
-                }`}
-              />
-              </div>
-              {formErrors.price && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.price}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Duration (weeks) *
-              </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium text-sm">₹</span>
                 <input
-                  type="number"
-                  min="1"
-                  max="52"
-                  value={formData.duration_weeks}
-                  onChange={(e) => handleChange('duration_weeks', parseInt(e.target.value) || 1)}
-                  className={`w-full pl-8 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
-                    formErrors.duration_weeks ? 'ring-1 ring-red-500 border-red-500' : ''
+                  type="text"
+                  value={formData.price || ''}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    handleChange('price', value ? parseInt(value) : undefined);
+                  }}
+                  placeholder="Enter price"
+                  className={`w-full pl-8 pr-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
+                    formErrors.price ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
               </div>
-              {formErrors.duration_weeks && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.duration_weeks}</p>
+              {formErrors.price && (
+                <p className="text-red-600 text-xs mt-1">{formErrors.price}</p>
               )}
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Duration (weeks) *</label>
+              <input
+                type="number"
+                min="1"
+                max="52"
+                value={formData.duration_weeks}
+                onChange={(e) => handleChange('duration_weeks', parseInt(e.target.value) || 1)}
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
+                  formErrors.duration_weeks ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {formErrors.duration_weeks && (
+                <p className="text-red-600 text-xs mt-1">{formErrors.duration_weeks}</p>
+              )}
+            </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Learning Outcomes
-              </label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Learning Outcomes</label>
               <textarea
                 value={formData.learning_outcomes || ''}
                 onChange={(e) => handleChange('learning_outcomes', e.target.value)}
-                placeholder="What will students be able to do after completing this course?"
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
+                placeholder="What will students learn?"
+                rows={2}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors resize-none"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Prerequisites
-              </label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Prerequisites</label>
               <textarea
                 value={formData.prerequisites || ''}
                 onChange={(e) => handleChange('prerequisites', e.target.value)}
-                placeholder="What should students know before taking this course?"
+                placeholder="What should students know?"
                 rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all resize-none"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors resize-none"
               />
             </div>
           </div>
         </div>
 
-        {/* Media Upload */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center mb-4">
-            <div className="p-1.5 bg-purple-100 rounded-lg mr-2">
+        {/* Media Upload & Settings Combined */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Media Upload */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center space-x-2 mb-3 pb-2 border-b border-gray-200">
               <Upload className="h-4 w-4 text-purple-600" />
+              <h2 className="text-base font-semibold text-gray-900">Course Media</h2>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Course Media</h2>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Thumbnail Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Course Thumbnail
-              </label>
-              <div className="relative">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Thumbnail</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -368,27 +336,18 @@ export default function CreateCoursePage() {
                   className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   {thumbnailPreview ? (
-                    <img
-                      src={thumbnailPreview}
-                      alt="Thumbnail preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                    <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-cover rounded-lg" />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <Upload className="h-6 w-6 mb-1" />
+                      <Upload className="h-5 w-5 mb-1" />
                       <span className="text-xs">Upload thumbnail</span>
                     </div>
                   )}
                 </label>
               </div>
-            </div>
 
-            {/* Banner Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Course Banner
-              </label>
-              <div className="relative">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Banner</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -401,90 +360,78 @@ export default function CreateCoursePage() {
                   className="block w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
                 >
                   {bannerPreview ? (
-                    <img
-                      src={bannerPreview}
-                      alt="Banner preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
+                    <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover rounded-lg" />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <Upload className="h-6 w-6 mb-1" />
+                      <Upload className="h-5 w-5 mb-1" />
                       <span className="text-xs">Upload banner</span>
                     </div>
                   )}
                 </label>
               </div>
-            </div>
 
-            {/* Demo Video Upload */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Demo Video (Optional)
-              </label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all"
-              />
-              <p className="text-gray-500 text-xs mt-1">Upload a short video preview of your course</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Demo Video</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Course Settings */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center mb-4">
-            <div className="p-1.5 bg-orange-100 rounded-lg mr-2">
+          {/* Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center space-x-2 mb-3 pb-2 border-b border-gray-200">
               <Eye className="h-4 w-4 text-orange-600" />
+              <h2 className="text-base font-semibold text-gray-900">Settings</h2>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Course Settings</h2>
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900 text-sm">Private Course</h3>
-                <p className="text-gray-600 text-xs">Only visible to learners from your organization</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900 text-sm">Private Course</h3>
+                  <p className="text-gray-600 text-xs">Organization only</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.is_private}
+                  onChange={(e) => handleChange('is_private', e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-0 border-gray-300 rounded"
+                />
               </div>
-              <input
-                type="checkbox"
-                checked={formData.is_private}
-                onChange={(e) => handleChange('is_private', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-            </div>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900 text-sm">Require Admin Approval</h3>
-                <p className="text-gray-600 text-xs">All enrollments need admin approval</p>
+              <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900 text-sm">Admin Approval</h3>
+                  <p className="text-gray-600 text-xs">Require approval</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.requires_admin_enrollment}
+                  onChange={(e) => handleChange('requires_admin_enrollment', e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-0 border-gray-300 rounded"
+                />
               </div>
-              <input
-                type="checkbox"
-                checked={formData.requires_admin_enrollment}
-                onChange={(e) => handleChange('requires_admin_enrollment', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Maximum Enrollments (Optional)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.max_enrollments || ''}
-                onChange={(e) => handleChange('max_enrollments', e.target.value ? parseInt(e.target.value) : undefined)}
-                placeholder="Leave empty for unlimited"
-                className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all ${
-                  formErrors.max_enrollments ? 'ring-1 ring-red-500 border-red-500' : ''
-                }`}
-              />
-              {formErrors.max_enrollments && (
-                <p className="text-red-600 text-sm mt-1">{formErrors.max_enrollments}</p>
-              )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Max Enrollments</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.max_enrollments || ''}
+                  onChange={(e) => handleChange('max_enrollments', e.target.value ? parseInt(e.target.value) : undefined)}
+                  placeholder="Unlimited"
+                  className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
+                    formErrors.max_enrollments ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {formErrors.max_enrollments && (
+                  <p className="text-red-600 text-xs mt-1">{formErrors.max_enrollments}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -497,7 +444,7 @@ export default function CreateCoursePage() {
         )}
 
         {/* Form Actions */}
-        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-3">
           <Link
             href="/dashboard/instructor/courses"
             className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors text-sm"
@@ -508,8 +455,8 @@ export default function CreateCoursePage() {
           <button
             type="submit"
             disabled={loading}
-            className={`inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm ${
-              loading ? 'opacity-50 cursor-not-allowed' : 'shadow-sm hover:shadow-md'
+            className={`inline-flex items-center px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             {loading ? (

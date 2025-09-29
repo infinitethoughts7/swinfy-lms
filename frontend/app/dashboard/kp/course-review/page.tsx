@@ -122,12 +122,10 @@ export default function CourseReviewPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Ensure courses is always an array
   const safeCourses = Array.isArray(courses) ? courses : [];
   const safeFilteredCourses = Array.isArray(filteredCourses) ? filteredCourses : [];
 
   useEffect(() => {
-    // Check if user is authenticated before making API calls
     if (!isAuthenticated()) {
       logout();
       return;
@@ -136,20 +134,17 @@ export default function CourseReviewPage() {
     fetchStats();
   }, []);
 
-  // Filter courses based on search term and status filter
   useEffect(() => {
     let filtered = safeCourses;
 
-    // Apply search filter
     if (searchTerm.trim()) {
       filtered = filtered.filter(course =>
-        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.tutor?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchTerm.toLowerCase())
+        course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.tutor?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(course => course.approval_status === statusFilter);
     }
@@ -162,22 +157,17 @@ export default function CourseReviewPage() {
       setLoading(true);
       setError(null);
       
-      // Fetch all courses for this KP admin
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/all/`, {
         method: 'GET',
       });
 
       const data = await response.json();
-      
-      // Handle paginated response - extract results array
       const coursesArray = data.results || data;
-      
-      // Ensure courses is always an array
       setCourses(Array.isArray(coursesArray) ? coursesArray : []);
     } catch (err) {
       console.error('Error fetching courses:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
-      setCourses([]); // Set empty array on error
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -261,7 +251,7 @@ export default function CourseReviewPage() {
 
   const openReviewModal = (course: Course) => {
     setSelectedCourse(course);
-    setReviewNotes('');
+    setReviewNotes(course.approval_notes || '');
     setShowReviewModal(true);
   };
 
@@ -327,7 +317,7 @@ export default function CourseReviewPage() {
         </div>
       </div>
 
-      {/* Stats Cards - Display Only */}
+      {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -382,10 +372,9 @@ export default function CourseReviewPage() {
         </div>
       )}
 
-      {/* Search and Filter Controls */}
+      {/* Search and Filter */}
       <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4">
         <div className="flex items-center gap-3">
-          {/* Search Input - Compact */}
           <div className="w-80">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -399,7 +388,6 @@ export default function CourseReviewPage() {
             </div>
           </div>
           
-          {/* Status Filter - Continuous */}
           <div className="w-40">
             <select
               value={statusFilter}
@@ -414,7 +402,6 @@ export default function CourseReviewPage() {
             </select>
           </div>
           
-          {/* Clear Filters */}
           {(searchTerm || statusFilter !== 'all') && (
             <button
               onClick={() => {
@@ -427,7 +414,6 @@ export default function CourseReviewPage() {
             </button>
           )}
           
-          {/* Results Count */}
           <div className="ml-auto text-sm text-gray-500">
             {safeFilteredCourses.length} of {safeCourses.length} courses
           </div>
@@ -453,11 +439,6 @@ export default function CourseReviewPage() {
                 ? "No courses have been created for this Knowledge Partner yet"
                 : "Try adjusting your search terms or filters"}
             </p>
-            {safeCourses.length === 0 && (
-              <div className="mt-4 text-xs text-gray-400">
-                <p>Courses need to be created by instructors and submitted for review</p>
-              </div>
-            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -500,7 +481,6 @@ export default function CourseReviewPage() {
                       {course.approval_status === 'pending_approval' ? 'Review' : 'View Details'}
                     </button>
                     
-                    {/* Quick approve/reject buttons for pending courses */}
                     {course.approval_status === 'pending_approval' && (
                       <>
                         <button
@@ -525,7 +505,6 @@ export default function CourseReviewPage() {
                       </>
                     )}
                     
-                    {/* Status display for already reviewed courses */}
                     {(course.approval_status === 'approved' || course.approval_status === 'rejected') && course.approval_notes && (
                       <div className="text-xs text-gray-500 max-w-xs">
                         <strong>Review Notes:</strong> {course.approval_notes}
@@ -534,7 +513,6 @@ export default function CourseReviewPage() {
                   </div>
                 </div>
                 
-                {/* Course Modules Preview */}
                 {course.modules && course.modules.length > 0 && (
                   <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Course Content:</h4>
@@ -567,7 +545,9 @@ export default function CourseReviewPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">Review Course</h3>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {selectedCourse.approval_status === 'pending_approval' ? 'Review Course' : 'Course Details'}
+                </h3>
                 <p className="text-gray-600">{selectedCourse.title}</p>
               </div>
               <button
@@ -604,6 +584,12 @@ export default function CourseReviewPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Category:</span>
                       <span className="font-medium capitalize">{selectedCourse.category.replace('_', ' ')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCourse.approval_status)}`}>
+                        {selectedCourse.approval_status.replace('_', ' ').toUpperCase()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -653,45 +639,56 @@ export default function CourseReviewPage() {
                 </div>
               )}
 
-              {/* Review Notes */}
+              {/* Review Notes - Show for all statuses */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Review Notes
+                  {selectedCourse.approval_status === 'pending_approval' ? 'Review Notes' : 'Previous Review Notes'}
                 </label>
-                <textarea
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Add your review notes here..."
-                />
+                {selectedCourse.approval_status === 'pending_approval' ? (
+                  <textarea
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                    placeholder="Add your review notes here..."
+                  />
+                ) : (
+                  <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
+                    {selectedCourse.approval_notes || 'No review notes provided'}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Modal Actions */}
+            {/* Modal Actions - Only show for pending courses */}
             <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
               <button
                 onClick={() => setShowReviewModal(false)}
                 className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                Close
               </button>
-              <button
-                onClick={() => handleReject(selectedCourse.id)}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                {actionLoading ? 'Rejecting...' : 'Reject'}
-              </button>
-              <button
-                onClick={() => handleApprove(selectedCourse.id)}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {actionLoading ? 'Approving...' : 'Approve'}
-              </button>
+              
+              {selectedCourse.approval_status === 'pending_approval' && (
+                <>
+                  <button
+                    onClick={() => handleReject(selectedCourse.id)}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {actionLoading ? 'Rejecting...' : 'Reject'}
+                  </button>
+                  <button
+                    onClick={() => handleApprove(selectedCourse.id)}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {actionLoading ? 'Approving...' : 'Approve'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
