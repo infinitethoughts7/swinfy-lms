@@ -363,8 +363,8 @@ export default function KPProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Organization Profile</h1>
-          <p className="text-gray-600 text-sm">Manage your Knowledge Partner organization details</p>
+          <h1 className="text-2xl font-bold text-gray-900">Knowledge Partner Profile</h1>
+          <p className="text-gray-600 text-sm">Manage your Knowledge Partner details</p>
         </div>
         <div className="flex items-center space-x-3">
           {!isEditing ? (
@@ -412,75 +412,22 @@ export default function KPProfilePage() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.total_courses}</p>
-              </div>
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <BookOpen className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Approved Courses</p>
-                <p className="text-2xl font-bold text-green-600">{stats.approved_courses}</p>
-              </div>
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Courses</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending_courses}</p>
-              </div>
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Award className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Instructors</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.total_instructors}</p>
-              </div>
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Organization Information */}
+        {/* Knowledge Partner Information */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <Building className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Organization Information</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Knowledge Panter Information</h2>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Organization Name
+                    Knowledge Partner Name
                   </label>
                   {isEditing ? (
                     <input
@@ -488,7 +435,7 @@ export default function KPProfilePage() {
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter organization name"
+                      placeholder="Enter Knowledge Pantername"
                     />
                   ) : (
                     <p className="text-gray-900 font-medium">{profile?.name || 'Not provided'}</p>
@@ -497,7 +444,7 @@ export default function KPProfilePage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Organization Type
+                    Knowledge Panter Type
                   </label>
                   {isEditing ? (
                     <select
@@ -529,7 +476,7 @@ export default function KPProfilePage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Describe your organization..."
+                    placeholder="Describe your knowledge partner..."
                   />
                 ) : (
                   <p className="text-gray-900">{profile?.description || 'No description provided'}</p>
@@ -679,7 +626,7 @@ export default function KPProfilePage() {
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <Upload className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Organization Logo</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Knowledge Partner Logo</h2>
             </div>
 
             <div className="text-center">
@@ -688,7 +635,7 @@ export default function KPProfilePage() {
                   <div className="w-32 h-32 mx-auto rounded-lg overflow-hidden border-2 border-gray-200">
                     <img
                       src={profile.logo.startsWith('http') ? profile.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${profile.logo}`}
-                      alt="Organization Logo"
+                      alt="Knowledge Partner Logo"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -755,7 +702,7 @@ export default function KPProfilePage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">Organization Status</span>
+                <span className="text-sm font-medium text-gray-600">Knowledge Partner Status</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   profile?.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>
@@ -779,16 +726,6 @@ export default function KPProfilePage() {
                 </div>
                 <p className="text-sm text-gray-900">
                   {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Last Updated
-                </div>
-                <p className="text-sm text-gray-900">
-                  {profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'Unknown'}
                 </p>
               </div>
             </div>

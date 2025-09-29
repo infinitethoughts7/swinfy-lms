@@ -15,7 +15,8 @@ import {
   Play,
   FileText,
   Image,
-  Award
+  Award,
+  Search
 } from 'lucide-react';
 import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
@@ -110,6 +111,7 @@ interface ReviewStats {
 
 export default function CourseReviewPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,9 +119,12 @@ export default function CourseReviewPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Ensure courses is always an array
   const safeCourses = Array.isArray(courses) ? courses : [];
+  const safeFilteredCourses = Array.isArray(filteredCourses) ? filteredCourses : [];
 
   useEffect(() => {
     // Check if user is authenticated before making API calls
@@ -131,12 +136,34 @@ export default function CourseReviewPage() {
     fetchStats();
   }, []);
 
+  // Filter courses based on search term and status filter
+  useEffect(() => {
+    let filtered = safeCourses;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(course =>
+        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.tutor?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(course => course.approval_status === statusFilter);
+    }
+
+    setFilteredCourses(filtered);
+  }, [safeCourses, searchTerm, statusFilter]);
+
   const fetchCourses = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/`, {
+      // Fetch all courses for this KP admin
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/all/`, {
         method: 'GET',
       });
 
@@ -300,9 +327,9 @@ export default function CourseReviewPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Display Only */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -342,39 +369,99 @@ export default function CourseReviewPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Draft</p>
-                <p className="text-2xl font-bold text-gray-600">{stats.total_draft}</p>
+                <p className="text-sm font-medium text-gray-600">Total Courses</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {stats.total_pending + stats.total_approved + stats.total_rejected + stats.total_draft || 0}
+                </p>
               </div>
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <FileText className="h-5 w-5 text-gray-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Search and Filter Controls */}
+      <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4">
+        <div className="flex items-center gap-3">
+          {/* Search Input - Compact */}
+          <div className="w-80">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+          
+          {/* Status Filter - Continuous */}
+          <div className="w-40">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="all">All Status</option>
+              <option value="pending_approval">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          
+          {/* Clear Filters */}
+          {(searchTerm || statusFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+              }}
+              className="px-3 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm"
+            >
+              Clear
+            </button>
+          )}
+          
+          {/* Results Count */}
+          <div className="ml-auto text-sm text-gray-500">
+            {safeFilteredCourses.length} of {safeCourses.length} courses
+          </div>
+        </div>
+      </div>
+
       {/* Courses List */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Courses Pending Review</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          Course History
+        </h2>
         
-        {safeCourses.length === 0 ? (
+        {safeFilteredCourses.length === 0 ? (
           <div className="text-center py-12">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No courses pending review</p>
-            <p className="text-gray-400 text-sm">
-              {stats?.total_pending === 0 
-                ? "All courses have been reviewed or no courses have been submitted for approval yet" 
-                : "No courses with 'pending_approval' status found"
-              }
+            <p className="text-gray-500 text-lg">
+              {safeCourses.length === 0 
+                ? "No courses found" 
+                : "No courses match your search criteria"}
             </p>
-            <div className="mt-4 text-xs text-gray-400">
-              <p>Courses need to be submitted by instructors for review</p>
-              <p>Check that instructors have clicked "Submit for Approval" on their courses</p>
-            </div>
+            <p className="text-gray-400 text-sm">
+              {safeCourses.length === 0 
+                ? "No courses have been created for this Knowledge Partner yet"
+                : "Try adjusting your search terms or filters"}
+            </p>
+            {safeCourses.length === 0 && (
+              <div className="mt-4 text-xs text-gray-400">
+                <p>Courses need to be created by instructors and submitted for review</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
-            {safeCourses.map((course) => (
+            {safeFilteredCourses.map((course) => (
               <div key={course.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -410,8 +497,40 @@ export default function CourseReviewPage() {
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Review
+                      {course.approval_status === 'pending_approval' ? 'Review' : 'View Details'}
                     </button>
+                    
+                    {/* Quick approve/reject buttons for pending courses */}
+                    {course.approval_status === 'pending_approval' && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(course.id)}
+                          disabled={actionLoading}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Quick Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            setReviewNotes('');
+                            setShowReviewModal(true);
+                          }}
+                          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Status display for already reviewed courses */}
+                    {(course.approval_status === 'approved' || course.approval_status === 'rejected') && course.approval_notes && (
+                      <div className="text-xs text-gray-500 max-w-xs">
+                        <strong>Review Notes:</strong> {course.approval_notes}
+                      </div>
+                    )}
                   </div>
                 </div>
                 

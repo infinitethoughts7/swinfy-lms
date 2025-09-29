@@ -1,0 +1,296 @@
+{
+  "instructors": [
+    {
+      "id": "inst_001",
+      "name": "Dr. Rajesh Kumar",
+      "specialization": "Python & Data Science",
+      "courses_count": 4,
+      "total_students": 52
+    },
+    {
+      "id": "inst_002", 
+      "name": "Prof. Priya Sharma",
+      "specialization": "AI & Machine Learning",
+      "courses_count": 3,
+      "total_students": 36
+    },
+    {
+      "id": "inst_003",
+      "name": "Mr. Arjun Patel",
+      "specialization": "Web Development",
+      "courses_count": 3,
+      "total_students": 18
+    }
+  ],
+  "courses": [
+    {
+      "id": "course_001",
+      "title": "Complete Python Programming",
+      "instructor": "Dr. Rajesh Kumar",
+      "instructor_id": "inst_001",
+      "category": "Programming",
+      "price": 4999,
+      "enrollments": 28,
+      "revenue": 139972,
+      "created_month": "September"
+    },
+    {
+      "id": "course_002",
+      "title": "Machine Learning with Python",
+      "instructor": "Prof. Priya Sharma",
+      "instructor_id": "inst_002",
+      "category": "AI/ML",
+      "price": 7999,
+      "enrollments": 18,
+      "revenue": 143982,
+      "created_month": "September"
+    },
+    {
+      "id": "course_003",
+      "title": "Data Science Fundamentals",
+      "instructor": "Dr. Rajesh Kumar",
+      "instructor_id": "inst_001",
+      "category": "Data Science",
+      "price": 6499,
+      "enrollments": 15,
+      "revenue": 97485,
+      "created_month": "June"
+    },
+    {
+      "id": "course_004",
+      "title": "Deep Learning & Neural Networks",
+      "instructor": "Prof. Priya Sharma",
+      "instructor_id": "inst_002",
+      "category": "AI/ML",
+      "price": 9999,
+      "enrollments": 9,
+      "revenue": 89991,
+      "created_month": "April"
+    },
+    {
+      "id": "course_005",
+      "title": "React.js Development",
+      "instructor": "Mr. Arjun Patel",
+      "instructor_id": "inst_003",
+      "category": "Web Development",
+      "price": 5499,
+      "enrollments": 12,
+      "revenue": 65988,
+      "created_month": "May"
+    },
+    {
+      "id": "course_006",
+      "title": "Python Django Framework",
+      "instructor": "Dr. Rajesh Kumar",
+      "instructor_id": "inst_001",
+      "category": "Web Development",
+      "price": 5999,
+      "enrollments": 6,
+      "revenue": 35994,
+      "created_month": "June"
+    },
+    {
+      "id": "course_007",
+      "title": "Natural Language Processing",
+      "instructor": "Prof. Priya Sharma",
+      "instructor_id": "inst_002",
+      "category": "AI/ML",
+      "price": 8499,
+      "enrollments": 4,
+      "revenue": 33996,
+      "created_month": "July"
+    },
+    {
+      "id": "course_008",
+      "title": "JavaScript ES6+ Mastery",
+      "instructor": "Mr. Arjun Patel",
+      "instructor_id": "inst_003",
+      "category": "Programming",
+      "price": 3999,
+      "enrollments": 3,
+      "revenue": 11997,
+      "created_month": "August"
+    },
+    {
+      "id": "course_009",
+      "title": "Python for Data Analysis",
+      "instructor": "Dr. Rajesh Kumar",
+      "instructor_id": "inst_001",
+      "category": "Data Science",
+      "price": 4499,
+      "enrollments": 3,
+      "revenue": 13497,
+      "created_month": "September"
+    },
+    {
+      "id": "course_010",
+      "title": "Node.js Backend Development",
+      "instructor": "Mr. Arjun Patel",
+      "instructor_id": "inst_003",
+      "category": "Web Development",
+      "price": 4999,
+      "enrollments": 2,
+      "revenue": 9998,
+      "created_month": "October"
+    }
+  ],
+  "monthly_enrollment_trends": {
+    "January": {
+      "Complete Python Programming": 8,
+      "Machine Learning with Python": 0,
+      "Data Science Fundamentals": 0,
+      "Deep Learning & Neural Networks": 0,
+      "React.js Development": 0
+    },
+    "February": {
+      "Complete Python Programming": 12,
+      "Machine Learning with Python": 5,
+      "Data Science Fundamentals": 0,
+      "Deep Learning & Neural Networks": 0,
+      "React.js Development": 0
+    },
+    "March": {
+      "Complete Python Programming": 8,
+      "Machine Learning with Python": 8,
+      "Data Science Fundamentals": 6,
+      "Deep Learning & Neural Networks": 0,
+      "React.js Development": 0
+    },
+    "April": {
+      "Complete Python Programming": 0,
+      "Machine Learning with Python": 5,
+      "Data Science Fundamentals": 9,
+      "Deep Learning & Neural Networks": 3,
+      "React.js Development": 0
+    },
+    "May": {
+      "Complete Python Programming": 0,
+      "Machine Learning with Python": 0,
+      "Data Science Fundamentals": 0,
+      "Deep Learning & Neural Networks": 6,
+      "React.js Development": 7
+    },
+    "June": {
+      "Complete Python Programming": 0,
+      "Machine Learning with Python": 0,
+      "Data Science Fundamentals": 0,
+      "Deep Learning & Neural Networks": 0,
+      "React.js Development": 5
+    }
+  },
+  "course_popularity": [
+    {
+      "course": "Complete Python Programming",
+      "students": 28,
+      "category": "Programming"
+    },
+    {
+      "course": "Machine Learning with Python", 
+      "students": 18,
+      "category": "AI/ML"
+    },
+    {
+      "course": "Data Science Fundamentals",
+      "students": 15,
+      "category": "Data Science"
+    },
+    {
+      "course": "React.js Development",
+      "students": 12,
+      "category": "Web Development"
+    },
+    {
+      "course": "Deep Learning & Neural Networks",
+      "students": 9,
+      "category": "AI/ML"
+    },
+    {
+      "course": "Python Django Framework",
+      "students": 6,
+      "category": "Web Development"
+    },
+    {
+      "course": "Natural Language Processing",
+      "students": 4,
+      "category": "AI/ML"
+    },
+    {
+      "course": "JavaScript ES6+ Mastery",
+      "students": 3,
+      "category": "Programming"
+    },
+    {
+      "course": "Python for Data Analysis",
+      "students": 3,
+      "category": "Data Science"
+    },
+    {
+      "course": "Node.js Backend Development",
+      "students": 2,
+      "category": "Web Development"
+    }
+  ],
+  "enrollment_vs_revenue": [
+    {
+      "course": "Complete Python Programming",
+      "enrollments": 28,
+      "revenue": 139972
+    },
+    {
+      "course": "Machine Learning with Python",
+      "enrollments": 18,
+      "revenue": 143982
+    },
+    {
+      "course": "Data Science Fundamentals", 
+      "enrollments": 15,
+      "revenue": 97485
+    },
+    {
+      "course": "Deep Learning & Neural Networks",
+      "enrollments": 9,
+      "revenue": 89991
+    },
+    {
+      "course": "React.js Development",
+      "enrollments": 12,
+      "revenue": 65988
+    },
+    {
+      "course": "Python Django Framework",
+      "enrollments": 6,
+      "revenue": 35994
+    },
+    {
+      "course": "Natural Language Processing",
+      "enrollments": 4,
+      "revenue": 33996
+    },
+    {
+      "course": "JavaScript ES6+ Mastery",
+      "enrollments": 3,
+      "revenue": 11997
+    },
+    {
+      "course": "Python for Data Analysis",
+      "enrollments": 3,
+      "revenue": 13497
+    },
+    {
+      "course": "Node.js Backend Development",
+      "enrollments": 2,
+      "revenue": 9998
+    }
+  ],
+  "summary": {
+    "total_students": 100,
+    "total_courses": 10,
+    "total_instructors": 3,
+    "total_revenue": 642900,
+    "most_popular_course": "Complete Python Programming",
+    "highest_revenue_course": "Machine Learning with Python",
+    "average_course_price": 5999,
+    "python_related_courses": 4,
+    "python_students": 40
+  }
+}

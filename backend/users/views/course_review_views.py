@@ -166,21 +166,75 @@ def reject_course(request, course_id):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AllCoursesListView(generics.ListAPIView):
+    """List ALL courses with their status for KP admins (history view)."""
+    
+    permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
+    serializer_class = InstructorCourseListSerializer
+    
+    def get_queryset(self):
+        """Return all courses for this KP admin with all statuses."""
+        # Get the Knowledge Partner user
+        kp_user = self.request.user
+        
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            from users.models import KPProfile
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            return Course.objects.none()
+        
+        # Get status filter from query params
+        status_filter = self.request.query_params.get('status', None)
+        
+        # Base queryset - all courses from this KP
+        queryset = Course.objects.filter(
+            training_partner=kp_profile
+        ).select_related('tutor', 'training_partner').prefetch_related(
+            Prefetch('modules', queryset=CourseModule.objects.all()),
+            Prefetch('modules__lessons', queryset=Lesson.objects.all()),
+            Prefetch('modules__lessons__materials', queryset=LessonMaterial.objects.all())
+        )
+        
+        # Apply status filter if provided
+        if status_filter and status_filter != 'all':
+            queryset = queryset.filter(approval_status=status_filter)
+        
+        return queryset.order_by('-created_at')
+
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated, IsKnowledgePartnerAdmin])
 def course_review_stats(request):
     """Get statistics for course review dashboard."""
     try:
-        # Count courses by status
-        total_pending = Course.objects.filter(approval_status='pending_approval').count()
-        total_approved = Course.objects.filter(approval_status='approved').count()
-        total_rejected = Course.objects.filter(approval_status='rejected').count()
-        total_draft = Course.objects.filter(approval_status='draft').count()
+        # Get the Knowledge Partner user
+        kp_user = request.user
         
-        # Recent activity
-        recent_courses = Course.objects.filter(
-            approval_status='pending_approval'
-        ).select_related('tutor').order_by('-created_at')[:5]
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            from users.models import KPProfile
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            return Response({
+                'stats': {
+                    'total_pending': 0,
+                    'total_approved': 0,
+                    'total_rejected': 0,
+                    'total_draft': 0
+                },
+                'recent_activity': []
+            }, status=status.HTTP_200_OK)
+        
+        # Count courses by status for this KP only
+        base_queryset = Course.objects.filter(training_partner=kp_profile)
+        total_pending = base_queryset.filter(approval_status='pending_approval').count()
+        total_approved = base_queryset.filter(approval_status='approved').count()
+        total_rejected = base_queryset.filter(approval_status='rejected').count()
+        total_draft = base_queryset.filter(approval_status='draft').count()
+        
+        # Recent activity for this KP only
+        recent_courses = base_queryset.select_related('tutor').order_by('-updated_at')[:5]
         
         recent_activity = []
         for course in recent_courses:
@@ -189,6 +243,7 @@ def course_review_stats(request):
                 'title': course.title,
                 'instructor': course.tutor.full_name if course.tutor else 'Unknown',
                 'created_at': course.created_at.isoformat(),
+                'updated_at': course.updated_at.isoformat(),
                 'status': course.approval_status
             })
         

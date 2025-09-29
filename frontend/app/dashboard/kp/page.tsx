@@ -1,9 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save } from 'lucide-react';
+import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
 import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  ComposedChart
+} from 'recharts';
+import mockData from '@/lib/mockAnalyticsData.json';
 
 interface Instructor {
   id: string;
@@ -405,151 +419,137 @@ export default function KPDashboard() {
         </div>
       </div>
 
-      {/* Payments Summary */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 lg:p-6">
+      {/* Course Enrollment Trends - Full Width */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Payments</h2>
-          <Link 
-            href="/dashboard/kp/payments"
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center"
-          >
-            Review payments <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Course Enrollment Trends</h3>
+            <p className="text-xs text-gray-600">Monthly enrollment tracking for top courses</p>
+          </div>
+          <LineChartIcon className="h-4 w-4 text-blue-600" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-            <p className="text-xs text-blue-700">Pending Verifications</p>
-            <p className="text-lg font-semibold text-blue-900">{stats?.pending_payments_count || 0}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-green-50 border border-green-100">
-            <p className="text-xs text-green-700">Pending Amount</p>
-            <p className="text-lg font-semibold text-green-900">₹{(stats?.pending_payments_amount || 0).toLocaleString()}</p>
-          </div>
+        <div style={{ width: '100%', height: 300 }}>
+          <ResponsiveContainer>
+            <LineChart data={Object.entries(mockData.monthly_enrollment_trends).map(([month, courses]) => ({
+              month,
+              'Python Programming': courses['Complete Python Programming'],
+              'ML with Python': courses['Machine Learning with Python'],
+              'Data Science': courses['Data Science Fundamentals'],
+              'Deep Learning': courses['Deep Learning & Neural Networks'],
+              'React.js Dev': courses['React.js Development']
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip contentStyle={{ fontSize: '11px' }} />
+              <Legend 
+                align="right" 
+                verticalAlign="top" 
+                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Python Programming" 
+                stroke="#3B82F6" 
+                strokeWidth={2}
+                dot={{ fill: '#3B82F6', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="ML with Python" 
+                stroke="#10B981" 
+                strokeWidth={2}
+                dot={{ fill: '#10B981', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Data Science" 
+                stroke="#F59E0B" 
+                strokeWidth={2}
+                dot={{ fill: '#F59E0B', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="Deep Learning" 
+                stroke="#8B5CF6" 
+                strokeWidth={2}
+                dot={{ fill: '#8B5CF6', r: 3 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="React.js Dev" 
+                stroke="#EF4444" 
+                strokeWidth={2}
+                dot={{ fill: '#EF4444', r: 3 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 lg:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <button
-            onClick={openAddModal}
-            className="group p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 w-full text-left"
-          >
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                <UserPlus className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">Add Instructor</p>
-                <p className="text-sm text-gray-600">Create new account</p>
-              </div>
-            </div>
-          </button>
-
-          <Link
-            href="/dashboard/kp/courses"
-            className="group p-4 border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all duration-200"
-          >
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                <BookOpen className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">Manage Courses</p>
-                <p className="text-sm text-gray-600">View and edit</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/kp/learners"
-            className="group p-4 border border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
-          >
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                <Users className="h-5 w-5 text-purple-600" />
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">View learners</p>
-                <p className="text-sm text-gray-600">Track progress</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/dashboard/kp/analytics"
-            className="group p-4 border border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-all duration-200"
-          >
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                <TrendingUp className="h-5 w-5 text-orange-600" />
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">Analytics</p>
-                <p className="text-sm text-gray-600">View insights</p>
-              </div>
-            </div>
-          </Link>
+      {/* Enrollment vs Revenue Chart - Full Width */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Enrollment vs Revenue Analysis</h3>
+            <p className="text-xs text-gray-600">Compare student volume with earnings performance</p>
+          </div>
+          <TrendingUp className="h-4 w-4 text-purple-600" />
         </div>
-      </div>
-
-      {/* Instructors List */}
-      {stats?.instructors && stats.instructors.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Instructors</h2>
-            <Link 
-              href="/dashboard/kp/instructors"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
+        <div style={{ width: '100%', height: 400 }}>
+          <ResponsiveContainer>
+            <ComposedChart 
+              data={mockData.enrollment_vs_revenue.map(item => ({
+                course: item.course.length > 18 ? item.course.substring(0, 18) + '...' : item.course,
+                enrollments: item.enrollments,
+                revenue: item.revenue / 1000 // Convert to thousands
+              }))}
+              margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
             >
-              View all <ArrowRight className="h-4 w-4 ml-1" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stats.instructors.slice(0, 6).map((instructor) => (
-              <div key={instructor.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {instructor.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{instructor.full_name}</h3>
-                      <p className="text-sm text-gray-600">{instructor.title}</p>
-                    </div>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    instructor.is_available 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {instructor.is_available ? 'Available' : 'Busy'}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">{instructor.email}</p>
-                  {instructor.specializations && (
-                    <div className="flex flex-wrap gap-1">
-                      {instructor.specializations.split(',').slice(0, 2).map((spec, index) => (
-                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                          {spec.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{instructor.years_of_experience} years exp</span>
-                    <span>{new Date(instructor.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="course" 
+                angle={-40}
+                textAnchor="end"
+                height={100}
+                tick={{ fontSize: 9 }}
+              />
+              <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
+              <Tooltip 
+                formatter={(value, name) => {
+                  if (name === 'Revenue (₹K)') {
+                    return [`₹${(value as number * 1000).toLocaleString('en-IN')}`, name];
+                  }
+                  return [value, name];
+                }}
+                contentStyle={{ fontSize: '11px' }}
+              />
+              <Legend 
+                align="right" 
+                verticalAlign="top" 
+                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+              />
+              <Bar 
+                yAxisId="left" 
+                dataKey="enrollments" 
+                fill="#3B82F6" 
+                name="Enrollments"
+                radius={[3, 3, 0, 0]}
+              />
+              <Line 
+                yAxisId="right" 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#EF4444" 
+                strokeWidth={3}
+                name="Revenue (₹K)"
+                dot={{ fill: '#EF4444', r: 5 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
-      )}
+      </div>
 
       {/* Recent Activity */}
       {stats?.recent_activity && stats.recent_activity.length > 0 && (
@@ -570,6 +570,7 @@ export default function KPDashboard() {
           </div>
         </div>
       )}
+
 
       {/* Add Instructor Modal */}
       {addModal && (

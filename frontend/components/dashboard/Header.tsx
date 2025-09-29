@@ -165,7 +165,7 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                 placeholder="Search courses, students, or sessions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-80 pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                className="block w-80 pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 focus:border-transparent placeholder-gray-600"
               />
             </div>
           </form>

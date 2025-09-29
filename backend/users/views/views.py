@@ -752,6 +752,77 @@ class KPInstructorDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class KPLearnerListView(APIView):
+    """List learners associated with the Knowledge Partner organization."""
+    
+    permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
+
+    def get(self, request):
+        # Get the Knowledge Partner user
+        kp_user = request.user
+        
+        # Find the KPProfile where this user is the Knowledge Partner
+        try:
+            kp_profile = KPProfile.objects.get(user=kp_user)
+        except KPProfile.DoesNotExist:
+            return Response({'detail': 'Knowledge Partner must have an associated profile'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get learners associated with this KP organization
+        learners = User.objects.filter(
+            knowledge_partner=kp_profile,
+            role='learner',
+            kp_approval_status='approved'
+        ).select_related('learner_profile').order_by('-created_at')
+        
+        # Apply search filter if provided
+        search = request.query_params.get('search')
+        if search:
+            learners = learners.filter(
+                Q(full_name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(learner_profile__phone_number__icontains=search)
+            )
+        
+        # Serialize learner data
+        learner_data = []
+        for learner in learners:
+            try:
+                profile = learner.learner_profile
+                profile_data = {
+                    'bio': profile.bio,
+                    'profile_picture': profile.profile_picture.url if profile.profile_picture else None,
+                    'phone_number': profile.phone_number,
+                    'learning_goals': profile.learning_goals,
+                    'interests': profile.interests,
+                    'created_at': profile.created_at.isoformat(),
+                    'updated_at': profile.updated_at.isoformat(),
+                }
+            except:
+                profile_data = {
+                    'bio': None,
+                    'profile_picture': None,
+                    'phone_number': None,
+                    'learning_goals': None,
+                    'interests': None,
+                    'created_at': None,
+                    'updated_at': None,
+                }
+            
+            learner_data.append({
+                'id': str(learner.id),
+                'email': learner.email,
+                'full_name': learner.full_name,
+                'is_verified': learner.is_verified,
+                'is_approved': learner.is_approved,
+                'kp_approval_status': learner.kp_approval_status,
+                'created_at': learner.created_at.isoformat(),
+                'updated_at': learner.updated_at.isoformat(),
+                'profile': profile_data,
+            })
+        
+        return Response(learner_data)
+
+
 # =========================
 # OTP Verification Views
 # =========================

@@ -17,6 +17,7 @@ from .views.course_review_views import (
     CourseReviewListView,
     CourseReviewDetailView,
     ApprovedCoursesListView,
+    AllCoursesListView,
     approve_course,
     reject_course,
     course_review_stats,
@@ -78,6 +79,9 @@ urlpatterns = [
     path('kp/instructors/', views.KPInstructorListCreateView.as_view(), name='kp_instructor_list_create'),
     path('kp/instructors/<uuid:id>/', views.KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
     
+    # KP Learner management (KP Admin only)
+    path('kp/learners/', views.KPLearnerListView.as_view(), name='kp_learner_list'),
+    
     # ==========================================
     # KNOWLEDGE PARTNER APPLICATION - SIMPLIFIED
     # ==========================================
@@ -104,6 +108,7 @@ urlpatterns = [
     
     # Course Review endpoints (KP Admin only)
     path('admin/course-review/', CourseReviewListView.as_view(), name='course_review_list'),
+    path('admin/course-review/all/', AllCoursesListView.as_view(), name='all_courses_list'),
     path('admin/course-review/stats/', course_review_stats, name='course_review_stats'),
     path('admin/course-review/<uuid:course_id>/', CourseReviewDetailView.as_view(), name='course_review_detail'),
     path('admin/course-review/<uuid:course_id>/approve/', approve_course, name='course_approve'),
