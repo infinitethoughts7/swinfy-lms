@@ -263,7 +263,7 @@ export default function AttendancePage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900"> Live Session Attendance Management</h1>
           <p className="text-gray-600 mt-2">Track and manage student attendance for your courses</p>
         </div>
 

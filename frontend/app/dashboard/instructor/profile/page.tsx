@@ -33,7 +33,6 @@ interface UserProfile {
 }
 
 export default function InstructorProfilePage() {
-  // const [user, setUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +52,6 @@ export default function InstructorProfilePage() {
     languages_spoken: 'English',
     is_available: true,
   });
-
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -75,11 +73,8 @@ export default function InstructorProfilePage() {
       }
       
       const data = await safeJsonParse(response) as UserProfile;
-      console.log('Profile data received:', data);
-      
       setProfile(data);
       
-      // Map API response to form data - API returns {user: {...}, profile: {...}}
       const profileData = data.profile || {};
       setFormData({
         phone_number: profileData.phone_number || '',
@@ -107,7 +102,6 @@ export default function InstructorProfilePage() {
       setSaving(true);
       setError(null);
       
-      // Prepare data for API - only profile data (user data is not editable here)
       const updateData = {
         profile_data: {
           bio: formData.bio,
@@ -124,8 +118,6 @@ export default function InstructorProfilePage() {
         }
       };
       
-      console.log('Saving profile data:', updateData);
-      
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/profile/detail/`, {
         method: 'PATCH',
         headers: {
@@ -138,7 +130,6 @@ export default function InstructorProfilePage() {
         let errorMessage = 'Failed to update profile';
         try {
           const errorData = await safeJsonParse(response) as { error?: string; message?: string };
-          console.error('Profile update error:', errorData);
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch {
           errorMessage = `Failed to update profile: ${response.status} ${response.statusText}`;
@@ -147,12 +138,8 @@ export default function InstructorProfilePage() {
       }
       
       const updatedProfile = await safeJsonParse(response) as UserProfile;
-      console.log('Profile updated successfully:', updatedProfile);
-      
       setProfile(updatedProfile);
       setIsEditing(false);
-      
-      // Show success message
       alert('Profile updated successfully!');
       
     } catch (err) {
@@ -183,7 +170,6 @@ export default function InstructorProfilePage() {
     setIsEditing(false);
   };
 
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -211,167 +197,142 @@ export default function InstructorProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Profile Settings</h1>
-              <p className="text-gray-600 mt-2 text-lg">Manage your instructor profile and personal information</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            {!isEditing ? (
+    <div className="max-w-6xl mx-auto">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+          <p className="text-sm text-gray-600 mt-1">Manage your instructor profile and personal information</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <>
               <button
-                onClick={() => setIsEditing(true)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
+                onClick={handleCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
               >
-                Edit Profile
+                Cancel
               </button>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleCancel}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            )}
-          </div>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Profile Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Basic Info */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Profile Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left Column - Main Content */}
+        <div className="lg:col-span-2 space-y-4">
           {/* Personal Information */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <p className="text-gray-900 font-medium">{profile?.user?.full_name || 'Not available'}</p>
-                <p className="text-xs text-gray-500 mt-1">Contact admin to change your name</p>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+                <p className="text-sm text-gray-900 font-medium">{profile?.user?.full_name || 'Not available'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email
-                </label>
-                <p className="text-gray-900 font-medium">{profile?.user?.email || 'Not available'}</p>
-                <p className="text-xs text-gray-500 mt-1">Contact admin to change your email</p>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                <p className="text-sm text-gray-900 font-medium">{profile?.user?.email || 'Not available'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Phone</label>
                 {isEditing ? (
                   <input
                     type="tel"
                     value={formData.phone_number}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                     placeholder="+1 (555) 123-4567"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile?.profile?.phone_number || 'Not provided'}</p>
+                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.phone_number || 'Not provided'}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Job Title
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title</label>
                 {isEditing ? (
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                     placeholder="e.g., Senior Software Engineer"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
+                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
                 )}
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Bio
-              </label>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Bio</label>
               {isEditing ? (
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="Tell us about yourself..."
                 />
-                ) : (
-                  <p className="text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
-                )}
+              ) : (
+                <p className="text-sm text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
+              )}
             </div>
           </div>
 
           {/* Professional Information */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <Award className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Professional Information</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
+              <Award className="h-5 w-5 text-green-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Professional Information</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Years of Experience
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Years of Experience</label>
                 {isEditing ? (
                   <input
                     type="number"
                     min="0"
                     value={formData.years_of_experience}
                     onChange={(e) => setFormData(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile?.profile?.years_of_experience || 0} years</p>
+                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.years_of_experience || 0} years</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Highest Education
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Highest Education</label>
                 {isEditing ? (
                   <select
                     value={formData.highest_education}
                     onChange={(e) => setFormData(prev => ({ ...prev, highest_education: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="">Select education level</option>
                     <option value="bachelor">Bachelor&apos;s Degree</option>
@@ -381,7 +342,7 @@ export default function InstructorProfilePage() {
                     <option value="self_taught">Self-Taught</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-gray-900 font-medium">
                     {profile?.profile?.highest_education ? 
                       profile.profile.highest_education.charAt(0).toUpperCase() + profile.profile.highest_education.slice(1).replace('_', ' ') : 
                       'Not provided'
@@ -391,189 +352,169 @@ export default function InstructorProfilePage() {
               </div>
             </div>
 
-            {/* Specializations */}
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Specializations
-              </label>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Specializations</label>
               {isEditing ? (
                 <textarea
                   value={formData.specializations}
                   onChange={(e) => setFormData(prev => ({ ...prev, specializations: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., Web Development, Machine Learning, Data Science (comma-separated)"
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="e.g., Web Development, Machine Learning, Data Science"
                 />
               ) : (
-                <p className="text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
+                <p className="text-sm text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
               )}
             </div>
 
-            {/* Technologies */}
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Technologies
-              </label>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Technologies</label>
               {isEditing ? (
                 <textarea
                   value={formData.technologies}
                   onChange={(e) => setFormData(prev => ({ ...prev, technologies: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="e.g., JavaScript, Python, React, Node.js (comma-separated)"
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="e.g., JavaScript, Python, React, Node.js"
                 />
               ) : (
-                <p className="text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
+                <p className="text-sm text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
               )}
             </div>
 
-            {/* Certifications */}
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Certifications
-              </label>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Certifications</label>
               {isEditing ? (
                 <textarea
                   value={formData.certifications}
                   onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="List your professional certifications (one per line or comma-separated)"
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="List your professional certifications"
                 />
               ) : (
-                <p className="text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
+                <p className="text-sm text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
               )}
             </div>
 
-            {/* Languages Spoken */}
-            <div className="mt-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Languages Spoken
-              </label>
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Languages Spoken</label>
               {isEditing ? (
                 <input
                   type="text"
                   value={formData.languages_spoken}
                   onChange={(e) => setFormData(prev => ({ ...prev, languages_spoken: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   placeholder="e.g., English, Spanish, French"
                 />
               ) : (
-                <p className="text-gray-900">{profile?.profile?.languages_spoken || 'Not provided'}</p>
+                <p className="text-sm text-gray-900">{profile?.profile?.languages_spoken || 'Not provided'}</p>
               )}
             </div>
           </div>
 
           {/* Social Links */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Mail className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Social Links</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
+              <Mail className="h-5 w-5 text-purple-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Social Links</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  LinkedIn Profile
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">LinkedIn Profile</label>
                 {isEditing ? (
                   <input
                     type="url"
                     value={formData.linkedin_url}
                     onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                     placeholder="https://linkedin.com/in/yourprofile"
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{profile?.profile?.linkedin_url || 'Not provided'}</p>
+                  <p className="text-sm text-gray-900 font-medium truncate">{profile?.profile?.linkedin_url || 'Not provided'}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Availability Status
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Availability Status</label>
                 {isEditing ? (
                   <select
                     value={formData.is_available ? 'available' : 'unavailable'}
                     onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'available' }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="available">Available for Teaching</option>
                     <option value="unavailable">Currently Unavailable</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900 font-medium">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm ${
-                      profile?.profile?.is_available 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
-                    </span>
-                  </p>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    profile?.profile?.is_available 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
+                  </span>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Stats & Info */}
-        <div className="space-y-6">
-          {/* Account Stats */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Account Information</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Calendar className="h-5 w-5 text-gray-400" />
+        {/* Right Column - Stats */}
+        <div className="space-y-4">
+          {/* Account Information */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Account Information</h3>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-gray-600">Member since</p>
-                  <p className="font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
+                  <p className="text-xs text-gray-600">Member since</p>
+                  <p className="text-sm font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Clock className="h-5 w-5 text-gray-400" />
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-gray-600">Last login</p>
-                  <p className="font-semibold text-gray-900">Never</p>
+                  <p className="text-xs text-gray-600">Last login</p>
+                  <p className="text-sm font-semibold text-gray-900">Never</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className={`w-3 h-3 rounded-full ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <div>
-                  <p className="text-sm text-gray-600">Status</p>
-                  <p className="font-semibold text-gray-900">{profile?.user?.is_verified ? 'Verified' : 'Not Verified'}</p>
+                  <p className="text-xs text-gray-600">Status</p>
+                  <p className="text-sm font-semibold text-gray-900">{profile?.user?.is_verified ? 'Verified' : 'Not Verified'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Teaching Stats</h3>
-            <div className="space-y-4">
+          {/* Teaching Stats */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">Teaching Stats</h3>
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <BookOpen className="h-5 w-5 text-blue-500" />
-                  <span className="text-gray-600">Courses</span>
+                <div className="flex items-center space-x-2">
+                  <BookOpen className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-gray-600">Courses</span>
                 </div>
-                <span className="font-bold text-gray-900">12</span>
+                <span className="text-sm font-bold text-gray-900">12</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-600">Students</span>
+                <div className="flex items-center space-x-2">
+                  <Users className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-gray-600">Students</span>
                 </div>
-                <span className="font-bold text-gray-900">1,234</span>
+                <span className="text-sm font-bold text-gray-900">1,234</span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Award className="h-5 w-5 text-yellow-500" />
-                  <span className="text-gray-600">Rating</span>
+                <div className="flex items-center space-x-2">
+                  <Award className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm text-gray-600">Rating</span>
                 </div>
-                <span className="font-bold text-gray-900">4.8/5</span>
+                <span className="text-sm font-bold text-gray-900">4.8/5</span>
               </div>
             </div>
           </div>

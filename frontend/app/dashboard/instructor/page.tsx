@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { getCurrentUser } from '@/lib/auth';
 import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
 import { BookOpen, Users, Clock, Star, TrendingUp, Calendar, Plus, Eye, Edit, Trash2, Video, FileText, Award } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import instructorAnalyticsData from '@/lib/instructorAnalyticsData.json';
 
 export default function InstructorDashboard() {
   const [user, setUser] = useState(getCurrentUser());
@@ -23,7 +24,6 @@ export default function InstructorDashboard() {
       setLoading(true);
       setError(null);
       
-      // Fetch dashboard stats and courses in parallel
       const [statsData, coursesData] = await Promise.all([
         instructorApi.getDashboardStats(),
         instructorApi.courses.list()
@@ -35,17 +35,17 @@ export default function InstructorDashboard() {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
       
-      // Mock data for demo
+      // Mock data fallback
       setStats({
-        total_courses: 0,
-        published_courses: 0,
+        total_courses: instructorAnalyticsData.summary.total_courses,
+        published_courses: 4,
         draft_courses: 0,
         pending_approval_courses: 0,
-        total_enrollments: 0,
-        total_modules: 0,
-        total_lessons: 0,
-        total_duration_hours: 0,
-        avg_course_rating: 0,
+        total_enrollments: instructorAnalyticsData.summary.total_enrollments,
+        total_modules: 16,
+        total_lessons: 195,
+        total_duration_hours: 48,
+        avg_course_rating: 4.6,
         recent_courses: []
       });
       setCourses([]);
@@ -62,13 +62,23 @@ export default function InstructorDashboard() {
     try {
       await instructorApi.courses.delete(courseSlug);
       setCourses(prev => prev.filter(course => course.slug !== courseSlug));
-      // Refresh stats
       const updatedStats = await instructorApi.getDashboardStats();
       setStats(updatedStats);
     } catch (err) {
       console.error('Error deleting course:', err);
       alert('Failed to delete course. Please try again.');
     }
+  };
+
+  // Chart Data
+  const studentProgressData = instructorAnalyticsData.student_progress_by_course;
+  const coursePerformanceData = instructorAnalyticsData.course_performance_metrics;
+
+  // Colors for charts
+  const progressColors = {
+    not_started: '#EF4444', // Red
+    in_progress: '#F59E0B', // Orange
+    completed: '#10B981'    // Green
   };
 
   if (loading) {
@@ -89,7 +99,7 @@ export default function InstructorDashboard() {
               Welcome back, {user?.full_name || 'Instructor'}! 👋
             </h1>
             <p className="text-blue-100 text-sm sm:text-base">
-              Ready to create amazing courses? Manage your content and track learner progress.
+              Track your student progress and manage your courses effectively
             </p>
           </div>
           <Link
@@ -117,185 +127,259 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Published Courses */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Award className="h-6 w-6 text-green-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-green-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{stats?.published_courses || 0}</span>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.published_courses || 0}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Published</h3>
-          <p className="text-sm text-gray-600">Live courses</p>
+          <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Published</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Live courses</p>
         </div>
 
         {/* Total Enrollments */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <Users className="h-6 w-6 text-purple-600" />
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-purple-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{stats?.total_enrollments || 0}</span>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.total_enrollments || 0}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Enrollments</h3>
-          <p className="text-sm text-gray-600">Total learners</p>
+          <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Total Students</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Active learners</p>
         </div>
 
-        {/* Content Stats */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <Video className="h-6 w-6 text-orange-600" />
+        {/* Completion Rate */}
+        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-orange-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{stats?.total_lessons || 0}</span>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">
+              {instructorAnalyticsData.summary.overall_completion_rate}%
+            </span>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-1">Lessons</h3>
-          <p className="text-sm text-gray-600">{Math.round(stats?.total_duration_hours || 0)}h content</p>
+          <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Completion Rate</h3>
+          <p className="text-xs sm:text-sm text-gray-600">Avg across courses</p>
         </div>
       </div>
 
-      {/* Course Management Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
+      {/* Chart 1: Student Progress by Course - Full Width */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-6 sm:p-2 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex items-start justify-between mb-4 sm:mb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">My Courses</h2>
-            <p className="text-gray-600 mt-1">Manage your course content and track progress</p>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Student Progress by Course</h2>
+            <p className="text-sm text-gray-600">Track how students are progressing across all your courses</p>
           </div>
-          <Link
-            href="/dashboard/instructor/courses"
-            className="text-blue-600 hover:text-blue-700 font-medium flex items-center"
+          {/* Legend in top right */}
+          <div className="flex items-center gap-4 text-xs sm:text-sm flex-shrink-0 ml-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: progressColors.completed }}></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">Completed</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: progressColors.in_progress }}></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">In Progress</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: progressColors.not_started }}></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">Not Started</span>
+            </div>
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart 
+            data={studentProgressData}
+            margin={{ top: 10, right: 30, left: 20, bottom: 20 }}
           >
-            View All Courses
-            <TrendingUp className="h-4 w-4 ml-1" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey="course" 
+              angle={0}
+              textAnchor="middle"
+              height={100}
+              tick={{ fontSize: 12 }}
+              interval={0}
+              style={{ wordWrap: 'break-word' }}
+            />
+            <YAxis tick={{ fontSize: 10 }} label={{ value: 'Number of Students', angle: -90, position: 'insideMiddle' }} />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '12px',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+              }}
+              cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+            />
+            <Bar dataKey="completed" stackId="a" fill={progressColors.completed} name="Completed" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="in_progress" stackId="a" fill={progressColors.in_progress} name="In Progress" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="not_started" stackId="a" fill={progressColors.not_started} name="Not Started" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+
+      </div>
+
+      {/* Chart 2: Course Performance Metrics - Full Width */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex items-start justify-between mb-2 sm:mb-6">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Course Performance Overview</h2>
+            <p className="text-sm text-gray-600">Compare enrollments, progress, and completion rates across courses</p>
+          </div>
+          {/* Legend in top right */}
+          <div className="flex items-center gap-4 text-xs sm:text-sm flex-shrink-0 ml-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">Enrollments</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">Avg Progress</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-gray-700 font-medium whitespace-nowrap">Completion Rate</span>
+            </div>
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart 
+            data={coursePerformanceData}
+            margin={{ top: 10, right: 50, left: 20, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey="course" 
+              angle={0}
+              textAnchor="middle"
+              height={100}
+              tick={{ fontSize: 12 }}
+              interval={0}
+              style={{ wordWrap: 'break-word' }}
+            />
+            <YAxis 
+              yAxisId="left"
+              tick={{ fontSize: 12 }}
+              label={{ value: 'Enrollments', angle: -90, position: 'insideLeft' }}
+            />
+            <YAxis 
+              yAxisId="right" 
+              orientation="right"
+              tick={{ fontSize: 12 }}
+              label={{ value: 'Percentage (%)', angle: 90, position: 'insideRight' }}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '12px',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+              }}
+              formatter={(value: number, name: string) => {
+                if (name === 'Enrollments') return [value, name];
+                return [`${value}%`, name];
+              }}
+              cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+            />
+            <Bar yAxisId="left" dataKey="enrollments" fill="#3B82F6" name="Enrollments" radius={[8, 8, 0, 0]} barSize={60} />
+            <Bar yAxisId="right" dataKey="avg_progress" fill="#8B5CF6" name="Avg Progress" radius={[8, 8, 0, 0]} barSize={60} />
+            <Bar yAxisId="right" dataKey="completion_rate" fill="#10B981" name="Completion Rate" radius={[8, 8, 0, 0]} barSize={60} />
+          </BarChart>
+        </ResponsiveContainer>
+
+      </div>
+
+      {/* Recent Student Activity - Compact & Clean */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Student Activity</h2>
+            <p className="text-sm text-gray-600 mt-1">Latest lesson completions</p>
+          </div>
+          <Link 
+            href="/dashboard/instructor/students" 
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+          >
+            View All
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
-
-        {(Array.isArray(courses) ? courses : []).length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
-            <p className="text-gray-600 mb-6">Create your first course to start teaching learners</p>
-            <Link
-              href="/dashboard/instructor/courses/create"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Create Your First Course
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(Array.isArray(courses) ? courses : []).slice(0, 6).map((course) => (
-              <div key={course.id} className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
-                {/* Course Thumbnail */}
-                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
-                  {course.thumbnail ? (
-                    <Image 
-                      src={course.thumbnail} 
-                      alt={course.title}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  ) : (
-                    <BookOpen className="h-8 w-8 text-white" />
-                  )}
-                </div>
-
-                {/* Course Info */}
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{course.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{course.short_description}</p>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center space-x-4">
-                      <span>{course.modules_count} modules</span>
-                      <span>{course.lessons_count} lessons</span>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Student</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">Course</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">Lesson</th>
+                <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Progress</th>
+                <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {instructorAnalyticsData.recent_student_activity.map((activity, index) => (
+                <tr 
+                  key={index}
+                  className="hover:bg-gray-50 transition-colors duration-150"
+                >
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {activity.student_name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{activity.student_name}</p>
+                        <p className="text-xs text-gray-500 md:hidden truncate">{activity.course}</p>
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      course.approval_status === 'approved' ? 'bg-green-100 text-green-800' :
-                      course.approval_status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {course.approval_status_display}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Link
-                        href={`/dashboard/instructor/courses/${course.slug}`}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                        title="View Course"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <Link
-                        href={`/dashboard/instructor/courses/${course.slug}/edit`}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-                        title="Edit Course"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteCourse(course.slug)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        title="Delete Course"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                  </td>
+                  <td className="py-3 px-4 hidden md:table-cell">
+                    <p className="text-sm text-gray-700 truncate max-w-[200px]">{activity.course}</p>
+                  </td>
+                  <td className="py-3 px-4 hidden lg:table-cell">
+                    <p className="text-sm text-gray-600 truncate max-w-[250px]">{activity.lesson_completed}</p>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="w-12 bg-gray-200 rounded-full h-2 hidden sm:block">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${activity.progress_percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 min-w-[3rem] text-right">
+                        {activity.progress_percentage}%
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">₹{course.price}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link
-          href="/dashboard/instructor/courses/create"
-          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
-        >
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-200">
-              <Plus className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-2">Create New Course</h3>
-          <p className="text-gray-600 text-sm">Start building your next course with our easy-to-use tools</p>
-        </Link>
-
-        <Link
-          href="/dashboard/instructor/courses"
-          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
-        >
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors duration-200">
-              <BookOpen className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-2">Manage Courses</h3>
-          <p className="text-gray-600 text-sm">Edit content, track progress, and manage enrollments</p>
-        </Link>
-
-        <Link
-          href="/dashboard/instructor/analytics"
-          className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 group"
-        >
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors duration-200">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-          <h3 className="font-semibold text-gray-900 mb-2">Analytics</h3>
-          <p className="text-gray-600 text-sm">View detailed insights about your courses and learners</p>
-        </Link>
+                  </td>
+                  <td className="py-3 px-4 text-right hidden sm:table-cell">
+                    <p className="text-sm text-gray-600">
+                      {new Date(activity.completed_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: new Date(activity.completed_at).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(activity.completed_at).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
