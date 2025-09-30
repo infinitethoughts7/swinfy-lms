@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { coursesApi } from '@/lib/api';
 
 // Interface for course data from backend
@@ -19,6 +18,7 @@ interface Course {
   duration_weeks: number;
   price: string;
   thumbnail: string | null;
+  thumbnail_url?: string | null;
   rating: string;
   total_reviews: number;
   enrollment_count: number;
@@ -252,12 +252,11 @@ export default function CoursesPage() {
               {/* Course Thumbnail */}
               <div className="relative h-40 overflow-hidden">
                 {/* Course Thumbnail - Full Background */}
-                {course.thumbnail ? (
-                  <Image
-                    src={course.thumbnail}
+                {(course.thumbnail_url || course.thumbnail) ? (
+                  <img
+                    src={course.thumbnail_url || course.thumbnail || ''}
                     alt={course.title}
-                    fill
-                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/assets/courses/python.svg';
