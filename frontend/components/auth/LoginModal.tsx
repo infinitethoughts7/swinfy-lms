@@ -262,7 +262,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
                     placeholder="Enter your email address"
                     required
                   />
@@ -311,7 +311,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
                         value={digit}
                         onChange={(e) => handleOTPInputChange(index, e.target.value)}
                         onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                        className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-blue-500 focus:border-transparent"
                       />
                     ))}
                   </div>

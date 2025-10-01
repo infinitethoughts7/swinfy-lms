@@ -475,6 +475,28 @@ export const coursesApi = {
     return response.json();
   },
 
+  // Get course modules (public preview)
+  getCourseModulesPreview: async (slug: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/preview/modules/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch course modules');
+    }
+    
+    return response.json();
+  },
+
+  // Get module lessons (public preview)
+  getModuleLessonsPreview: async (slug: string, moduleId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/preview/modules/${moduleId}/lessons/`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch module lessons');
+    }
+    
+    return response.json();
+  },
+
   // Get featured courses
   getFeaturedCourses: async () => {
     const response = await fetch(`${API_BASE_URL}/api/courses/featured/`);

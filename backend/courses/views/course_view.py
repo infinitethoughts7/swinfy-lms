@@ -322,6 +322,17 @@ class CourseModulesView(generics.ListAPIView):
         raise permissions.PermissionDenied("You don't have access to this course content.")
 
 
+class PublicCourseModulesView(generics.ListAPIView):
+    """Get all modules for a specific course (public access for course preview)."""
+    serializer_class = CourseModuleSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        return CourseModule.objects.filter(course=course).order_by('order')
+
+
 class ModuleLessonsView(generics.ListAPIView):
     """Get all lessons for a specific module."""
     serializer_class = LessonSerializer
@@ -357,6 +368,19 @@ class ModuleLessonsView(generics.ListAPIView):
                 pass
         
         raise permissions.PermissionDenied("You don't have access to this course content.")
+
+
+class PublicModuleLessonsView(generics.ListAPIView):
+    """Get all lessons for a specific module (public access for course preview)."""
+    serializer_class = LessonSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        course_slug = self.kwargs['slug']
+        module_id = self.kwargs['module_id']
+        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        module = get_object_or_404(CourseModule, id=module_id, course=course)
+        return Lesson.objects.filter(module=module).order_by('order')
 
 
 class CourseProgressView(generics.RetrieveAPIView):

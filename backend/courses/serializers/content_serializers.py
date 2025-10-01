@@ -11,14 +11,15 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(read_only=True)
     lessons_count = serializers.SerializerMethodField()
     total_duration_minutes = serializers.SerializerMethodField()
+    duration_weeks = serializers.SerializerMethodField()
     
     class Meta:
         model = CourseModule
         fields = [
-            'id', 'title', 'slug', 'course', 'order',
+            'id', 'title', 'slug', 'course', 'order', 'duration_weeks',
             'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'slug', 'lessons_count', 'total_duration_minutes', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'slug', 'lessons_count', 'total_duration_minutes', 'duration_weeks', 'created_at', 'updated_at']
     
     def get_lessons_count(self, obj):
         """Get number of lessons in this module."""
@@ -27,6 +28,12 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     def get_total_duration_minutes(self, obj):
         """Get total duration of all lessons in this module."""
         return sum(lesson.duration_minutes for lesson in obj.lessons.all())
+    
+    def get_duration_weeks(self, obj):
+        """Get duration in weeks (calculated from total minutes)."""
+        total_minutes = sum(lesson.duration_minutes for lesson in obj.lessons.all())
+        # Convert minutes to weeks (assuming 1 week = 7 days * 24 hours * 60 minutes = 10080 minutes)
+        return round(total_minutes / 10080, 1) if total_minutes > 0 else 0
 
 
 class CourseModuleCreateSerializer(serializers.ModelSerializer):

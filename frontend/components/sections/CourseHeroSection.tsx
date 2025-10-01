@@ -1,13 +1,5 @@
 import Link from 'next/link';
-import { 
-  Database, 
-  BarChart3, 
-  TrendingUp, 
-  Code,
-  FileSpreadsheet,
-  Brain,
-  LucideIcon
-} from 'lucide-react';
+import { Tag, BarChart3, Clock, Star, Users, Eye, Award } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -28,173 +20,121 @@ interface Course {
   thumbnail: string | null;
   banner_image: string | null;
   demo_video?: string | null;
-  learning_outcomes: string;
-  prerequisites: string;
-  tags: string;
-  tags_list: string[];
-  is_published: boolean;
-  is_featured: boolean;
-  is_draft: boolean;
-  approval_status: string;
-  is_private: boolean;
-  is_active: boolean;
-  requires_admin_enrollment: boolean;
-  max_enrollments?: number;
   training_partner: {
     id: string;
     name: string;
     type: string;
     location: string;
-    website?: string;
-    description?: string;
-    is_active: boolean;
-    created_at: string;
   };
   tutor: {
     id: string;
     full_name: string;
     email: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    is_verified: boolean;
-    is_approved: boolean;
-    created_at: string;
   };
-  created_at: string;
-  updated_at: string;
 }
-
-interface FloatingIconProps {
-  Icon: LucideIcon;
-  className: string;
-  delay?: number;
-}
-
-// Function to get course-specific icons based on category
-const getCourseIcons = (category: string): LucideIcon[] => {
-  switch (category.toLowerCase()) {
-    case 'backend development':
-      return [Database, Code, BarChart3, TrendingUp];
-    case 'data analyst':
-      return [BarChart3, FileSpreadsheet, TrendingUp, Database];
-    case 'frontend development':
-      return [Code, Brain, BarChart3];
-    default:
-      return [Database, BarChart3, Code, TrendingUp];
-  }
-};
-
-const FloatingIcon = ({ Icon, className, delay = 0 }: FloatingIconProps) => (
-  <div 
-    className={`absolute text-white/8 animate-float drop-shadow-lg ${className}`}
-    style={{ 
-      animationDelay: `${delay}s`,
-      animationDuration: `${25 + Math.random() * 15}s`,
-      filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))'
-    }}
-  >
-    <Icon size={48} strokeWidth={1} />
-  </div>
-);
 
 export default function CourseHeroSection({ course }: { course: Course }) {
-  const courseIcons = getCourseIcons(course.category_display);
   
   return (
-    <>
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translate(0, 0) rotate(0deg);
-          }
-          33% {
-            transform: translate(40px, -40px) rotate(15deg);
-          }
-          66% {
-            transform: translate(-30px, 30px) rotate(-10deg);
-          }
-        }
-        .animate-float {
-          animation: float ease-in-out infinite;
-        }
-      `}</style>
-      
-      {/* Course Hero */}
-      <div className="relative overflow-hidden bg-gray-900">
-        {/* Floating Background Icons - Course Specific (Right Side Only) */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Top right area icons */}
-          <FloatingIcon Icon={courseIcons[0]} className="top-[12%] right-[8%]" delay={0} />
-          <FloatingIcon Icon={courseIcons[1]} className="top-[25%] right-[15%]" delay={4} />
-          
-          {/* Middle right area icons */}
-          <FloatingIcon Icon={courseIcons[2]} className="top-[45%] right-[5%]" delay={2} />
-          
-          {/* Bottom right area icons */}
-          <FloatingIcon Icon={courseIcons[3] || courseIcons[0]} className="bottom-[15%] right-[12%]" delay={6} />
-          
-          {/* Additional icon for courses with more specific icons */}
-          {courseIcons.length > 4 && (
-            <FloatingIcon Icon={courseIcons[4]} className="bottom-[30%] right-[20%]" delay={8} />
-          )}
-        </div>
+    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      {/* Subtle Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, rgb(59, 130, 246) 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 text-center lg:text-left">
-              <Link 
-                href="/courses" 
-                className="inline-flex items-center text-blue-200 hover:text-white transition-colors mb-6"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back to Courses
-              </Link>
-              
-              <div className="mb-6">
-                <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm text-white text-sm font-inter rounded-full border border-white/30">
-                  {course.category_display}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm mb-4">
+          <Link 
+            href="/courses" 
+            className="text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            All Courses
+          </Link>
+          <span className="text-gray-400">/</span>
+          <Link 
+            href={`/courses?category=${course.category}`}
+            className="text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {course.category_display}
+          </Link>
+          <span className="text-gray-400">/</span>
+          <span className="text-gray-500 truncate max-w-xs">{course.title}</span>
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Course Info */}
+          <div className="lg:col-span-2">
+            {/* Category Badge - Above title */}
+            <div className="mb-3">
+              <span className="inline-flex items-center px-3 py-1.5 bg-white rounded-full border border-gray-200 text-sm font-semibold text-gray-900">
+                <Tag className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
+                {course.category_display}
+              </span>
+            </div>
+
+            {/* Course Title */}
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 leading-tight">
+              {course.title}
+            </h1>
+
+            {/* Short Description */}
+            <p className="text-base text-gray-600 mb-6 leading-relaxed">
+              {course.short_description}
+            </p>
+
+            {/* ALL Stats in ONE line - Icon + Value only */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              {/* Rating */}
+              <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-white rounded-full border border-gray-200">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <span className="text-sm font-semibold text-gray-900">{course.rating}</span>
+              </div>
+
+              {/* Students */}
+              <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-white rounded-full border border-gray-200">
+                <Users className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-semibold text-gray-900">{course.enrollment_count.toLocaleString()} students</span>
+              </div>
+
+              {/* Duration */}
+              <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-white rounded-full border border-gray-200">
+                <Clock className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-semibold text-gray-900">{course.duration_weeks} weeks</span>
+              </div>
+
+              {/* Level */}
+              <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-white rounded-full border border-gray-200">
+                <Award className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-semibold text-gray-900">{course.level_display}</span>
+              </div>
+            </div>
+
+            {/* Instructor Info - Compact rounded box */}
+            <div className="inline-flex items-center space-x-3 px-4 py-3 bg-white rounded-full border border-gray-200 shadow-sm">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-gray-700">
+                  {course.tutor.full_name.charAt(0)}
                 </span>
               </div>
-              
-              <h1 className="text-5xl md:text-6xl font-sora font-black text-white mb-6 leading-tight">
-                {course.title}
-              </h1>
-              
-              <p className="text-xl md:text-2xl text-blue-100 font-inter max-w-4xl mb-6 leading-relaxed">
-                {course.short_description}
-              </p>
-              
-              <div className="flex flex-wrap items-center gap-8 text-blue-200 mb-8">
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.rating} ({course.enrollment_count.toLocaleString()} students)</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.duration_weeks} weeks</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="font-inter font-semibold">{course.tutor.full_name}</span>
-                </div>
+              <div>
+                <p className="text-xs text-gray-500">Created by</p>
+                <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                  {course.tutor.full_name}, {course.training_partner.name}
+                </p>
               </div>
-              
-              <button className="bg-white text-blue-600 hover:bg-blue-50 font-sora font-bold text-lg px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sm">
-                Enroll Now - ₹{parseFloat(course.price).toLocaleString()}
-              </button>
             </div>
+          </div>
+
+          {/* Right Column - Placeholder */}
+          <div className="lg:col-span-1">
+            {/* Space for sidebar */}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -69,6 +69,10 @@ urlpatterns = [
     path('<slug:slug>/progress/', views.CourseProgressView.as_view(), name='course-progress'),
     path('<slug:slug>/modules/<uuid:module_id>/lessons/', views.ModuleLessonsView.as_view(), name='module-lessons'),
     
+    # Public Course Preview Endpoints
+    path('<slug:slug>/preview/modules/', views.PublicCourseModulesView.as_view(), name='public-course-modules'),
+    path('<slug:slug>/preview/modules/<uuid:module_id>/lessons/', views.PublicModuleLessonsView.as_view(), name='public-module-lessons'),
+    
     # Lesson Endpoints
     path('lessons/<uuid:lesson_id>/complete/', views.LessonCompleteView.as_view(), name='lesson-complete'),
     path('lessons/<uuid:lesson_id>/start/', views.LessonStartView.as_view(), name='lesson-start'),
