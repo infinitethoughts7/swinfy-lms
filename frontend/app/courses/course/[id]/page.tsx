@@ -13,7 +13,7 @@ import PaymentModal from '@/components/payment/PaymentModal';
 import { coursesApi, paymentsApi } from '@/lib/api';
 import { useModal } from '@/components/providers/ModalProvider';
 
-// [Keep all your existing interfaces - Course, CourseModule, Lesson, TabType]
+// [Keep all your existing interfaces]
 interface Course {
   id: string;
   title: string;
@@ -300,13 +300,38 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Course Hero */}
+    <div className="min-h-screen bg-gray-50">
+       {/* Course Hero Section - Dark Background */}
+       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-black pb-24">
+         {/* Grid Pattern Overlay */}
+         <div className="absolute inset-0 opacity-10">
+           <div className="absolute inset-0" style={{
+             backgroundImage: `
+               linear-gradient(to right, rgb(148, 163, 184) 1px, transparent 1px),
+               linear-gradient(to bottom, rgb(148, 163, 184) 1px, transparent 1px)
+             `,
+             backgroundSize: '40px 40px'
+           }} />
+         </div>
+
+         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+             {/* Left Column - Course Hero Info */}
+             <div className="lg:col-span-2">
       <CourseHeroSection course={course} />
+             </div>
+
+             {/* Right Column - Sidebar Preview (Hidden on mobile) */}
+             <div className="lg:col-span-1 hidden lg:block">
+               {/* Empty space for sidebar positioning */}
+             </div>
+           </div>
+         </div>
+       </div>
 
       {/* Payment Success Notification */}
       {showSuccessMessage && (
-        <div className="bg-green-50 border border-green-200 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-lg">
+        <div className="bg-green-50 border border-green-200 p-4 mx-4 sm:mx-6 lg:mx-8 -mt-20 mb-4 rounded-lg relative z-10">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
@@ -318,33 +343,33 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 Payment successful! Your enrollment is pending approval.
               </p>
             </div>
-            <button
-              onClick={() => setShowSuccessMessage(false)}
+              <button
+                onClick={() => setShowSuccessMessage(false)}
               className="ml-auto text-green-600 hover:text-green-800"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
+              >
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
           </div>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Content with Sticky Tabs */}
-          <div className="lg:col-span-2">
-            {/* STICKY Tab Navigation - Full width with light gray background */}
-            <div className="sticky top-16 z-20 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 mb-4">
-              <div className="bg-gray-100 rounded-xl p-1.5 flex gap-1 shadow-sm border border-gray-200">
+       {/* Main Content Area - WHITE BACKGROUND */}
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           {/* Left Column - Main Content with Sticky Tabs */}
+           <div className="lg:col-span-2 pt-6">
+             {/* STICKY Tab Navigation */}
+             <div className="sticky top-16 z-20 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 mb-6 bg-gray-50 pb-4">
+               <div className="bg-white rounded-lg p-1.5 flex gap-1 shadow-sm border border-gray-200">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex-1 px-6 py-2.5 text-sm font-medium rounded-lg transition-all ${
                       activeTab === tab.id
-                        ? 'bg-white text-gray-900 shadow-sm'
+                        ? 'bg-slate-900 text-white shadow-md'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
@@ -354,63 +379,73 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
 
-            {/* Tab Content - Scrollable */}
+            {/* Tab Content - ALL WITH WHITE BACKGROUND */}
             <div>
               {activeTab === 'overview' && (
-                <OverviewTab
-                  learningOutcomes={course.learning_outcomes}
-                  description={course.description}
-                  prerequisites={course.prerequisites}
-                  tags={course.tags_list}
-                  rating={course.rating}
-                  enrollmentCount={course.enrollment_count}
-                  viewCount={course.view_count}
-                />
-              )}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <OverviewTab
+                    learningOutcomes={course.learning_outcomes}
+                    description={course.description}
+                    prerequisites={course.prerequisites}
+                    tags={course.tags_list}
+                    rating={course.rating}
+                    enrollmentCount={course.enrollment_count}
+                    viewCount={course.view_count}
+                  />
+              </div>
+            )}
 
               {activeTab === 'content' && (
-                <CourseContentTab
-                  modules={modules}
-                  lessons={lessons}
-                  isEnrolled={isEnrolled}
-                />
-              )}
-
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <CourseContentTab
+                modules={modules} 
+                lessons={lessons} 
+                isEnrolled={isEnrolled}
+              />
+                  </div>
+                )}
+                
               {activeTab === 'instructor' && (
-                <InstructorTab
-                  tutor={course.tutor}
-                  trainingPartner={course.training_partner}
-                  courseRating={course.rating}
-                  totalStudents={course.enrollment_count}
-                  totalCourses={2}
-                />
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <InstructorTab
+                    tutor={course.tutor}
+                    trainingPartner={course.training_partner}
+                    courseRating={course.rating}
+                    totalStudents={course.enrollment_count}
+                    totalCourses={2}
+                  />
+                </div>
               )}
-
+              
               {activeTab === 'reviews' && (
-                <ReviewsTab
-                  courseRating={course.rating}
-                  totalReviews={course.total_reviews}
-                />
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <ReviewsTab
+                    courseRating={course.rating}
+                    totalReviews={course.total_reviews}
+                  />
+                </div>
               )}
             </div>
           </div>
 
-          {/* Right Column - Sticky Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-16">
-              <CourseSidebar
-                demoVideo={course.demo_video || undefined}
-                courseThumbnail={course.thumbnail || undefined}
-                price={course.price}
-                duration={course.duration_weeks}
-                lessonsCount={modules.reduce((sum, module) => sum + module.lessons_count, 0)}
-                level={course.level}
-                isEnrolled={isEnrolled}
-                paymentStatus={paymentStatus}
-                onEnrollClick={handleEnrollClick}
-                onDemoVideoClick={() => setShowDemoModal(true)}
-              />
-            </div>
+           {/* Right Column - STICKY SIDEBAR CARD */}
+           <div className="lg:col-span-1">
+             <div className="sticky top-16 z-30 -mt-32">
+               <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+                 <CourseSidebar
+                   demoVideo={course.demo_video || undefined}
+                   courseThumbnail={course.thumbnail || undefined}
+                   price={course.price}
+                   duration={course.duration_weeks}
+                   lessonsCount={modules.reduce((sum, module) => sum + module.lessons_count, 0)}
+                   level={course.level}
+                   isEnrolled={isEnrolled}
+                   paymentStatus={paymentStatus}
+                   onEnrollClick={handleEnrollClick}
+                   onDemoVideoClick={() => setShowDemoModal(true)}
+                 />
+               </div>
+             </div>
           </div>
         </div>
       </div>
