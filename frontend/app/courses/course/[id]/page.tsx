@@ -11,7 +11,7 @@ import ReviewsTab from '@/components/course/ReviewsTab';
 import DemoVideoModal from '@/components/course/DemoVideoModal';
 import PaymentModal from '@/components/payment/PaymentModal';
 import { coursesApi, paymentsApi } from '@/lib/api';
-import { useModal } from '@/components/providers/ModalProvider';
+import LoginModal from '@/components/auth/LoginModal';
 
 // [Keep all your existing interfaces]
 interface Course {
@@ -117,7 +117,6 @@ interface Lesson {
 type TabType = 'overview' | 'content' | 'instructor' | 'reviews';
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
-  const { openLoginModal } = useModal();
   const [id, setId] = useState<string>('');
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
@@ -132,6 +131,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showCustomLoginModal, setShowCustomLoginModal] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
@@ -145,9 +145,17 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     const handleStorageChange = () => {
       checkLoginStatus();
     };
+
+    const handleUserLogin = () => {
+      checkLoginStatus();
+    };
     
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('userLogin', handleUserLogin);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLogin', handleUserLogin);
+    };
   }, []);
 
   // Handle async params
@@ -218,10 +226,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               setEnrollmentStatus('not_enrolled');
               setIsEnrolled(false);
             }
-          } catch (err) {
-            setEnrollmentStatus('not_enrolled');
-            setIsEnrolled(false);
-          }
+        } catch (err) {
+          console.error('Error checking enrollment status:', err);
+          setEnrollmentStatus('not_enrolled');
+          setIsEnrolled(false);
+        }
         } else {
           setEnrollmentStatus('not_enrolled');
           setIsEnrolled(false);
@@ -246,11 +255,15 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     setTimeout(() => setShowSuccessMessage(false), 5000);
   };
 
+  const handlePaymentModalClose = () => {
+    setShowPaymentModal(false);
+  };
+
   const handleEnrollClick = () => {
     if (!course) return;
     
     if (!isLoggedIn) {
-      openLoginModal();
+      setShowCustomLoginModal(true);
       return;
     }
     
@@ -258,6 +271,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       return;
     }
 
+    setShowPaymentModal(true);
+  };
+
+  const handleLoginSuccess = () => {
+    setShowCustomLoginModal(false);
     setShowPaymentModal(true);
   };
 
@@ -458,11 +476,22 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         courseTitle={course.title}
       />
 
+      {/* Custom Login Modal for Course Enrollment */}
+      <LoginModal
+        open={showCustomLoginModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCustomLoginModal(false);
+          }
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
       {/* Payment Modal */}
       {course && (
         <PaymentModal
           isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={handlePaymentModalClose}
           course={{
             id: course.id,
             title: course.title,
@@ -470,7 +499,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             slug: course.slug
           }}
           onPaymentSuccess={handlePaymentSuccess}
-          onAuthRequired={() => openLoginModal()}
+          onAuthRequired={() => setShowCustomLoginModal(true)}
         />
       )}
     </div>
