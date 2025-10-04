@@ -185,6 +185,7 @@ export default function LearnerHomePage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white">
         <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Welcome back!</h1>
