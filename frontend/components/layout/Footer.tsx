@@ -6,11 +6,11 @@ const Footer = () => {
 
 
   const socialLinks = [
-    { name: 'LinkedIn', href: '/linkedin', icon: 'linkedin' },
-    { name: 'Twitter', href: '/twitter', icon: 'twitter' },
-    { name: 'Facebook', href: '/facebook', icon: 'facebook' },
-    { name: 'Instagram', href: '/instagram', icon: 'instagram' },
-    { name: 'YouTube', href: '/youtube', icon: 'youtube' }
+    { name: 'LinkedIn', href: 'https://linkedin.com/company/olla', icon: 'linkedin' },
+    { name: 'Twitter', href: 'https://twitter.com/olla', icon: 'twitter' },
+    { name: 'Facebook', href: 'https://facebook.com/olla', icon: 'facebook' },
+    { name: 'Instagram', href: 'https://instagram.com/olla', icon: 'instagram' },
+    { name: 'YouTube', href: 'https://youtube.com/@olla', icon: 'youtube' }
   ];
 
   const renderSocialIcon = (icon: string) => {
@@ -95,14 +95,16 @@ const Footer = () => {
           {/* Social Links */}
           <div className="flex space-x-3">
             {socialLinks.slice(0, 4).map((social, index) => (
-              <Link
+              <a
                 key={index}
                 href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white transition-all duration-200"
                 aria-label={social.name}
               >
                 {renderSocialIcon(social.icon)}
-              </Link>
+              </a>
             ))}
           </div>
         </div>
@@ -114,12 +116,12 @@ const Footer = () => {
               © {currentYear} OLLA. All rights reserved.
             </div>
             <div className="flex space-x-6 mt-2 md:mt-0">
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <span className="hover:text-white transition-colors cursor-pointer">
                 Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
+              </span>
+              <span className="hover:text-white transition-colors cursor-pointer">
                 Terms of Service
-              </Link>
+              </span>
             </div>
           </div>
         </div>

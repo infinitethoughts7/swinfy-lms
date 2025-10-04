@@ -753,7 +753,7 @@ class KPInstructorDetailView(APIView):
 
 
 class KPLearnerListView(APIView):
-    """List learners associated with the Knowledge Partner organization."""
+    """List learners enrolled in courses created by the Knowledge Partner."""
     
     permission_classes = [permissions.IsAuthenticated, IsKnowledgePartnerAdmin]
 
@@ -767,25 +767,51 @@ class KPLearnerListView(APIView):
         except KPProfile.DoesNotExist:
             return Response({'detail': 'Knowledge Partner must have an associated profile'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get learners associated with this KP organization
-        learners = User.objects.filter(
-            knowledge_partner=kp_profile,
-            role='learner',
-            kp_approval_status='approved'
-        ).select_related('learner_profile').order_by('-created_at')
+        # Get learners who are enrolled in courses created by this KP
+        from courses.models.enrollment import Enrollment
+        from courses.models.course import Course
+        
+        # Get all courses created by this KP
+        kp_courses = Course.objects.filter(training_partner=kp_profile)
+        
+        # Get enrollments for these courses
+        enrollments = Enrollment.objects.filter(
+            course__in=kp_courses,
+            learner__role='learner'
+        ).select_related(
+            'learner', 
+            'learner__learner_profile', 
+            'course',
+            'course_progress'
+        ).order_by('-enrollment_date')
         
         # Apply search filter if provided
         search = request.query_params.get('search')
         if search:
-            learners = learners.filter(
-                Q(full_name__icontains=search) |
-                Q(email__icontains=search) |
-                Q(learner_profile__phone_number__icontains=search)
+            enrollments = enrollments.filter(
+                Q(learner__full_name__icontains=search) |
+                Q(learner__email__icontains=search) |
+                Q(learner__learner_profile__phone_number__icontains=search) |
+                Q(course__title__icontains=search)
             )
         
-        # Serialize learner data
+        # Group enrollments by learner to avoid duplicates
+        learner_enrollments = {}
+        for enrollment in enrollments:
+            learner_id = str(enrollment.learner.id)
+            if learner_id not in learner_enrollments:
+                learner_enrollments[learner_id] = {
+                    'learner': enrollment.learner,
+                    'enrollments': []
+                }
+            learner_enrollments[learner_id]['enrollments'].append(enrollment)
+        
+        # Serialize learner data with their enrollments
         learner_data = []
-        for learner in learners:
+        for learner_id, data in learner_enrollments.items():
+            learner = data['learner']
+            enrollments = data['enrollments']
+            
             try:
                 profile = learner.learner_profile
                 profile_data = {
@@ -808,16 +834,44 @@ class KPLearnerListView(APIView):
                     'updated_at': None,
                 }
             
+            # Prepare enrollment data
+            enrollment_data = []
+            for enrollment in enrollments:
+                enrollment_info = {
+                    'id': str(enrollment.id),
+                    'course_title': enrollment.course.title,
+                    'course_slug': enrollment.course.slug,
+                    'status': enrollment.status,
+                    'enrollment_date': enrollment.enrollment_date.isoformat(),
+                    'progress_percentage': enrollment.progress_percentage,
+                    'payment_status': enrollment.payment_status,
+                    'amount_paid': str(enrollment.amount_paid),
+                }
+                
+                # Add progress info if available
+                if hasattr(enrollment, 'course_progress') and enrollment.course_progress:
+                    enrollment_info.update({
+                        'overall_progress': str(enrollment.course_progress.overall_progress),
+                        'lessons_completed': enrollment.course_progress.lessons_completed,
+                        'total_lessons': enrollment.course_progress.total_lessons,
+                        'last_activity': enrollment.course_progress.last_activity.isoformat() if enrollment.course_progress.last_activity else None,
+                    })
+                
+                enrollment_data.append(enrollment_info)
+            
             learner_data.append({
                 'id': str(learner.id),
                 'email': learner.email,
                 'full_name': learner.full_name,
                 'is_verified': learner.is_verified,
                 'is_approved': learner.is_approved,
-                'kp_approval_status': learner.kp_approval_status,
                 'created_at': learner.created_at.isoformat(),
                 'updated_at': learner.updated_at.isoformat(),
                 'profile': profile_data,
+                'enrollments': enrollment_data,
+                'total_enrollments': len(enrollments),
+                'active_enrollments': len([e for e in enrollments if e.status == 'active']),
+                'completed_enrollments': len([e for e in enrollments if e.status == 'completed']),
             })
         
         return Response(learner_data)

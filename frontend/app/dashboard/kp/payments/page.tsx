@@ -286,27 +286,27 @@ export default function KPPaymentsPage() {
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{payment.user_name}</div>
-                        <div className="text-sm text-gray-500">{payment.user_email}</div>
+                        <div className="text-sm font-medium text-gray-900">{payment.user_name || 'Unknown User'}</div>
+                        <div className="text-sm text-gray-500">{payment.user_email || 'No email'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link 
                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline" 
-                        href={`/courses/course/${payment.course_slug}`}
+                        href={`/courses/course/${payment.course_slug || payment.id}`}
                       >
-                        {payment.course_title}
+                        {payment.course_title || 'Unknown Course'}
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-semibold text-green-700">
-                        ₹{Number(payment.amount as unknown as number || parseFloat(payment.amount)).toLocaleString()}
+                        ₹{payment.amount ? Number(payment.amount).toLocaleString() : '0'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                        {getStatusIcon(payment.status)}
-                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(payment.status || 'pending')}`}>
+                        {getStatusIcon(payment.status || 'pending')}
+                        {(payment.status || 'pending').charAt(0).toUpperCase() + (payment.status || 'pending').slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

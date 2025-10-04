@@ -29,16 +29,34 @@ interface LearnerProfile {
   updated_at: string | null;
 }
 
+interface Enrollment {
+  id: string;
+  course_title: string;
+  course_slug: string;
+  status: string;
+  enrollment_date: string;
+  progress_percentage: number;
+  payment_status: string;
+  amount_paid: string;
+  overall_progress?: string;
+  lessons_completed?: number;
+  total_lessons?: number;
+  last_activity?: string;
+}
+
 interface Learner {
   id: string;
   email: string;
   full_name: string;
   is_verified: boolean;
   is_approved: boolean;
-  kp_approval_status: string;
   created_at: string;
   updated_at: string;
   profile: LearnerProfile;
+  enrollments: Enrollment[];
+  total_enrollments: number;
+  active_enrollments: number;
+  completed_enrollments: number;
 }
 
 export default function KPLearnersPage() {
@@ -83,7 +101,10 @@ export default function KPLearnersPage() {
   const filteredLearners = learners.filter(learner =>
     learner.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     learner.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (learner.profile.phone_number && learner.profile.phone_number.includes(searchTerm))
+    (learner.profile.phone_number && learner.profile.phone_number.includes(searchTerm)) ||
+    learner.enrollments.some(enrollment => 
+      enrollment.course_title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const openModal = (learner: Learner) => {
@@ -147,7 +168,7 @@ export default function KPLearnersPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search by name, email, phone, or course..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
@@ -165,7 +186,7 @@ export default function KPLearnersPage() {
             </p>
             <p className="text-gray-400 text-sm">
               {learners.length === 0 
-                ? 'Learners will appear here once they join your organization'
+                ? 'Learners will appear here once they enroll in your courses'
                 : 'Try adjusting your search terms'}
             </p>
           </div>
@@ -220,6 +241,22 @@ export default function KPLearnersPage() {
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
                         <span>Joined {formatDate(learner.created_at)}</span>
+                      </div>
+                    </div>
+
+                    {/* Enrollment Stats */}
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">Enrollments:</span>
+                        <span className="font-medium text-gray-900">{learner.total_enrollments}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">Active:</span>
+                        <span className="font-medium text-green-600">{learner.active_enrollments}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">Completed:</span>
+                        <span className="font-medium text-blue-600">{learner.completed_enrollments}</span>
                       </div>
                     </div>
 
@@ -346,6 +383,50 @@ export default function KPLearnersPage() {
                   </div>
                 </div>
               )}
+
+              {/* Course Enrollments */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-3">Course Enrollments</h4>
+                <div className="space-y-3">
+                  {selectedLearner.enrollments.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No course enrollments found</p>
+                  ) : (
+                    selectedLearner.enrollments.map((enrollment) => (
+                      <div key={enrollment.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900 mb-1">{enrollment.course_title}</h5>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span>Status: <span className={`font-medium ${
+                                enrollment.status === 'active' ? 'text-green-600' :
+                                enrollment.status === 'completed' ? 'text-blue-600' :
+                                enrollment.status === 'pending_approval' ? 'text-yellow-600' :
+                                'text-gray-600'
+                              }`}>{enrollment.status.replace('_', ' ').toUpperCase()}</span></span>
+                              <span>Progress: {enrollment.progress_percentage}%</span>
+                              <span>Enrolled: {formatDate(enrollment.enrollment_date)}</span>
+                            </div>
+                            {enrollment.lessons_completed !== undefined && enrollment.total_lessons !== undefined && (
+                              <div className="mt-2">
+                                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                  <span>Lessons Completed</span>
+                                  <span>{enrollment.lessons_completed} / {enrollment.total_lessons}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${(enrollment.lessons_completed / enrollment.total_lessons) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
               {/* Account Information */}
               <div>

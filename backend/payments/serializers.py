@@ -61,13 +61,15 @@ class PendingPaymentSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source='user.email', read_only=True)
     course_title = serializers.CharField(source='enrollment.course.title', read_only=True)
     course_slug = serializers.CharField(source='enrollment.course.slug', read_only=True)
+    verified_by = serializers.CharField(source='verified_by.full_name', read_only=True)
     
     class Meta:
         model = Payment
         fields = [
             'id', 'razorpay_order_id', 'razorpay_payment_id',
-            'amount', 'created_at', 'paid_at', 
-            'user_name', 'user_email', 'course_title', 'course_slug'
+            'amount', 'status', 'created_at', 'paid_at', 'verified_at',
+            'verification_notes', 'user_name', 'user_email', 
+            'course_title', 'course_slug', 'verified_by'
         ]
 
 
