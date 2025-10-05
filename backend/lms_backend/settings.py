@@ -129,11 +129,11 @@ if USE_S3:
     AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL')
     AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
     AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.digitaloceanspaces.com'
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.cdn.digitaloceanspaces.com'
     
     # S3 Configuration for proper file uploads
     AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',
+    'CacheControl': 'max-age=31536000',  # 1 year for better performance
     }
     AWS_QUERYSTRING_AUTH = False  # Disable signed URLs for public content
     AWS_S3_FILE_OVERWRITE = False
