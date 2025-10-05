@@ -385,6 +385,8 @@ export default function EditCoursePage() {
                           <video 
                             src={URL.createObjectURL(files.demo_video)} 
                             controls
+                            preload="metadata"
+                            playsInline
                             className="w-full h-48 rounded-lg border-2 border-blue-500 bg-black"
                           />
                           <div className="absolute top-2 right-2">
@@ -404,6 +406,8 @@ export default function EditCoursePage() {
                           <video 
                             src={course?.demo_video || ''} 
                             controls
+                            preload="metadata"
+                            playsInline
                             className="w-full h-48 rounded-lg border border-gray-200 bg-black"
                           />
                           <div className="absolute top-2 right-2">

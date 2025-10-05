@@ -133,7 +133,7 @@ if USE_S3:
     
     # S3 Configuration for proper file uploads
     AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=31536000',  # 1 year for better performance
+        'CacheControl': 'max-age=31536000',  # 1 year for better performance
     }
     AWS_QUERYSTRING_AUTH = False  # Disable signed URLs for public content
     AWS_S3_FILE_OVERWRITE = False
@@ -142,7 +142,7 @@ if USE_S3:
     # Django 4.2+ STORAGES Configuration
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
+            "BACKEND": "lms_backend.storage_backends.OptimizedMediaStorage",
             "OPTIONS": {
                 "access_key": AWS_ACCESS_KEY_ID,
                 "secret_key": AWS_SECRET_ACCESS_KEY,
