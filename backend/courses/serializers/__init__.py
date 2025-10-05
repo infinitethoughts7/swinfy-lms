@@ -22,6 +22,10 @@ from .instructor_serializers import (
     InstructorCourseResourceCreateSerializer, InstructorCourseResourceListSerializer,
     InstructorCourseStatsSerializer, LearnerProgressSummarySerializer
 )
+from .live_session_serializers import (
+    LiveSessionSerializer, LiveSessionCreateSerializer, LiveSessionUpdateSerializer,
+    LiveSessionApprovalSerializer, LiveSessionListSerializer, LiveSessionStatusUpdateSerializer
+)
 
 __all__ = [
     # Course serializers
@@ -74,5 +78,13 @@ __all__ = [
     'InstructorCourseResourceCreateSerializer',
     'InstructorCourseResourceListSerializer',
     'InstructorCourseStatsSerializer',
-    'LearnerProgressSummarySerializer'
+    'LearnerProgressSummarySerializer',
+    
+    # Live session serializers
+    'LiveSessionSerializer',
+    'LiveSessionCreateSerializer',
+    'LiveSessionUpdateSerializer',
+    'LiveSessionApprovalSerializer',
+    'LiveSessionListSerializer',
+    'LiveSessionStatusUpdateSerializer'
 ]

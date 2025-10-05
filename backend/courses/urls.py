@@ -104,6 +104,9 @@ urlpatterns = [
     path('knowledge-partners/', views.KnowledgePartnerListView.as_view(), name='knowledge-partner-list'),
     path('knowledge-partners/<int:pk>/', views.KnowledgePartnerDetailView.as_view(), name='knowledge-partner-detail'),
     
+    # Live Session endpoints
+    path('live-sessions/', include('courses.urls_live_sessions')),
+    
     # Legacy endpoints for backward compatibility
     path('legacy/list/', views.course_list, name='course-list-legacy'),
     path('legacy/stats/', views.course_stats, name='course-stats-legacy'),

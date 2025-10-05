@@ -2,7 +2,8 @@ from .course import Course
 from .content import CourseModule, Lesson, LessonMaterial, CourseResource
 from .enrollment import Enrollment, CourseReview, CourseWishlist, CourseNotification
 from .progress import LessonProgress, CourseProgress
-from .attendance import AttendanceRecord
+from .attendance import AttendanceRecord     
+from .live_session import LiveSession
 
 __all__ = [
     'Course',
@@ -16,5 +17,6 @@ __all__ = [
     'CourseNotification',
     'LessonProgress',
     'CourseProgress',
-    'AttendanceRecord'
+    'AttendanceRecord',
+    'LiveSession'
 ]

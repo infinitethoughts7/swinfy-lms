@@ -26,9 +26,9 @@ class IsTrainingPartnerAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and
-            request.user.role == 'admin' and
-            hasattr(request.user, 'organization') and
-            request.user.organization is not None
+            request.user.role == 'knowledge_partner' and
+            hasattr(request.user, 'kp_profile') and
+            request.user.kp_profile is not None
         )
 
 
@@ -291,3 +291,28 @@ class LearnerEnrollmentAccess(permissions.BasePermission):
                 )
         
         return False
+
+
+class IsInstructorOrReadOnly(permissions.BasePermission):
+    """
+    Permission to allow only instructors to create/edit live sessions.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Read permissions for all authenticated users
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # Write permissions only for instructors
+        return request.user.role == 'knowledge_partner_instructor'
+    
+    def has_object_permission(self, request, view, obj):
+        # Read permissions for all authenticated users
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        # Write permissions only for the instructor who created the session
+        return obj.instructor == request.user

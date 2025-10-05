@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { userApi, learnerDashboardApi, paymentsApi } from '@/lib/api';
+import { userApi, learnerDashboardApi, paymentsApi, liveSessionApi, type LiveSession } from '@/lib/api';
 import { getCourseThumbnailUrl } from '@/lib/image-utils';
 import { WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
-import { BookOpen, Clock, Award, TrendingUp, Users } from 'lucide-react';
+import { BookOpen, Clock, Award, TrendingUp, Users, Video, Calendar } from 'lucide-react';
 
 interface DashboardStats {
   total_enrollments?: number;
@@ -67,6 +67,7 @@ interface LearnerHomeData {
   weeklyActivity: WeeklyActivity[];
   learnerDistribution: LearnerDistribution[];
   recentPayments: Payment[];
+  liveSessions: LiveSession[];
 }
 
 export default function LearnerHomePage() {
@@ -87,13 +88,15 @@ export default function LearnerHomePage() {
           enrolledCoursesData,
           weeklyActivityData,
           learnerDistributionData,
-          recentPaymentsData
+          recentPaymentsData,
+          liveSessionsData
         ] = await Promise.allSettled([
           userApi.getDashboardStats(),
           learnerDashboardApi.getMyCourses(),
           learnerDashboardApi.getWeeklyActivity(),
           learnerDashboardApi.getLearnerDistribution(),
-          paymentsApi.getPaymentHistory()
+          paymentsApi.getPaymentHistory(),
+          liveSessionApi.upcoming()
         ]);
         
         console.log('Dashboard stats:', dashboardStatsData);
@@ -107,7 +110,8 @@ export default function LearnerHomePage() {
           enrolledCourses: enrolledCoursesData.status === 'fulfilled' ? (enrolledCoursesData.value.results || enrolledCoursesData.value || []) : [],
           weeklyActivity: weeklyActivityData.status === 'fulfilled' ? weeklyActivityData.value.weekly_activity || [] : [],
           learnerDistribution: learnerDistributionData.status === 'fulfilled' ? learnerDistributionData.value.learner_distribution || [] : [],
-          recentPayments: recentPaymentsData.status === 'fulfilled' ? (recentPaymentsData.value.results || recentPaymentsData.value || []) : []
+          recentPayments: recentPaymentsData.status === 'fulfilled' ? (recentPaymentsData.value.results || recentPaymentsData.value || []) : [],
+          liveSessions: liveSessionsData.status === 'fulfilled' ? liveSessionsData.value || [] : []
         });
       } catch (err) {
         console.error('Error fetching learner home data:', err);
@@ -151,6 +155,7 @@ export default function LearnerHomePage() {
   const enrolledCourses = data?.enrolledCourses || [];
   const recentCourses = enrolledCourses.slice(0, 3);
   const weeklyActivity = data?.weeklyActivity || [];
+  const liveSessions = data?.liveSessions || [];
 
   // Minimal placeholder for new learners with no data yet
   const isNewLearner = (
@@ -459,6 +464,76 @@ export default function LearnerHomePage() {
             </div>
           </div>
 
+          {/* Upcoming Live Sessions */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Upcoming Live Sessions</h3>
+              <Link 
+                href="/dashboard/learner/live-sessions" 
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All
+              </Link>
+            </div>
+            
+            {liveSessions.length === 0 ? (
+              <div className="text-center py-6">
+                <Video className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 text-sm">No upcoming live sessions</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {liveSessions.slice(0, 3).map((session) => (
+                  <div key={session.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 mb-1">{session.title}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{session.course_title}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(session.scheduled_datetime).toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(session.scheduled_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Video className="w-3 h-3" />
+                            {session.meeting_platform_display}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                          {session.formatted_duration}
+                        </span>
+                        {session.is_live_now && (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">
+                            Live Now
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {session.meeting_link && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <a
+                          href={session.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          Join Session
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Quick Actions */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
@@ -470,20 +545,20 @@ export default function LearnerHomePage() {
                 <BookOpen className="w-5 h-5 text-blue-600 mr-3" />
                 <span className="text-blue-700 font-medium">Browse All Courses</span>
               </Link>
-              <a 
-                href="/dashboard/learner/sessions"
+              <Link 
+                href="/dashboard/learner/live-sessions"
                 className="flex items-center p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
               >
-                <Users className="w-5 h-5 text-green-600 mr-3" />
+                <Video className="w-5 h-5 text-green-600 mr-3" />
                 <span className="text-green-700 font-medium">Join Live Sessions</span>
-              </a>
-              <a 
+              </Link>
+              <Link 
                 href="/dashboard/learner/payments"
                 className="flex items-center p-3 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors"
               >
                 <Clock className="w-5 h-5 text-purple-600 mr-3" />
                 <span className="text-purple-700 font-medium">View Payments</span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
-import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
+import { instructorApi, liveSessionApi, type InstructorStats, type Course, type LiveSession } from '@/lib/api';
 import { BookOpen, Users, Clock, Star, TrendingUp, Calendar, Plus, Eye, Edit, Trash2, Video, FileText, Award } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import instructorAnalyticsData from '@/lib/instructorAnalyticsData.json';
@@ -12,6 +12,7 @@ export default function InstructorDashboard() {
   const [user, setUser] = useState(getCurrentUser());
   const [stats, setStats] = useState<InstructorStats | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,31 +25,34 @@ export default function InstructorDashboard() {
       setLoading(true);
       setError(null);
       
-      const [statsData, coursesData] = await Promise.all([
+      const [statsData, coursesData, liveSessionsData] = await Promise.all([
         instructorApi.getDashboardStats(),
-        instructorApi.courses.list()
+        instructorApi.courses.list(),
+        instructorApi.liveSessions.list()
       ]);
       
       setStats(statsData);
       setCourses(coursesData);
+      setLiveSessions(liveSessionsData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
       
-      // Mock data fallback
+      // Fallback to empty data
       setStats({
-        total_courses: instructorAnalyticsData.summary.total_courses,
-        published_courses: 4,
+        total_courses: 0,
+        published_courses: 0,
         draft_courses: 0,
         pending_approval_courses: 0,
-        total_enrollments: instructorAnalyticsData.summary.total_enrollments,
-        total_modules: 16,
-        total_lessons: 195,
-        total_duration_hours: 48,
-        avg_course_rating: 4.6,
+        total_enrollments: 0,
+        total_modules: 0,
+        total_lessons: 0,
+        total_duration_hours: 0,
+        avg_course_rating: 0,
         recent_courses: []
       });
       setCourses([]);
+      setLiveSessions([]);
     } finally {
       setLoading(false);
     }
@@ -295,91 +299,79 @@ export default function InstructorDashboard() {
 
       </div>
 
-      {/* Recent Student Activity - Compact & Clean */}
+      {/* Live Sessions Section */}
       <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Student Activity</h2>
-            <p className="text-sm text-gray-600 mt-1">Latest lesson completions</p>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Live Sessions</h2>
+            <p className="text-sm text-gray-600 mt-1">Manage your live teaching sessions</p>
           </div>
           <Link 
-            href="/dashboard/instructor/students" 
+            href="/dashboard/instructor/live-sessions" 
             className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
           >
-            View All
+            Manage Sessions
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Student</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">Course</th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">Lesson</th>
-                <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Progress</th>
-                <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {instructorAnalyticsData.recent_student_activity.map((activity, index) => (
-                <tr 
-                  key={index}
-                  className="hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {activity.student_name.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">{activity.student_name}</p>
-                        <p className="text-xs text-gray-500 md:hidden truncate">{activity.course}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 hidden md:table-cell">
-                    <p className="text-sm text-gray-700 truncate max-w-[200px]">{activity.course}</p>
-                  </td>
-                  <td className="py-3 px-4 hidden lg:table-cell">
-                    <p className="text-sm text-gray-600 truncate max-w-[250px]">{activity.lesson_completed}</p>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="inline-flex items-center gap-2">
-                      <div className="w-12 bg-gray-200 rounded-full h-2 hidden sm:block">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${activity.progress_percentage}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900 min-w-[3rem] text-right">
-                        {activity.progress_percentage}%
+        {liveSessions.length === 0 ? (
+          <div className="text-center py-8">
+            <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">No live sessions created yet</p>
+            <Link 
+              href="/dashboard/instructor/live-sessions/create" 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Create Live Session
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {liveSessions.slice(0, 3).map((session) => (
+              <div key={session.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 mb-1">{session.title}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{session.course_title}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(session.scheduled_datetime).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(session.scheduled_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Video className="w-3 h-3" />
+                        {session.meeting_platform_display}
                       </span>
                     </div>
-                  </td>
-                  <td className="py-3 px-4 text-right hidden sm:table-cell">
-                    <p className="text-sm text-gray-600">
-                      {new Date(activity.completed_at).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric',
-                        year: new Date(activity.completed_at).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-                      })}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(activity.completed_at).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      session.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      session.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
+                      session.status === 'live' ? 'bg-blue-100 text-blue-800' :
+                      session.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {session.status.replace('_', ' ')}
+                    </span>
+                    {session.is_live_now && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium animate-pulse">
+                        Live Now
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

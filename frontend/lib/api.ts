@@ -1188,6 +1188,86 @@ export interface InstructorStats {
   recent_courses: Course[];
 }
 
+// Live Session interfaces
+export interface LiveSession {
+  id: string;
+  title: string;
+  description: string;
+  course: string;
+  course_title: string;
+  instructor: string;
+  instructor_name: string;
+  training_partner: string;
+  training_partner_name: string;
+  scheduled_datetime: string;
+  duration_minutes: number;
+  formatted_duration: string;
+  meeting_link: string;
+  meeting_platform: string;
+  meeting_platform_display: string;
+  meeting_id?: string;
+  meeting_password?: string;
+  status: 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'live' | 'completed' | 'cancelled';
+  is_approved: boolean;
+  approved_by?: string;
+  approved_by_name?: string;
+  approval_notes?: string;
+  approved_at?: string;
+  max_participants?: number;
+  is_recording_enabled: boolean;
+  recording_link?: string;
+  session_notes?: string;
+  post_session_notes?: string;
+  notification_sent: boolean;
+  reminder_sent: boolean;
+  is_upcoming: boolean;
+  is_live_now: boolean;
+  is_past: boolean;
+  end_datetime: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LiveSessionCreateData {
+  title: string;
+  description: string;
+  course: string;
+  scheduled_datetime: string;
+  duration_minutes: number;
+  meeting_link: string;
+  meeting_platform: string;
+  meeting_id?: string;
+  meeting_password?: string;
+  max_participants?: number;
+  is_recording_enabled?: boolean;
+  session_notes?: string;
+}
+
+export interface LiveSessionUpdateData {
+  title?: string;
+  description?: string;
+  scheduled_datetime?: string;
+  duration_minutes?: number;
+  meeting_link?: string;
+  meeting_platform?: string;
+  meeting_id?: string;
+  meeting_password?: string;
+  max_participants?: number;
+  is_recording_enabled?: boolean;
+  session_notes?: string;
+  post_session_notes?: string;
+  recording_link?: string;
+}
+
+export interface LiveSessionApprovalData {
+  is_approved: boolean;
+  approval_notes?: string;
+}
+
+export interface LiveSessionStatusUpdateData {
+  status: 'live' | 'completed' | 'cancelled';
+}
+
 // Instructor course management API
 export const instructorApi = {
   // Dashboard
@@ -1612,6 +1692,220 @@ export const instructorApi = {
       }
       return true;
     },
+  },
+
+  // Live Sessions
+  liveSessions: {
+    list: async (): Promise<LiveSession[]> => {
+      const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/instructor/live-sessions/', {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch live sessions');
+      }
+      
+      const data = await response.json();
+      return data.results || data;
+    },
+
+    create: async (sessionData: LiveSessionCreateData): Promise<LiveSession> => {
+      const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/instructor/live-sessions/', {
+        method: 'POST',
+        body: JSON.stringify(sessionData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create live session');
+      }
+      
+      return response.json();
+    },
+
+    get: async (sessionId: string): Promise<LiveSession> => {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/instructor/live-sessions/${sessionId}/`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch live session');
+      }
+      
+      return response.json();
+    },
+
+    update: async (sessionId: string, sessionData: LiveSessionUpdateData): Promise<LiveSession> => {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/instructor/live-sessions/${sessionId}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(sessionData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update live session');
+      }
+      
+      return response.json();
+    },
+
+    delete: async (sessionId: string): Promise<void> => {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/instructor/live-sessions/${sessionId}/`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete live session');
+      }
+    },
+
+    updateStatus: async (sessionId: string, statusData: LiveSessionStatusUpdateData): Promise<LiveSession> => {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/instructor/live-sessions/${sessionId}/update_status/`, {
+        method: 'POST',
+        body: JSON.stringify(statusData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update session status');
+      }
+      
+      return response.json();
+    },
+
+    sendReminder: async (sessionId: string): Promise<void> => {
+      const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/instructor/live-sessions/${sessionId}/send_reminder/`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send reminder');
+      }
+    },
+  },
+};
+
+// Live Session API for learners
+export const liveSessionApi = {
+  // Get all live sessions (for learners - only approved ones)
+  list: async (): Promise<LiveSession[]> => {
+    const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/learner/live-sessions/', {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch live sessions');
+    }
+    
+    const data = await response.json();
+    return data.results || data;
+  },
+
+  // Get upcoming sessions
+  upcoming: async (): Promise<LiveSession[]> => {
+    const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/learner/live-sessions/upcoming/', {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch upcoming sessions');
+    }
+    
+    return response.json();
+  },
+
+  // Get live now sessions
+  liveNow: async (): Promise<LiveSession[]> => {
+    const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/learner/live-sessions/live_now/', {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch live sessions');
+    }
+    
+    return response.json();
+  },
+
+  // Get past sessions
+  past: async (): Promise<LiveSession[]> => {
+    const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/learner/live-sessions/past/', {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch past sessions');
+    }
+    
+    return response.json();
+  },
+
+  // Get session details
+  get: async (sessionId: string): Promise<LiveSession> => {
+    const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/learner/live-sessions/${sessionId}/`, {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch live session');
+    }
+    
+    return response.json();
+  },
+};
+
+// Training Partner Live Session API
+export const trainingPartnerLiveSessionApi = {
+  // Get all sessions for training partner
+  list: async (): Promise<LiveSession[]> => {
+    const response = await authenticatedFetchWithRefresh('/api/courses/live-sessions/training-partner/live-sessions/', {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Training Partner Live Sessions API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Failed to fetch live sessions: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.results || data;
+  },
+
+  // Approve or reject session
+  approve: async (sessionId: string, approvalData: LiveSessionApprovalData): Promise<LiveSession> => {
+    const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/training-partner/live-sessions/${sessionId}/approve/`, {
+      method: 'POST',
+      body: JSON.stringify(approvalData),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to approve/reject session');
+    }
+    
+    const data = await response.json();
+    // The backend returns { message: '...', session: {...} }
+    // Return the session object
+    return data.session || data;
+  },
+
+  // Get session details
+  get: async (sessionId: string): Promise<LiveSession> => {
+    const response = await authenticatedFetchWithRefresh(`/api/courses/live-sessions/training-partner/live-sessions/${sessionId}/`, {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch live session');
+    }
+    
+    return response.json();
   },
 };
 

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
+import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save, LineChart as LineChartIcon } from 'lucide-react';
 import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 import { 
-  BarChart, 
   Bar, 
   XAxis, 
   YAxis, 
