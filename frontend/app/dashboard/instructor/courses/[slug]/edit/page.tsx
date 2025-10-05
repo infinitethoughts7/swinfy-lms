@@ -304,42 +304,144 @@ export default function EditCoursePage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
-                    <ImageIcon className="h-6 w-6 text-gray-400 mx-auto mb-1" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange('thumbnail', e.target.files?.[0] || null)}
-                      className="hidden"
-                      id="thumbnail-upload"
-                    />
-                    <label htmlFor="thumbnail-upload" className="cursor-pointer">
-                      <span className="text-xs text-blue-600 hover:text-blue-700">
-                        {files.thumbnail ? files.thumbnail.name : 'Upload thumbnail'}
-                      </span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
-                  </div>
+                  
+                  {/* Show current or new thumbnail */}
+                  {(course?.thumbnail || files.thumbnail) ? (
+                    <div className="relative group">
+                      {files.thumbnail ? (
+                        // Preview new file
+                        <div className="relative">
+                          <img 
+                            src={URL.createObjectURL(files.thumbnail)} 
+                            alt="New thumbnail preview" 
+                            className="w-full h-48 object-cover rounded-lg border-2 border-blue-500"
+                          />
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleFileChange('thumbnail', null)}
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg hover:bg-red-700 transition-colors text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <p className="text-xs text-blue-600 mt-2 font-medium">New thumbnail selected</p>
+                        </div>
+                      ) : (
+                        // Show current thumbnail
+                        <div className="relative">
+                          <img 
+                            src={course?.thumbnail || ''} 
+                            alt="Current thumbnail" 
+                            className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <label htmlFor="thumbnail-upload" className="cursor-pointer">
+                              <div className="bg-white px-3 py-1.5 rounded-lg shadow-lg hover:bg-gray-50 transition-colors">
+                                <span className="text-xs font-medium text-gray-900">Edit</span>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange('thumbnail', e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="thumbnail-upload"
+                      />
+                    </div>
+                  ) : (
+                    // No thumbnail - show upload area
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange('thumbnail', e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="thumbnail-upload"
+                      />
+                      <label htmlFor="thumbnail-upload" className="cursor-pointer">
+                        <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          Upload thumbnail
+                        </span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Demo Video</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
-                    <Video className="h-6 w-6 text-gray-400 mx-auto mb-1" />
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
-                      className="hidden"
-                      id="demo-video-upload"
-                    />
-                    <label htmlFor="demo-video-upload" className="cursor-pointer">
-                      <span className="text-xs text-blue-600 hover:text-blue-700">
-                        {files.demo_video ? files.demo_video.name : 'Upload demo'}
-                      </span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">MP4, MOV up to 50MB</p>
-                  </div>
+                  
+                  {/* Show current or new demo video */}
+                  {(course?.demo_video || files.demo_video) ? (
+                    <div className="relative">
+                      {files.demo_video ? (
+                        // Preview new file
+                        <div className="relative">
+                          <video 
+                            src={URL.createObjectURL(files.demo_video)} 
+                            controls
+                            className="w-full h-48 rounded-lg border-2 border-blue-500 bg-black"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <button
+                              type="button"
+                              onClick={() => handleFileChange('demo_video', null)}
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg hover:bg-red-700 transition-colors text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <p className="text-xs text-blue-600 mt-2 font-medium">New demo video selected</p>
+                        </div>
+                      ) : (
+                        // Show current video
+                        <div className="relative">
+                          <video 
+                            src={course?.demo_video || ''} 
+                            controls
+                            className="w-full h-48 rounded-lg border border-gray-200 bg-black"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <label htmlFor="demo-video-upload" className="cursor-pointer">
+                              <div className="bg-white px-3 py-1.5 rounded-lg shadow-lg hover:bg-gray-50 transition-colors">
+                                <span className="text-xs font-medium text-gray-900">Edit</span>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="demo-video-upload"
+                      />
+                    </div>
+                  ) : (
+                    // No video - show upload area
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleFileChange('demo_video', e.target.files?.[0] || null)}
+                        className="hidden"
+                        id="demo-video-upload"
+                      />
+                      <label htmlFor="demo-video-upload" className="cursor-pointer">
+                        <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          Upload demo video
+                        </span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">MP4, MOV up to 50MB</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
