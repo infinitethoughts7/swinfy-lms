@@ -167,7 +167,20 @@ export default function InstructorsPage() {
 
     try {
       setSaving(true);
-      const updatedInstructor = await userApi.instructors.update(editModal.instructor.id, editForm);
+      
+      // Transform form data to match backend API expectations
+      const updateData = {
+        user_email: editForm.email,
+        user_full_name: editForm.full_name,
+        title: editForm.title,
+        specializations: editForm.specializations,
+        technologies: editForm.technologies,
+        years_of_experience: editForm.years_of_experience,
+        is_available: editForm.is_available,
+        // Note: is_active is not supported in the update serializer
+      };
+      
+      const updatedInstructor = await userApi.instructors.update(editModal.instructor.id, updateData);
       
       setInstructors(prev => 
         prev.map(instructor => 
@@ -176,6 +189,8 @@ export default function InstructorsPage() {
       );
       
       closeEditModal();
+      // Refresh the list to get the latest data
+      await fetchInstructors();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update instructor');
     } finally {
@@ -478,21 +493,15 @@ export default function InstructorsPage() {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={editForm.is_active}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
                     checked={editForm.is_available}
                     onChange={(e) => setEditForm(prev => ({ ...prev, is_available: e.target.checked }))}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Available</span>
+                  <span className="ml-2 text-sm text-gray-700">Available for Teaching</span>
                 </label>
+                <div className="text-xs text-gray-500">
+                  <span className="font-medium">Note:</span> User activation status can only be changed by admin
+                </div>
               </div>
 
               {/* Modal Actions */}

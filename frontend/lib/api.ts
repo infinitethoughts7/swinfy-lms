@@ -67,6 +67,8 @@ export interface InstructorCreateData {
 }
 
 export interface InstructorUpdateData {
+  user_email?: string;  // Backend expects this for email updates
+  user_full_name?: string;  // Backend expects this for name updates
   bio?: string;
   title?: string;
   highest_education?: 'bachelor' | 'master' | 'phd' | 'self_taught';
@@ -77,8 +79,7 @@ export interface InstructorUpdateData {
   languages_spoken?: string;
   linkedin_url?: string;
   is_available?: boolean;
-  user_email?: string;
-  user_full_name?: string;
+  // Note: is_active is not supported in backend update serializer
 }
 
 export interface InstructorListItem {
@@ -1041,17 +1042,29 @@ export const userApi = {
 
     // Update instructor
     update: async (instructorId: string, updateData: Partial<InstructorUpdateData>) => {
+      console.log('=== FRONTEND DEBUG: Instructor Update Request ===');
+      console.log('Instructor ID:', instructorId);
+      console.log('Update data:', updateData);
+      console.log('Request URL:', `${API_BASE_URL}/api/auth/kp/instructors/${instructorId}/`);
+      console.log('===============================================');
+      
       const response = await authenticatedFetchWithRefresh(`/api/auth/kp/instructors/${instructorId}/`, {
         method: 'PATCH',
         body: JSON.stringify(updateData),
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update instructor');
+        console.log('Error data:', errorData);
+        throw new Error(errorData.message || errorData.detail || 'Failed to update instructor');
       }
       
-      return response.json();
+      const responseData = await response.json();
+      console.log('Success response:', responseData);
+      return responseData;
     },
 
     // Delete instructor
