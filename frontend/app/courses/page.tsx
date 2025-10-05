@@ -259,17 +259,23 @@ export default function CoursesPage() {
                     className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = '/assets/courses/python.svg';
+                      // Hide the broken image and show fallback
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
                     }}
                   />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <div className="text-white text-center">
-                      <div className="text-4xl mb-2">📚</div>
-                      <div className="text-sm font-medium">{course.category_display}</div>
-                    </div>
+                ) : null}
+                {/* Fallback gradient - always present but hidden if image loads */}
+                <div 
+                  className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+                  style={{ display: (course.thumbnail_url || course.thumbnail) ? 'none' : 'flex' }}
+                >
+                  <div className="text-white text-center">
+                    <div className="text-4xl mb-2">📚</div>
+                    <div className="text-sm font-medium">{course.category_display}</div>
                   </div>
-                )}
+                </div>
                 
                 {/* Badges */}
                 <div className="absolute inset-x-0 top-0 p-3 flex items-start justify-between">

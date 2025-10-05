@@ -18,20 +18,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-async redirects() {
-  return [
-    {
-      source: '/dashboard/knowledge_partner_admin',
-      destination: '/dashboard/kp',
-      permanent: true, // Changed to permanent
-    },
-    {
-      source: '/dashboard/knowledge_partner_admin/:path*',
-      destination: '/dashboard/kp/:path*',  
-      permanent: true, // Changed to permanent
-    },
-  ];
-},
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/knowledge_partner_admin',
+        destination: '/dashboard/kp',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/knowledge_partner_admin/:path*',
+        destination: '/dashboard/kp/:path*',  
+        permanent: true,
+      },
+    ];
+  },
   // Enable static optimization
   output: 'standalone',
   // Ensure proper handling of dynamic routes in production
@@ -49,6 +49,10 @@ async redirects() {
         hostname: 'urchin-app-3xb5n.ondigitalocean.app',
         pathname: '/media/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'olla-lms-media-prod.blr1.cdn.digitaloceanspaces.com',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
@@ -56,7 +60,6 @@ async redirects() {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    // Only optimize remote images, not local static assets
     unoptimized: process.env.NODE_ENV === 'development',
   },
 };
