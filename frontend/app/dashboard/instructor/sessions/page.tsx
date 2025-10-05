@@ -259,17 +259,53 @@ export default function InstructorLiveSessionsPage() {
                     <p className="text-gray-600 mt-3 text-sm line-clamp-2">{session.description}</p>
                   )}
 
-                  {session.meeting_link && session.is_approved && (
-                    <div className="mt-4">
-                      <a
-                        href={session.meeting_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                      >
-                        <Video className="w-4 h-4 mr-2" />
-                        Join Session
-                      </a>
+                  {/* Meeting Details */}
+                  {session.meeting_link && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                        <Video className="w-4 h-4 mr-2 text-blue-600" />
+                        Meeting Details
+                      </h4>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-start">
+                          <span className="text-xs font-medium text-gray-600 w-20">Link:</span>
+                          <a 
+                            href={session.meeting_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline break-all flex-1"
+                          >
+                            {session.meeting_link}
+                          </a>
+                        </div>
+                        {session.meeting_id && (
+                          <div className="flex items-start">
+                            <span className="text-xs font-medium text-gray-600 w-20">Meeting ID:</span>
+                            <span className="text-xs text-gray-900 font-mono">{session.meeting_id}</span>
+                          </div>
+                        )}
+                        {session.meeting_password && (
+                          <div className="flex items-start">
+                            <span className="text-xs font-medium text-gray-600 w-20">Password:</span>
+                            <span className="text-xs text-gray-900 font-mono">{session.meeting_password}</span>
+                          </div>
+                        )}
+                      </div>
+                      {session.is_approved && (
+                        <a
+                          href={session.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            session.is_live_now 
+                              ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse' 
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          {session.is_live_now ? 'Join Live Session Now' : 'Join Session'}
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

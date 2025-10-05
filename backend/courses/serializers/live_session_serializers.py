@@ -174,9 +174,10 @@ class LiveSessionListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'course_title', 'instructor_name', 'training_partner_name',
             'scheduled_datetime', 'duration_minutes', 'formatted_duration',
-            'meeting_platform', 'meeting_platform_display', 'status', 'is_approved',
+            'meeting_platform', 'meeting_platform_display', 'meeting_link', 
+            'meeting_id', 'meeting_password', 'status', 'is_approved',
             'max_participants', 'is_upcoming', 'is_live_now', 'is_past',
-            'created_at'
+            'description', 'created_at'
         ]
 
 
