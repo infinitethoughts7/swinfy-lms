@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { instructorApi, type Course, type Module, type Lesson } from '@/lib/api';
 import { 
   Plus, Video, FileText, Edit, Trash2, GripVertical, 
-  ChevronDown, ChevronRight, Play, Clock, Eye, AlertCircle, X
+  ChevronDown, ChevronRight, Play, Clock, AlertCircle, X
 } from 'lucide-react';
 
 interface ModulesLessonsManagerProps {
@@ -414,7 +414,13 @@ const LessonCard = ({
           </span>
           <div className="flex items-center space-x-1">
             {lesson.lesson_type === 'video' ? (
-              <Play className="h-3 w-3 text-blue-500" />
+              <button
+                onClick={() => onPreview(lesson)}
+                className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+                title="Preview video"
+              >
+                <Play className="h-3 w-3" />
+              </button>
             ) : (
               <FileText className="h-3 w-3 text-green-500" />
             )}
@@ -437,12 +443,6 @@ const LessonCard = ({
             className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <Edit className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => onPreview(lesson)}
-            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            <Eye className="h-3 w-3" />
           </button>
           <button
             onClick={handleDeleteLesson}

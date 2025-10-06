@@ -270,7 +270,7 @@ export default function LearnerHomePage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Recent Courses</h2>
               <Link 
-                href="/courses" 
+                href="/dashboard/learner/courses" 
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 View all
@@ -374,7 +374,7 @@ export default function LearnerHomePage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Recommended for You</h3>
               <Link 
-                href="/courses" 
+                href="/dashboard/learner/courses" 
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 View all

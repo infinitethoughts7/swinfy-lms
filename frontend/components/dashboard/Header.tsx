@@ -308,18 +308,7 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                     <p className="text-sm font-medium text-gray-900">{user.full_name || 'User'}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
-                  <a
-                    href={`/dashboard/${user.role}/profile`}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Profile Settings
-                  </a>
-                  <a
-                    href="/dashboard/help"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Help & Support
-                  </a>
+
                   <div className="border-t border-gray-100 mt-2 pt-2">
                     <button 
                       onClick={handleSignOut}
