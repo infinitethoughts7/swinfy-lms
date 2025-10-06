@@ -152,46 +152,12 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
             </button>
           )}
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:block">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search courses, students, or sessions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-80 pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 focus:border-transparent placeholder-gray-600"
-              />
-            </div>
-          </form>
+      
         </div>
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">
-          {/* Quick Actions */}
-          <div className="hidden md:flex items-center space-x-2">
-            {user.role === 'tutor' && (
-              <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Start Session
-              </button>
-            )}
-            {user.role === 'learner' && (
-              <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Join Session
-              </button>
-            )}
-          </div>
+         
 
           {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
