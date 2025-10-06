@@ -9,6 +9,22 @@ import {
   Image as ImageIcon, Video
 } from 'lucide-react';
 
+const CATEGORIES = [
+  { value: 'frontend_development', label: 'Frontend Development' },
+  { value: 'backend_development', label: 'Backend Development' },
+  { value: 'programming_languages', label: 'Programming Languages' },
+  { value: 'ai', label: 'Artificial Intelligence' },
+  { value: 'ai_tools', label: 'AI Tools' },
+  { value: 'data_science', label: 'Data Science' },
+  { value: 'data_analysis', label: 'Data Analysis' },
+  { value: 'software_engineering', label: 'Software Engineering Essentials' },
+];
+
+const LEVELS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 export default function EditCoursePage() {
   const params = useParams();
@@ -24,20 +40,19 @@ export default function EditCoursePage() {
     title: '',
     description: '',
     short_description: '',
-    price: 0,
-    duration_weeks: 4,
-    category: 'frontend_development',
-    level: 'beginner',
+    price: undefined,
+    duration_weeks: undefined,
+    category: '',
+    level: '',
     learning_outcomes: '',
-    is_private: false,
-    requires_admin_enrollment: false,
+    prerequisites: '',
+    max_enrollments: undefined,
   });
 
   const [files, setFiles] = useState<{
     thumbnail?: File;
     demo_video?: File;
   }>({});
-
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -56,8 +71,8 @@ export default function EditCoursePage() {
         category: data.category,
         level: data.level,
         learning_outcomes: data.learning_outcomes || '',
-        is_private: data.is_private,
-        requires_admin_enrollment: data.requires_admin_enrollment,
+        prerequisites: data.prerequisites || '',
+        max_enrollments: data.max_enrollments,
       });
     } catch (err) {
       console.error('Error fetching course:', err);
@@ -109,7 +124,6 @@ export default function EditCoursePage() {
       });
     }
   };
-
 
   if (loading) {
     return (
@@ -184,7 +198,7 @@ export default function EditCoursePage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Course Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Course Title *</label>
                   <input
                     type="text"
                     value={formData.title}
@@ -196,89 +210,104 @@ export default function EditCoursePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Short Description *</label>
                   <textarea
                     value={formData.short_description}
                     onChange={(e) => handleInputChange('short_description', e.target.value)}
                     rows={2}
+                    maxLength={300}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Brief description for course listings..."
                     required
                   />
+                  <p className="text-gray-500 text-xs mt-1">{formData.short_description?.length || 0}/300</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Description *</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Detailed course description..."
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                     <select
                       value={formData.category}
                       onChange={(e) => handleInputChange('category', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      required
                     >
-                      <option value="frontend_development">Frontend Development</option>
-                      <option value="backend_development">Backend Development</option>
-                      <option value="programming_languages">Programming Languages</option>
-                      <option value="ai">Artificial Intelligence</option>
-                      <option value="ai_tools">AI Tools</option>
-                      <option value="data_science">Data Science</option>
-                      <option value="data_analysis">Data Analysis</option>
-                      <option value="software_engineering">Software Engineering Essentials</option>
+                      {CATEGORIES.map(cat => (
+                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                      ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Level *</label>
                     <select
                       value={formData.level}
                       onChange={(e) => handleInputChange('level', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      required
                     >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
+                      {LEVELS.map(level => (
+                        <option key={level.value} value={level.value}>{level.label}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-gray-500">₹</span>
                       <input
                         type="number"
                         min="0"
                         step="1"
-                        value={formData.price}
-                        onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                        value={formData.price || ''}
+                        onChange={(e) => handleInputChange('price', e.target.value ? parseFloat(e.target.value) : undefined)}
                         className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0"
+                        placeholder="Enter price"
+                        required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Duration (weeks)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Duration (weeks) *</label>
                     <input
                       type="number"
                       min="1"
                       max="52"
-                      value={formData.duration_weeks}
-                      onChange={(e) => handleInputChange('duration_weeks', parseInt(e.target.value) || 1)}
+                      value={formData.duration_weeks || ''}
+                      onChange={(e) => handleInputChange('duration_weeks', e.target.value ? parseInt(e.target.value) : undefined)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter duration"
+                      required
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Enrollments</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.max_enrollments || ''}
+                    onChange={(e) => handleInputChange('max_enrollments', e.target.value ? parseInt(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Unlimited"
+                  />
                 </div>
 
                 <div>
@@ -291,11 +320,22 @@ export default function EditCoursePage() {
                     placeholder="What learners will learn from this course..."
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prerequisites</label>
+                  <textarea
+                    value={formData.prerequisites}
+                    onChange={(e) => handleInputChange('prerequisites', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="What students should know before taking this course..."
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Media & Settings */}
+          {/* Right Column - Media & Actions */}
           <div className="space-y-4">
             {/* Media Upload */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -305,11 +345,9 @@ export default function EditCoursePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail</label>
                   
-                  {/* Show current or new thumbnail */}
                   {(course?.thumbnail || files.thumbnail) ? (
                     <div className="relative group">
                       {files.thumbnail ? (
-                        // Preview new file
                         <div className="relative">
                           <img 
                             src={URL.createObjectURL(files.thumbnail)} 
@@ -328,7 +366,6 @@ export default function EditCoursePage() {
                           <p className="text-xs text-blue-600 mt-2 font-medium">New thumbnail selected</p>
                         </div>
                       ) : (
-                        // Show current thumbnail
                         <div className="relative">
                           <img 
                             src={course?.thumbnail || ''} 
@@ -353,7 +390,6 @@ export default function EditCoursePage() {
                       />
                     </div>
                   ) : (
-                    // No thumbnail - show upload area
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                       <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                       <input
@@ -376,11 +412,9 @@ export default function EditCoursePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Demo Video</label>
                   
-                  {/* Show current or new demo video */}
                   {(course?.demo_video || files.demo_video) ? (
                     <div className="relative">
                       {files.demo_video ? (
-                        // Preview new file
                         <div className="relative">
                           <video 
                             src={URL.createObjectURL(files.demo_video)} 
@@ -401,7 +435,6 @@ export default function EditCoursePage() {
                           <p className="text-xs text-blue-600 mt-2 font-medium">New demo video selected</p>
                         </div>
                       ) : (
-                        // Show current video
                         <div className="relative">
                           <video 
                             src={course?.demo_video || ''} 
@@ -428,7 +461,6 @@ export default function EditCoursePage() {
                       />
                     </div>
                   ) : (
-                    // No video - show upload area
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                       <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                       <input
@@ -450,39 +482,6 @@ export default function EditCoursePage() {
               </div>
             </div>
 
-            {/* Settings */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
-              
-              <div className="space-y-3">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_private}
-                    onChange={(e) => handleInputChange('is_private', e.target.checked)}
-                    className="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  />
-                  <div className="ml-2">
-                    <span className="text-sm font-medium text-gray-700">Private Course</span>
-                    <p className="text-xs text-gray-500">Only enrolled students can see this</p>
-                  </div>
-                </label>
-
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={formData.requires_admin_enrollment}
-                    onChange={(e) => handleInputChange('requires_admin_enrollment', e.target.checked)}
-                    className="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  />
-                  <div className="ml-2">
-                    <span className="text-sm font-medium text-gray-700">Admin Enrollment</span>
-                    <p className="text-xs text-gray-500">Students must be manually enrolled</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
             {/* Actions */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="space-y-3">
@@ -495,40 +494,7 @@ export default function EditCoursePage() {
                   {saving ? 'Updating...' : 'Update Course'}
                 </button>
 
-                {course?.approval_status === 'draft' && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (confirm('Submit this course for approval? Once submitted, you cannot edit until it is reviewed.')) {
-                        try {
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/courses/${courseSlug}/submit-approval/`, {
-                            method: 'POST',
-                            headers: {
-                              'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({})
-                          });
-                          
-                          if (response.ok) {
-                            alert('Course submitted for approval successfully!');
-                            fetchCourse(); // Refresh course data
-                          } else {
-                            const errorData = await response.json();
-                            alert(errorData.detail || 'Failed to submit course for approval');
-                          }
-                        } catch (err) {
-                          console.error('Submit for approval error:', err);
-                          alert('Failed to submit course for approval');
-                        }
-                      }
-                    }}
-                    className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Submit for Approval
-                  </button>
-                )}
+  
                 
                 <Link
                   href={`/dashboard/instructor/courses/${courseSlug}`}

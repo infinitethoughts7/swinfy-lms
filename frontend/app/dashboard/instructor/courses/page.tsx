@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { instructorApi, type Course } from '@/lib/api';
-import { BookOpen, Plus, Eye, Edit, Trash2, Search, Filter, Video, Users, Clock, Star } from 'lucide-react';
+import { BookOpen, Plus, Eye, Edit, Trash2, Search, Video, Users, Clock } from 'lucide-react';
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -21,7 +21,7 @@ export default function CoursesPage() {
       setLoading(true);
       setError(null);
       const data = await instructorApi.courses.list();
-      setCourses(Array.isArray(data) ? data : data?.results || []);
+      setCourses(Array.isArray(data) ? data : (data as { results?: Course[] })?.results || []);
     } catch (err) {
       console.error('Error fetching courses:', err);
       setError('Failed to load courses');
@@ -46,8 +46,8 @@ export default function CoursesPage() {
   };
 
   const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = course.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesFilter = filterStatus === 'all' || course.approval_status === filterStatus;
     
@@ -194,7 +194,7 @@ export default function CoursesPage() {
                     course.approval_status === 'rejected' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {course.approval_status_display}
+                    {course.approval_status_display || course.approval_status || 'Draft'}
                   </span>
                 </div>
               </div>
@@ -203,25 +203,25 @@ export default function CoursesPage() {
               <div className="p-6">
                 <div className="mb-4">
                   <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{course.title}</h3>
-                  <p className="text-gray-600 text-sm line-clamp-3">{course.short_description}</p>
+                  <p className="text-gray-600 text-sm line-clamp-3">{course.short_description || course.description || 'No description available'}</p>
                 </div>
 
                 {/* Course Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
                   <div className="flex items-center">
                     <Video className="h-4 w-4 mr-1" />
-                    <span>{course.lessons_count} lessons</span>
+                    <span>{course.lessons_count || 0} lessons</span>
                   </div>
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-1" />
-                    <span>{course.enrollment_count} students</span>
+                    <span>{course.enrollment_count || 0} students</span>
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>{Math.round(course.total_duration_minutes / 60)}h total</span>
+                    <span>{course.total_duration_minutes ? Math.round(course.total_duration_minutes / 60) : 0}h total</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-lg font-bold text-blue-600">₹{course.price}</span>
+                    <span className="text-lg font-bold text-blue-600">₹{course.price || 0}</span>
                   </div>
                 </div>
 
@@ -250,13 +250,7 @@ export default function CoursesPage() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  
-                  <Link
-                    href={`/dashboard/instructor/courses/${course.slug}/modules`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    Manage Content
-                  </Link>
+              
                 </div>
               </div>
             </div>
