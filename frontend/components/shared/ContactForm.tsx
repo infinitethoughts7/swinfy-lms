@@ -454,6 +454,7 @@ const ContactForm = () => {
               onSendOTP={sendOTPForEmail}
               onVerifyOTP={verifyOTPForEmail}
               isVerified={isEmailVerified}
+              otpAlreadySent={true}
             />
           </div>
         )}

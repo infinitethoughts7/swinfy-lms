@@ -9,6 +9,7 @@ interface OTPVerificationProps {
   onVerifyOTP: (email: string, otpCode: string) => Promise<void>;
   isVerified: boolean;
   disabled?: boolean;
+  otpAlreadySent?: boolean; // New prop to indicate OTP was already sent
 }
 
 const OTPVerification = ({ 
@@ -17,7 +18,8 @@ const OTPVerification = ({
   onSendOTP, 
   onVerifyOTP, 
   isVerified, 
-  disabled = false 
+  disabled = false,
+  otpAlreadySent = false
 }: OTPVerificationProps) => {
   const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -106,37 +108,32 @@ const OTPVerification = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleSendOTP}
-          disabled={!email || isSending || disabled}
-          className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSending ? 'Sending...' : 'Send OTP'}
-        </button>
-        
-        {resendCooldown > 0 && (
-          <button
-            type="button"
-            onClick={handleResendOTP}
-            disabled={resendCooldown > 0}
-            className="px-3 py-2 text-blue-600 text-sm hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Resend in {Math.floor(resendCooldown / 60)}:{(resendCooldown % 60).toString().padStart(2, '0')}
-          </button>
-        )}
-        
-        {resendCooldown === 0 && email && (
-          <button
-            type="button"
-            onClick={handleResendOTP}
-            className="px-3 py-2 text-blue-600 text-sm hover:text-blue-800"
-          >
-            Resend OTP
-          </button>
-        )}
-      </div>
+      {/* Only show resend button if OTP was already sent */}
+      {otpAlreadySent && (
+        <div className="flex items-center gap-2">
+          {resendCooldown > 0 && (
+            <button
+              type="button"
+              onClick={handleResendOTP}
+              disabled={resendCooldown > 0}
+              className="px-3 py-2 text-blue-600 text-sm hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Resend in {Math.floor(resendCooldown / 60)}:{(resendCooldown % 60).toString().padStart(2, '0')}
+            </button>
+          )}
+          
+          {resendCooldown === 0 && email && (
+            <button
+              type="button"
+              onClick={handleResendOTP}
+              disabled={isSending}
+              className="px-3 py-2 text-blue-600 text-sm hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSending ? 'Sending...' : 'Resend OTP'}
+            </button>
+          )}
+        </div>
+      )}
 
       {email && (
         <div className="space-y-2">
