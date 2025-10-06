@@ -2,6 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile, OTPVerification
+import secrets
+import string
 
 
 class KPProfileSerializer(serializers.ModelSerializer):
@@ -294,14 +296,35 @@ class KPInstructorUserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'role', 'is_verified', 'is_approved', 'created_at']
 
 
+def generate_secure_password(length=12):
+    """Generate a secure random password with letters, digits, and special characters."""
+    letters = string.ascii_letters
+    digits = string.digits
+    special_chars = '@#$%&*!'
+    
+    password = [
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(digits),
+        secrets.choice(special_chars),
+    ]
+    
+    all_chars = letters + digits + special_chars
+    password += [secrets.choice(all_chars) for _ in range(length - 4)]
+    
+    secrets.SystemRandom().shuffle(password)
+    
+    return ''.join(password)
+
+
 class KPInstructorCreateSerializer(serializers.Serializer):
     """Create a new KP Instructor (user only, profile with defaults)."""
 
     # User fields - only what KP admin should set
     email = serializers.EmailField()
     full_name = serializers.CharField(max_length=200)
-    password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8, required=False, allow_blank=True)
+    confirm_password = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     def validate_email(self, value: str):
         if User.objects.filter(email__iexact=value).exists():
@@ -309,7 +332,12 @@ class KPInstructorCreateSerializer(serializers.Serializer):
         return value.lower()
 
     def validate_password(self, value: str):
-        """Validate password strength."""
+        """Validate password strength - skip if empty (will be auto-generated)."""
+        # If password is empty or not provided, skip validation (will be auto-generated)
+        if not value or value.strip() == '':
+            return value
+            
+        # Only validate if password is actually provided
         from django.contrib.auth.password_validation import validate_password
         from django.core.exceptions import ValidationError
         try:
@@ -320,14 +348,30 @@ class KPInstructorCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         print(f"DEBUG SERIALIZER: Received data for validation: {attrs}")
-        if attrs['password'] != attrs['confirm_password']:
-            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        
+        # If password is not provided or empty, generate a random one
+        if not attrs.get('password') or attrs.get('password').strip() == '':
+            generated_password = generate_secure_password(length=12)
+            attrs['password'] = generated_password
+            attrs['confirm_password'] = generated_password
+            attrs['_password_generated'] = True  # Flag to indicate password was auto-generated
+            print(f"DEBUG SERIALIZER: Generated random password for instructor")
+        else:
+            attrs['_password_generated'] = False
+            # If password provided, confirm_password must match
+            if attrs.get('password') != attrs.get('confirm_password'):
+                raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        
         return attrs
 
     def create(self, validated_data):
         print(f"DEBUG SERIALIZER: Creating instructor with validated_data: {validated_data}")
         print(f"DEBUG SERIALIZER: Required fields - email: {validated_data.get('email')}, full_name: {validated_data.get('full_name')}, password: {'***' if validated_data.get('password') else 'MISSING'}")
         print(f"DEBUG SERIALIZER: Context request user: {self.context.get('request', {}).user if self.context.get('request') else 'NO REQUEST'}")
+        
+        # Store password and flag before popping
+        password_generated = validated_data.pop('_password_generated', False)
+        
         # Remove confirm_password as it's not needed for user creation
         validated_data.pop('confirm_password', None)
 
@@ -369,6 +413,11 @@ class KPInstructorCreateSerializer(serializers.Serializer):
             languages_spoken='English',
             is_available=True,  # Default to available
         )
+
+        # Store password info on user object so view can access it for email
+        user._temp_password = password
+        user._password_was_generated = password_generated
+        user._kp_profile = kp_profile
 
         return user
 

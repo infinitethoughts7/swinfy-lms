@@ -108,7 +108,7 @@ export default function KPApplicationsPage() {
       const result = await response.json();
       
       // Show success message with updated information
-      alert(`🎉 ${result.message}\n\n📧 Admin Email: ${result.admin_email}\n🔑 Password: LearnWin8\n🌐 Login URL: ${result.login_url}\n\n✅ Congratulatory email has been sent automatically!\n\nThe Knowledge Partner can now login immediately.`);
+      alert(`🎉 ${result.message}\n\n📧 Admin Email: ${result.admin_email}\n🔑 Sent with a Temporary Password\n🌐 Login URL: ${result.login_url}\n\n✅ Congratulatory email has been sent automatically!\n\nThe Knowledge Partner can now login immediately.`);
       
       setShowModal(false);
       setSelectedApplication(null);

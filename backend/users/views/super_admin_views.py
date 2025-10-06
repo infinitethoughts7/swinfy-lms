@@ -7,6 +7,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.hashers import make_password
+import secrets
+import string
 
 from ..models.models import User, KPProfile, LearnerProfile, KPInstructorProfile
 from ..models.kp_application import KnowledgePartnerApplication
@@ -16,6 +19,31 @@ from ..serializers.super_admin_serializers import (
     DashboardStatsSerializer
 )
 from ..permissions import IsSuperAdmin
+
+
+def generate_secure_password(length=12):
+    """Generate a secure random password with letters, digits, and special characters."""
+    # Define character sets
+    letters = string.ascii_letters
+    digits = string.digits
+    special_chars = '@#$%&*!'
+    
+    # Ensure password has at least one of each type
+    password = [
+        secrets.choice(string.ascii_uppercase),  # At least one uppercase
+        secrets.choice(string.ascii_lowercase),  # At least one lowercase
+        secrets.choice(digits),                   # At least one digit
+        secrets.choice(special_chars),           # At least one special char
+    ]
+    
+    # Fill the rest randomly
+    all_chars = letters + digits + special_chars
+    password += [secrets.choice(all_chars) for _ in range(length - 4)]
+    
+    # Shuffle to avoid predictable patterns
+    secrets.SystemRandom().shuffle(password)
+    
+    return ''.join(password)
 
 
 class DashboardStatsView(generics.GenericAPIView):
@@ -139,13 +167,13 @@ def approve_kp_application(request, application_id):
                     'message': f'A user with email {application.knowledge_partner_email} already exists.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Create admin user account with inspirational password
-            inspirational_password = "LearnWin8"  # 8 characters, inspirational, easy to remember
+            # Generate a secure random password
+            generated_password = generate_secure_password(length=12)
             
             admin_user = User.objects.create_user(
                 email=application.knowledge_partner_email,
                 full_name=f"{application.knowledge_partner_name} Admin",
-                password=inspirational_password,
+                password=generated_password,
                 role='knowledge_partner',
                 is_verified=True,
                 is_approved=True
@@ -176,7 +204,7 @@ def approve_kp_application(request, application_id):
 
             # Send congratulatory email with credentials
             try:
-                send_congratulations_email(application, admin_user, knowledge_partner, inspirational_password)
+                send_congratulations_email(application, admin_user, knowledge_partner, generated_password)
             except Exception as e:
                 # Log error but don't fail the approval
                 print(f"Failed to send congratulations email: {e}")

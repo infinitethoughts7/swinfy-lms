@@ -18,9 +18,11 @@ import {
   Calendar,
   Users,
   BookOpen,
-  Award
+  Award,
+  Lock
 } from 'lucide-react';
 import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
+import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 
 interface KPProfile {
   id: string;
@@ -94,6 +96,7 @@ export default function KPProfilePage() {
     kp_admin_phone: '',
     linkedin_url: '',
   });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated before making API calls
@@ -368,13 +371,22 @@ export default function KPProfilePage() {
         </div>
         <div className="flex items-center space-x-3">
           {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Profile
-            </button>
+            <>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Update Password
+              </button>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Profile
+              </button>
+            </>
           ) : (
             <div className="flex items-center space-x-2">
               <button
@@ -731,7 +743,34 @@ export default function KPProfilePage() {
             </div>
           </div>
         </div>
+
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Update Your Password</h2>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6">
+              <ChangePasswordForm 
+                onSuccess={() => {
+                  setTimeout(() => {
+                    setShowPasswordModal(false);
+                  }, 2000);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

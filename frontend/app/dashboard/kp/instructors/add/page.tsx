@@ -9,8 +9,6 @@ import { useRouter } from 'next/navigation';
 interface FormData {
   email: string;
   full_name: string;
-  password: string;
-  confirm_password: string;
 }
 
 interface FormErrors {
@@ -22,8 +20,6 @@ export default function AddInstructorPage() {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     full_name: '',
-    password: 'rockyg07',
-    confirm_password: 'rockyg07',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -44,16 +40,6 @@ export default function AddInstructorPage() {
     } else if (formData.full_name.length < 2) {
       newErrors.full_name = 'Full name must be at least 2 characters';
     }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (formData.password !== formData.confirm_password) {
-      newErrors.confirm_password = 'Passwords do not match';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -71,11 +57,12 @@ export default function AddInstructorPage() {
       const instructorData: InstructorCreateData = {
         email: formData.email,
         full_name: formData.full_name,
-        password: formData.password,
-        confirm_password: formData.confirm_password,
+        password: '', // Empty password triggers auto-generation on backend
+        confirm_password: '',
       };
 
       await userApi.instructors.create(instructorData);
+      alert('✅ Instructor created successfully! An invitation email with login credentials has been sent to their email address.');
       router.push('/dashboard/kp/instructors?success=created');
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create instructor');
@@ -167,47 +154,21 @@ export default function AddInstructorPage() {
               />
               {errors.email && <p className="text-red-600 text-sm mt-2">{errors.email}</p>}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleChange('password', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                      errors.password ? 'ring-2 ring-red-500' : ''
-                    }`}
-                    placeholder="Minimum 8 characters"
-                  />
-                </div>
-                {errors.password && <p className="text-red-600 text-sm mt-2">{errors.password}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="password"
-                    value={formData.confirm_password}
-                    onChange={(e) => handleChange('confirm_password', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                      errors.confirm_password ? 'ring-2 ring-red-500' : ''
-                    }`}
-                    placeholder="Confirm password"
-                  />
-                </div>
-                {errors.confirm_password && <p className="text-red-600 text-sm mt-2">{errors.confirm_password}</p>}
-              </div>
-            </div>
           </div>
+        </div>
+
+        {/* Security Notice */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+          <h3 className="font-medium text-blue-900 mb-3 flex items-center">
+            <Lock className="h-5 w-5 mr-2" />
+            Secure Password Generation
+          </h3>
+          <p className="text-blue-800 text-sm mb-2">
+            A secure, randomly-generated password will be automatically created for this instructor.
+          </p>
+          <p className="text-blue-700 text-sm">
+            The instructor will receive an email with their login credentials and will be prompted to change their password upon first login.
+          </p>
         </div>
 
         {/* Professional Details Notice */}
@@ -216,15 +177,19 @@ export default function AddInstructorPage() {
           <ul className="text-gray-700 space-y-2">
             <li className="flex items-center">
               <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              Account created with default profile settings
+              A secure temporary password is automatically generated
             </li>
             <li className="flex items-center">
               <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              Instructor can log in and complete their professional details
+              Instructor receives an invitation email with login credentials
             </li>
             <li className="flex items-center">
               <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              They can update bio, specializations, and availability
+              They must change their password after first login for security
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+              They can complete their profile, bio, specializations, and start creating courses
             </li>
           </ul>
         </div>

@@ -7,6 +7,8 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
+import secrets
+import string
 
 from ..models import KnowledgePartnerApplication, User, KPProfile
 from ..serializers import (
@@ -15,6 +17,31 @@ from ..serializers import (
     ApplicationApprovalSerializer,
     ApplicationRejectionSerializer,
 )
+
+
+def generate_secure_password(length=12):
+    """Generate a secure random password with letters, digits, and special characters."""
+    # Define character sets
+    letters = string.ascii_letters
+    digits = string.digits
+    special_chars = '@#$%&*!'
+    
+    # Ensure password has at least one of each type
+    password = [
+        secrets.choice(string.ascii_uppercase),  # At least one uppercase
+        secrets.choice(string.ascii_lowercase),  # At least one lowercase
+        secrets.choice(digits),                   # At least one digit
+        secrets.choice(special_chars),           # At least one special char
+    ]
+    
+    # Fill the rest randomly
+    all_chars = letters + digits + special_chars
+    password += [secrets.choice(all_chars) for _ in range(length - 4)]
+    
+    # Shuffle to avoid predictable patterns
+    secrets.SystemRandom().shuffle(password)
+    
+    return ''.join(password)
 
 
 class ApplicationPagination(PageNumberPagination):
@@ -191,13 +218,13 @@ def approve_application(request, application_id):
                     'message': f'A user with email {application.knowledge_partner_email} already exists.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Create admin user account with inspirational password
-            inspirational_password = "LearnWin8"  # 8 characters, inspirational, easy to remember
+            # Generate a secure random password
+            generated_password = generate_secure_password(length=12)
             
             admin_user = User.objects.create_user(
                 email=application.knowledge_partner_email,
                 full_name=f"{application.knowledge_partner_name} Admin",
-                password=inspirational_password,
+                password=generated_password,
                 role='knowledge_partner',
                 is_verified=True,
                 is_approved=True
@@ -228,7 +255,7 @@ def approve_application(request, application_id):
 
             # Send congratulatory email with credentials
             try:
-                send_congratulations_email(application, admin_user, knowledge_partner, inspirational_password)
+                send_congratulations_email(application, admin_user, knowledge_partner, generated_password)
             except Exception as e:
                 # Log error but don't fail the approval
                 print(f"Failed to send congratulations email: {e}")
@@ -307,10 +334,22 @@ Your Knowledge Partner application has been successfully approved, and we're exc
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📧 Email: {admin_user.email}
-🔑 Password: {password}
+🔑 Temporary Password: {password}
 🌐 Login URL: https://olla.co.in/
 
-⚠️ IMPORTANT: Please change your password after your first login for security.
+⚠️ IMPORTANT SECURITY NOTICE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is a TEMPORARY password that has been randomly generated for your security.
+
+🔒 YOU MUST CHANGE THIS PASSWORD immediately after your first login!
+
+To change your password:
+1. Login with the credentials above
+2. Go to your Profile Settings
+3. Click on "Change Password"
+4. Create a strong, unique password that you'll remember
+
+Never share your password with anyone, including our support team.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚀 NEXT STEPS TO GET STARTED

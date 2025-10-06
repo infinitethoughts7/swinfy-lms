@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError, PermissionDenied
 from rest_framework import generics
 from django.db.models import Q
+from django.core.mail import send_mail
+from django.conf import settings
 from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile, OTPVerification
 from ..permissions import IsKnowledgePartnerAdmin
 from ..utils import (
@@ -645,6 +647,106 @@ class UserProfileDetailView(APIView):
 # KP Instructor CRUD (KP Admin only)
 # =========================
 
+def send_instructor_invitation_email(instructor_user, kp_profile, password):
+    """Send invitation email with credentials to newly created instructor."""
+    subject = f"🎉 Welcome to {kp_profile.name} - Instructor Invitation"
+    message = f"""
+🎉 WELCOME TO {kp_profile.name.upper()}! 🎉
+
+Dear {instructor_user.full_name},
+
+We are thrilled to invite you to join {kp_profile.name} as an Instructor on the Swinfy Learning Platform!
+
+You have been added to our team by the Knowledge Partner administrator. We're excited to have you on board to share your expertise and help transform the lives of learners worldwide.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 YOUR LOGIN CREDENTIALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📧 Email: {instructor_user.email}
+🔑 Temporary Password: {password}
+🌐 Login URL: https://olla.co.in/
+
+⚠️ IMPORTANT SECURITY NOTICE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This is a TEMPORARY password that has been randomly generated for your security.
+
+🔒 YOU MUST CHANGE THIS PASSWORD immediately after your first login!
+
+To change your password:
+1. Login with the credentials above
+2. Go to your Profile Settings
+3. Click on "Change Password"
+4. Create a strong, unique password that you'll remember
+
+Never share your password with anyone, including our support team.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 NEXT STEPS TO GET STARTED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Login to your Instructor Dashboard
+2️⃣ Complete your instructor profile (add bio, qualifications, specializations)
+3️⃣ Upload a professional profile photo
+4️⃣ Start creating amazing courses to share your knowledge!
+5️⃣ Engage with learners and track their progress
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ WHAT YOU CAN DO AS AN INSTRUCTOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎓 Create and publish courses
+📚 Upload course materials and resources
+🎥 Add video lessons and interactive content
+📝 Create quizzes and assessments
+👥 Track learner progress and engagement
+💬 Interact with learners through discussions
+📊 View detailed analytics on your courses
+🌟 Build your reputation as an expert educator
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏢 YOUR ORGANIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Organization: {kp_profile.name}
+Type: {kp_profile.get_type_display()}
+Website: {kp_profile.website or 'Not specified'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤝 NEED HELP? WE'RE HERE FOR YOU!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📧 Email Support: rockyg.swinfy@gmail.com
+📞 Phone Support: +91 7981313783
+💬 We're here to help you succeed!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Welcome to the team! We can't wait to see the incredible courses you'll create and the impact you'll make on learners' lives.
+
+Let's make learning accessible, engaging, and transformative! 🌟
+
+With warm regards,
+{kp_profile.name} & Swinfy Learning Platform Team
+
+P.S. Your expertise matters. Together, we'll empower thousands of learners! 🚀
+    """
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[instructor_user.email],
+            fail_silently=False,
+        )
+        print(f"✅ Invitation email sent successfully to {instructor_user.email}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send invitation email to {instructor_user.email}: {e}")
+        return False
+
+
 class KPAdminOnlyMixin:
     permission_classes = [permissions.IsAuthenticated]
 
@@ -704,6 +806,18 @@ class KPInstructorListCreateView(APIView):
         print(f"DEBUG VIEW: Serializer valid, creating user...")
         user = serializer.save()
         profile = user.instructor_profile
+        
+        # Send invitation email with credentials if password was auto-generated
+        if hasattr(user, '_password_was_generated') and user._password_was_generated:
+            try:
+                kp_profile = user._kp_profile
+                password = user._temp_password
+                send_instructor_invitation_email(user, kp_profile, password)
+                print(f"DEBUG VIEW: Invitation email sent to {user.email}")
+            except Exception as e:
+                # Log error but don't fail the creation
+                print(f"DEBUG VIEW: Failed to send invitation email: {e}")
+        
         detail = KPInstructorDetailSerializer(profile).data
         
         print(f"DEBUG VIEW: Instructor created successfully: {user.email}")

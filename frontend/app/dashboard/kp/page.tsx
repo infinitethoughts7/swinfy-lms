@@ -58,8 +58,7 @@ export default function KPDashboard() {
   const [saving, setSaving] = useState(false);
   const [addForm, setAddForm] = useState({
     full_name: '',
-    email: '',
-    password: 'rockyg07' // Default password as requested
+    email: ''
   });
 
   useEffect(() => {
@@ -163,8 +162,7 @@ export default function KPDashboard() {
   const openAddModal = () => {
     setAddForm({
       full_name: '',
-      email: '',
-      password: 'rockyg07'
+      email: ''
     });
     setAddModal(true);
   };
@@ -173,8 +171,7 @@ export default function KPDashboard() {
     setAddModal(false);
     setAddForm({
       full_name: '',
-      email: '',
-      password: 'rockyg07'
+      email: ''
     });
   };
 
@@ -194,10 +191,6 @@ export default function KPDashboard() {
       setError('Please enter a valid email address');
       return;
     }
-    if (addForm.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
 
     try {
       setSaving(true);
@@ -205,8 +198,8 @@ export default function KPDashboard() {
       const requestData = {
         full_name: addForm.full_name,
         email: addForm.email,
-        password: addForm.password,
-        confirm_password: addForm.password
+        password: '', // Empty password triggers auto-generation
+        confirm_password: ''
       };
       
       console.log('=== FRONTEND DEBUG: Instructor Creation Request ===');
@@ -253,7 +246,7 @@ export default function KPDashboard() {
       const newInstructor = await response.json();
       console.log('Instructor created successfully:', newInstructor);
       
-      alert('Instructor added successfully! Profile information will be updated by the instructor.');
+      alert('✅ Instructor added successfully! An invitation email with login credentials has been sent to their email address. They will be prompted to change their password upon first login.');
       closeAddModal();
       fetchDashboardStats(); // Refresh the dashboard data
     } catch (err) {
@@ -312,7 +305,7 @@ export default function KPDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {/* Instructors */}
         <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
@@ -390,32 +383,6 @@ export default function KPDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Analytics */}
-        <div className="bg-white rounded-xl border border-gray-100 p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3">
-            <div className="p-2 sm:p-3 bg-orange-100 rounded-lg sm:rounded-xl mb-2 sm:mb-0 w-fit">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600" />
-            </div>
-            <Link 
-              href="/dashboard/kp/analytics"
-              className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center"
-            >
-              View all <ArrowRight className="h-3 w-3 ml-1" />
-            </Link>
-          </div>
-          <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Analytics</h3>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">Revenue</span>
-              <span className="font-semibold">₹2.4L</span>
-            </div>
-            <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">Growth</span>
-              <span className="font-semibold text-green-600">+12%</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Course Enrollment Trends - Full Width */}
@@ -490,7 +457,7 @@ export default function KPDashboard() {
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">Enrollment vs Revenue Analysis</h3>
+            <h3 className="text-base font-semibold text-gray-900">Course Enrollment vs Revenue Analysis</h3>
             <p className="text-xs text-gray-600">Compare student volume with earnings performance</p>
           </div>
           <TrendingUp className="h-4 w-4 text-purple-600" />
@@ -613,24 +580,18 @@ export default function KPDashboard() {
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    type="text"
-                    value={addForm.password}
-                    onChange={(e) => setAddForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    placeholder="Default password"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">A secure password will be generated automatically</p>
-                </div>
               </div>
 
-              {/* Note */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              {/* Security & Notification Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-blue-800">
+                  <strong>🔒 Secure Password:</strong> A randomly-generated temporary password will be created automatically.
+                </p>
                 <p className="text-xs text-blue-700">
-                  <strong>Note:</strong> Profile information will be updated by the instructor after login.
+                  <strong>📧 Email Invitation:</strong> The instructor will receive an invitation email with their login credentials.
+                </p>
+                <p className="text-xs text-blue-700">
+                  <strong>🔐 Password Change:</strong> They must change their password after first login for security.
                 </p>
               </div>
 
