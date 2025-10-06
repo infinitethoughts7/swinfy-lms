@@ -228,13 +228,7 @@ export default function CoursesPage() {
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="flex items-center space-x-2">
-                    <Link
-                      href={`/dashboard/instructor/courses/${course.slug}`}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                      title="View Course"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Link>
+                
                     <Link
                       href={`/dashboard/instructor/courses/${course.slug}/edit`}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
