@@ -1,6 +1,6 @@
 # Dependencies
 
-clean_db.py
+
 node_modules/
 */node_modules/
 */venv/
