@@ -20,6 +20,8 @@ interface ApiError {
   [key: string]: string[];
 }
 
+type FormStep = 'filling' | 'verifying_email' | 'submitting';
+
 const ContactForm = () => {
   const [formData, setFormData] = useState<FormData>({
     knowledge_partner_name: '',
@@ -33,14 +35,15 @@ const ContactForm = () => {
     partner_message: ''
   });
 
+  const [currentStep, setCurrentStep] = useState<FormStep>('filling');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ApiError>({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
   
   // Email verification state
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [showOTPSection, setShowOTPSection] = useState(false);
   const [emailVerificationError, setEmailVerificationError] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
 
   // Load previously saved details for auto-fill (dev UX)
   useEffect(() => {
@@ -48,7 +51,6 @@ const ContactForm = () => {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('kpApplicationForm') : null;
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Basic shape guard
         if (parsed && typeof parsed === 'object') {
           setFormData((prev) => ({ ...prev, ...parsed }));
         }
@@ -57,6 +59,35 @@ const ContactForm = () => {
       // ignore storage errors
     }
   }, []);
+
+  // Auto-close success message after 5 seconds
+  useEffect(() => {
+    if (submitSuccess) {
+      const timer = setTimeout(() => {
+        setSubmitSuccess(false);
+        setCurrentStep('filling');
+        setIsEmailVerified(false);
+        // Reset form data
+        setFormData({
+          knowledge_partner_name: '',
+          knowledge_partner_type: '',
+          knowledge_partner_email: '',
+          contact_number: '',
+          website_url: '',
+          courses_interested_in: '',
+          experience_years: '',
+          expected_tutors: '',
+          partner_message: ''
+        });
+        // Clear localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('kpApplicationForm');
+        }
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [submitSuccess]);
 
   const KP_TYPE_CHOICES = [
     { value: 'company', label: 'Company' },
@@ -78,7 +109,7 @@ const ContactForm = () => {
     { value: 'other', label: 'Other' }
   ];
 
-  // OTP API methods for contact form (doesn't require existing user)
+  // OTP API methods for contact form
   const sendOTPForEmail = async (email: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     const response = await fetch(`${API_BASE_URL}/api/auth/send-contact-form-otp/`, {
@@ -126,11 +157,11 @@ const ContactForm = () => {
     // Reset email verification if email changed
     if (name === 'knowledge_partner_email' && value !== formData.knowledge_partner_email) {
       setIsEmailVerified(false);
-      setShowOTPSection(false);
+      setCurrentStep('filling');
       setEmailVerificationError('');
     }
     
-    // Persist as-you-type to enable auto-fill next time
+    // Persist as-you-type
     try {
       if (typeof window !== 'undefined') {
         localStorage.setItem('kpApplicationForm', JSON.stringify(next));
@@ -139,7 +170,7 @@ const ContactForm = () => {
       // ignore storage errors
     }
     
-    // Clear error for this field when user starts typing
+    // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -150,23 +181,41 @@ const ContactForm = () => {
 
   const handleEmailVerified = () => {
     setIsEmailVerified(true);
-    setShowOTPSection(false);
+    setCurrentStep('submitting');
     setEmailVerificationError('');
   };
 
-  const handleSendOTP = () => {
-    if (formData.knowledge_partner_email) {
-      setShowOTPSection(true);
-      setEmailVerificationError('');
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form before sending OTP
+    if (!formData.knowledge_partner_name || !formData.knowledge_partner_type || 
+        !formData.knowledge_partner_email || !formData.contact_number || 
+        !formData.website_url || !formData.courses_interested_in || 
+        !formData.experience_years || !formData.expected_tutors) {
+      setEmailVerificationError('Please fill in all required fields before verifying email.');
+      return;
+    }
+    
+    setOtpSending(true);
+    setEmailVerificationError('');
+    
+    try {
+      await sendOTPForEmail(formData.knowledge_partner_email);
+      setCurrentStep('verifying_email');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
+      setEmailVerificationError(errorMessage);
+    } finally {
+      setOtpSending(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if email is verified before allowing submission
     if (!isEmailVerified) {
-      setEmailVerificationError('Please verify your email address before submitting the application.');
+      setEmailVerificationError('Please verify your email address first.');
       return;
     }
     
@@ -188,15 +237,7 @@ const ContactForm = () => {
       
       if (response.ok && data.success) {
         setSubmitSuccess(true);
-        // Keep localStorage so subsequent visits can be auto-filled.
-        // Optionally clear in-memory form for a clean confirmation screen.
-        setFormData(prev => ({ ...prev }));
-        
-        // Show success message for 5 seconds
-        setTimeout(() => setSubmitSuccess(false), 5000);
-        
       } else {
-        // Handle validation errors
         if (data.errors || response.status === 400) {
           setErrors(data.errors || data);
         } else {
@@ -214,7 +255,7 @@ const ContactForm = () => {
   // Show success message if submission was successful
   if (submitSuccess) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fadeIn">
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
           <div className="text-green-600 text-2xl mb-4">✅</div>
           <h4 className="text-green-800 font-semibold text-lg mb-2">
@@ -228,17 +269,22 @@ const ContactForm = () => {
               📞 <strong>Next Steps:</strong> We&apos;ll call you at {formData.contact_number} to discuss the partnership opportunity.
             </p>
           </div>
+          <div className="mt-4 text-xs text-green-600">
+            This window will close automatically in a few seconds...
+          </div>
         </div>
-        
-        <button
-          onClick={() => setSubmitSuccess(false)}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-all duration-300"
-        >
-          Submit Another Application
-        </button>
       </div>
     );
   }
+
+  const isFormComplete = formData.knowledge_partner_name && 
+                         formData.knowledge_partner_type && 
+                         formData.knowledge_partner_email && 
+                         formData.contact_number && 
+                         formData.website_url && 
+                         formData.courses_interested_in && 
+                         formData.experience_years && 
+                         formData.expected_tutors;
 
   return (
     <div className="space-y-4">
@@ -248,12 +294,22 @@ const ContactForm = () => {
           <Building2 className="w-4 h-4" />
           <span className="font-medium text-sm">Quick Application Process</span>
         </div>
-        <p className="text-xs text-blue-600">
-          📧 Verify email → Submit application → Get callback within 24-48 hours → Receive dashboard access
-        </p>
+        <div className="flex items-center gap-2 text-xs text-blue-600">
+          <span className={currentStep === 'filling' ? 'font-semibold' : ''}>
+            1️⃣ Fill Form
+          </span>
+          <span>→</span>
+          <span className={currentStep === 'verifying_email' ? 'font-semibold' : ''}>
+            2️⃣ Verify Email
+          </span>
+          <span>→</span>
+          <span className={currentStep === 'submitting' ? 'font-semibold' : ''}>
+            3️⃣ Submit
+          </span>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={currentStep === 'submitting' ? handleSubmit : handleVerifyEmail} className="space-y-4">
         {/* Compact Knowledge Partner Info */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <h5 className="text-gray-800 font-medium text-sm flex items-center gap-2">
@@ -271,9 +327,10 @@ const ContactForm = () => {
                 autoComplete="organization"
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               />
               {errors.knowledge_partner_name && (
                 <p className="mt-1 text-xs text-red-500">{errors.knowledge_partner_name[0]}</p>
@@ -286,9 +343,10 @@ const ContactForm = () => {
                 value={formData.knowledge_partner_type}
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_type ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Organization Type *</option>
                 {KP_TYPE_CHOICES.map((type) => (
@@ -312,9 +370,10 @@ const ContactForm = () => {
               autoComplete="url"
               onChange={handleChange}
               required
+              disabled={currentStep !== 'filling'}
               className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                 errors.website_url ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
             {errors.website_url && (
               <p className="mt-1 text-xs text-red-500">{errors.website_url[0]}</p>
@@ -339,9 +398,10 @@ const ContactForm = () => {
                 autoComplete="email"
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.knowledge_partner_email ? 'border-red-500' : 'border-gray-300'
-                } ${isEmailVerified ? 'border-green-500 bg-green-50' : ''}`}
+                } ${isEmailVerified ? 'border-green-500 bg-green-50' : ''} ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               />
               {isEmailVerified && (
                 <div className="absolute right-3 top-2 text-green-600">
@@ -353,40 +413,10 @@ const ContactForm = () => {
               )}
             </div>
 
-            {/* Email Verification Status */}
-            {!isEmailVerified && formData.knowledge_partner_email && (
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={handleSendOTP}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
-                >
-                  Send verification code
-                </button>
-                <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Email verification required
-                </span>
-              </div>
-            )}
-
             {isEmailVerified && (
               <div className="flex items-center gap-2 text-green-600 text-xs">
                 <CheckCircle className="w-3 h-3" />
                 <span>Email verified successfully</span>
-              </div>
-            )}
-
-            {/* OTP Verification Component */}
-            {showOTPSection && (
-              <div className="bg-white rounded-md border border-blue-200 p-3">
-                <OTPVerification
-                  email={formData.knowledge_partner_email}
-                  onVerified={handleEmailVerified}
-                  onSendOTP={sendOTPForEmail}
-                  onVerifyOTP={verifyOTPForEmail}
-                  isVerified={isEmailVerified}
-                />
               </div>
             )}
 
@@ -399,9 +429,10 @@ const ContactForm = () => {
                 autoComplete="tel"
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.contact_number ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               />
               {errors.contact_number && (
                 <p className="mt-1 text-xs text-red-500">{errors.contact_number[0]}</p>
@@ -409,6 +440,23 @@ const ContactForm = () => {
             </div>
           </div>
         </div>
+
+        {/* OTP Verification Component - Shows when in verifying_email step */}
+        {currentStep === 'verifying_email' && (
+          <div className="bg-white rounded-lg border-2 border-blue-200 p-4 animate-slideDown">
+            <div className="flex items-center gap-2 mb-3 text-blue-700">
+              <Mail className="w-5 h-5" />
+              <h5 className="font-medium text-sm">Email Verification</h5>
+            </div>
+            <OTPVerification
+              email={formData.knowledge_partner_email}
+              onVerified={handleEmailVerified}
+              onSendOTP={sendOTPForEmail}
+              onVerifyOTP={verifyOTPForEmail}
+              isVerified={isEmailVerified}
+            />
+          </div>
+        )}
 
         {/* Quick Questions */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
@@ -423,9 +471,10 @@ const ContactForm = () => {
                 value={formData.courses_interested_in}
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.courses_interested_in ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Course category *</option>
                 {COURSE_CATEGORIES.map((category) => (
@@ -445,9 +494,10 @@ const ContactForm = () => {
                 value={formData.experience_years}
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.experience_years ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Experience *</option>
                 <option value="0-1">0-1 years</option>
@@ -466,9 +516,10 @@ const ContactForm = () => {
                 value={formData.expected_tutors}
                 onChange={handleChange}
                 required
+                disabled={currentStep !== 'filling'}
                 className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                   errors.expected_tutors ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Expected tutors *</option>
                 <option value="1-2">1-2 tutors</option>
@@ -491,9 +542,10 @@ const ContactForm = () => {
             rows={3}
             value={formData.partner_message}
             onChange={handleChange}
+            disabled={currentStep !== 'filling'}
             className={`w-full px-3 py-2 bg-gray-50 border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all resize-none ${
               errors.partner_message ? 'border-red-500' : 'border-gray-300'
-            }`}
+            } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
           ></textarea>
           {errors.partner_message && (
             <p className="mt-1 text-xs text-red-500">{errors.partner_message[0]}</p>
@@ -508,29 +560,55 @@ const ContactForm = () => {
           </div>
         )}
 
-        {/* Submit Button */}
+        {/* Action Button - Changes based on step */}
         <div className="flex justify-center pt-2">
-          <button
-            type="submit"
-            disabled={isSubmitting || !isEmailVerified}
-            className={`py-3 px-6 rounded-md font-medium text-sm flex items-center justify-center gap-2 min-w-[180px] transition-all ${
-              isEmailVerified 
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg' 
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            } ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800"></div>
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Submit Application
-              </>
-            )}
-          </button>
+          {currentStep === 'filling' && (
+            <button
+              type="submit"
+              disabled={!isFormComplete || otpSending}
+              className={`py-3 px-6 rounded-md font-medium text-sm flex items-center justify-center gap-2 min-w-[180px] transition-all ${
+                isFormComplete && !otpSending
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {otpSending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Sending OTP...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4" />
+                  Verify Email
+                </>
+              )}
+            </button>
+          )}
+
+          {currentStep === 'submitting' && (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`py-3 px-6 rounded-md font-medium text-sm flex items-center justify-center gap-2 min-w-[180px] transition-all ${
+                !isSubmitting
+                  ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Submit Application
+                </>
+              )}
+            </button>
+          )}
         </div>
       </form>
 

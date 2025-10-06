@@ -84,7 +84,7 @@ export default function EmailVerificationForm({
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
         <p className="text-gray-600">
-          We've sent a verification code to <strong>{email}</strong>
+          We&apos;ve sent a verification code to <strong>{email}</strong>
         </p>
       </div>
 
@@ -128,7 +128,7 @@ export default function EmailVerificationForm({
 
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-2">
-              Didn't receive the code?
+              Didn&apos;t receive the code?
             </p>
             <button
               type="button"
