@@ -263,6 +263,27 @@ class ChangePasswordView(APIView):
             user = request.user
             user.set_password(serializer.validated_data['new_password'])
             user.save()
+            # Send password changed email notification
+            try:
+                subject = "Your password was changed successfully"
+                message = (
+                    f"Hello {user.full_name or 'User'},\n\n"
+                    "This is a confirmation that the password for your account "
+                    f"({user.email}) was changed successfully.\n\n"
+                    "If you did not make this change, please reset your password immediately "
+                    "using the 'Forgot password' option and contact support.\n\n"
+                    "— Swinfy LMS"
+                )
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                # Don't block the response on email errors
+                pass
             
             return Response(
                 {'message': 'Password changed successfully.'},
@@ -1267,6 +1288,25 @@ class ResetPasswordView(APIView):
             user = User.objects.get(email__iexact=email)
             user.set_password(new_password)
             user.save()
+            # Send password reset success email
+            try:
+                subject = "Your password has been reset successfully"
+                message = (
+                    f"Hello {user.full_name or 'User'},\n\n"
+                    "Your password was reset successfully using the verification code.\n\n"
+                    f"Email: {user.email}\n\n"
+                    "If you did not request this change, please contact support immediately.\n\n"
+                    "— Swinfy LMS"
+                )
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
             
             return Response({
                 'success': True,

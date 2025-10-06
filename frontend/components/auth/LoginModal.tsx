@@ -108,14 +108,15 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     setError('');
 
     try {
-      const response = await authApi.forgotPassword({ email });
+      await authApi.forgotPassword({ email });
       setOtpSent(true);
       setForgotPasswordStep('otp');
       setTimeLeft(300); // 5 minutes
       setError('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Forgot password error:', error);
-      setError(error.message || 'Failed to send reset code. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Failed to send reset code. Please try again.';
+      setError(msg);
     }
 
     setIsLoading(false);
@@ -132,12 +133,13 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     setError('');
 
     try {
-      const response = await authApi.verifyResetOTP({ email, otp_code: otp });
+      await authApi.verifyResetOTP({ email, otp_code: otp });
       setForgotPasswordStep('new-password');
       setError('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('OTP verification error:', error);
-      setError(error.message || 'Invalid verification code. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Invalid verification code. Please try again.';
+      setError(msg);
     }
 
     setIsLoading(false);
@@ -163,13 +165,13 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     setError('');
 
     try {
-      const response = await authApi.resetPassword({ 
+      await authApi.resetPassword({ 
         email, 
         otp_code: otpCode.join(''), 
         new_password: newPassword 
       });
       
-      // Reset all states
+      // Reset all states and return to login screen with success message
       setForgotPasswordStep(null);
       setEmail('');
       setPassword('');
@@ -178,14 +180,19 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       setConfirmPassword('');
       setOtpSent(false);
       setTimeLeft(0);
-      setError('');
+      setError('Your password has been updated. Please login with your new password.');
       
-      // Close modal
-      onOpenChange(false);
+      // Keep modal open and show login form
+      // Focus email input for convenience
+      setTimeout(() => {
+        const emailInput = document.getElementById('email') as HTMLInputElement | null;
+        emailInput?.focus();
+      }, 50);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password update error:', error);
-      setError(error.message || 'Failed to update password. Please try again.');
+      const msg = error instanceof Error ? error.message : 'Failed to update password. Please try again.';
+      setError(msg);
     }
 
     setIsLoading(false);
