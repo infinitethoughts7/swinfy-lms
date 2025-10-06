@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
 import { authenticatedFetch } from '@/lib/auth';
-import { User, Mail, Calendar, Award, BookOpen, Users, Clock, Lock, X } from 'lucide-react';
+import { User, Mail, Calendar, Award, Lock, X } from 'lucide-react';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 
 interface UserProfile {
@@ -139,8 +139,8 @@ export default function InstructorProfilePage() {
         throw new Error(errorMessage);
       }
       
-      const updatedProfile = await safeJsonParse(response) as UserProfile;
-      setProfile(updatedProfile);
+      // Refresh the profile data to show updated information
+      await fetchProfile();
       setIsEditing(false);
       alert('Profile updated successfully!');
       
@@ -283,19 +283,41 @@ export default function InstructorProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Availability Status</label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  <select
+                    value={formData.is_available ? 'available' : 'unavailable'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'available' }))}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="e.g., Senior Software Engineer"
-                  />
+                  >
+                    <option value="available">Available for Teaching</option>
+                    <option value="unavailable">Currently Unavailable</option>
+                  </select>
                 ) : (
-                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    profile?.profile?.is_available 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
+                  </span>
                 )}
               </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title</label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="e.g., Senior Software Engineer"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
+              )}
             </div>
 
             <div className="mt-4">
@@ -424,6 +446,10 @@ export default function InstructorProfilePage() {
             </div>
           </div>
 
+        </div>
+
+        {/* Right Column - Stats */}
+        <div className="space-y-4">
           {/* Social Links */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
@@ -431,49 +457,22 @@ export default function InstructorProfilePage() {
               <h2 className="text-lg font-semibold text-gray-900">Social Links</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">LinkedIn Profile</label>
-                {isEditing ? (
-                  <input
-                    type="url"
-                    value={formData.linkedin_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900 font-medium truncate">{profile?.profile?.linkedin_url || 'Not provided'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Availability Status</label>
-                {isEditing ? (
-                  <select
-                    value={formData.is_available ? 'available' : 'unavailable'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'available' }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="available">Available for Teaching</option>
-                    <option value="unavailable">Currently Unavailable</option>
-                  </select>
-                ) : (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    profile?.profile?.is_available 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
-                  </span>
-                )}
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">LinkedIn Profile</label>
+              {isEditing ? (
+                <input
+                  type="url"
+                  value={formData.linkedin_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="https://linkedin.com/in/yourprofile"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 font-medium truncate">{profile?.profile?.linkedin_url || 'Not provided'}</p>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Right Column - Stats */}
-        <div className="space-y-4">
           {/* Account Information */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Account Information</h3>
@@ -484,14 +483,7 @@ export default function InstructorProfilePage() {
                   <p className="text-xs text-gray-600">Member since</p>
                   <p className="text-sm font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-600">Last login</p>
-                  <p className="text-sm font-semibold text-gray-900">Never</p>
-                </div>
-              </div>
+              </div> 
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <div>
@@ -501,34 +493,7 @@ export default function InstructorProfilePage() {
               </div>
             </div>
           </div>
-
-          {/* Teaching Stats */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900 mb-3">Teaching Stats</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm text-gray-600">Courses</span>
-                </div>
-                <span className="text-sm font-bold text-gray-900">12</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-gray-600">Students</span>
-                </div>
-                <span className="text-sm font-bold text-gray-900">1,234</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Award className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm text-gray-600">Rating</span>
-                </div>
-                <span className="text-sm font-bold text-gray-900">4.8/5</span>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
       </div>

@@ -197,8 +197,8 @@ export default function KPProfilePage() {
         throw new Error(errorData.error || errorData.detail || 'Failed to update profile');
       }
 
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
+      // Refresh the profile data to show updated information
+      await fetchProfile();
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (err) {
@@ -254,10 +254,8 @@ export default function KPProfilePage() {
         throw new Error(errorMessage);
       }
 
-      const result = await safeJsonParse(response) as { logo_url?: string };
-      if (profile) {
-        setProfile({ ...profile, logo: result.logo_url || '' });
-      }
+      // Refresh the profile data to show updated logo
+      await fetchProfile();
       alert('Logo uploaded successfully!');
     } catch (err) {
       console.error('Error uploading logo:', err);
