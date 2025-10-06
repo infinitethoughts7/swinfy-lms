@@ -17,7 +17,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon: React.ReactElement;
-  badge?: string;
+  badge?: number;
 }
 
 interface KPProfile {
@@ -35,11 +35,16 @@ interface KPProfile {
 const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   const pathname = usePathname();
   const [kpProfile, setKpProfile] = useState<KPProfile | null>(null);
+  const [pendingCounts, setPendingCounts] = useState<{
+    courses: number;
+    liveSessions: number;
+  }>({ courses: 0, liveSessions: 0 });
 
-  // Fetch KP profile data if user is a knowledge partner
+  // Fetch KP profile data and pending counts if user is a knowledge partner
   useEffect(() => {
     if (userRole === 'knowledge_partner') {
       fetchKPProfile();
+      fetchPendingCounts();
     }
   }, [userRole]);
 
@@ -54,6 +59,61 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
       console.error('Failed to fetch KP profile:', error);
     }
   };
+
+  const fetchPendingCounts = async () => {
+    try {
+      // Fetch pending courses count
+      const coursesResponse = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/stats/`);
+      let coursesCount = 0;
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json();
+        // Handle both possible response structures
+        coursesCount = coursesData.stats?.total_pending || coursesData.total_pending || 0;
+        console.log('Course review stats:', coursesData);
+        console.log('Pending courses count:', coursesCount);
+      } else {
+        console.error('Failed to fetch course review stats:', coursesResponse.status, coursesResponse.statusText);
+        const errorText = await coursesResponse.text();
+        console.error('Error response:', errorText);
+      }
+
+      // Fetch pending live sessions count
+      const sessionsResponse = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/live-sessions/training-partner/live-sessions/`);
+      let sessionsCount = 0;
+      if (sessionsResponse.ok) {
+        const sessionsData = await sessionsResponse.json();
+        const sessions = Array.isArray(sessionsData) ? sessionsData : sessionsData.results || [];
+        sessionsCount = sessions.filter((session: { status: string }) => session.status === 'pending_approval').length;
+        console.log('Live sessions data:', sessionsData);
+        console.log('Pending sessions count:', sessionsCount);
+      } else {
+        console.error('Failed to fetch live sessions:', sessionsResponse.status, sessionsResponse.statusText);
+      }
+
+      console.log('Setting pending counts:', { courses: coursesCount, liveSessions: sessionsCount });
+      setPendingCounts({ courses: coursesCount, liveSessions: sessionsCount });
+    } catch (error) {
+      console.error('Failed to fetch pending counts:', error);
+    }
+  };
+
+  // Refresh counts when pathname changes (user navigates)
+  useEffect(() => {
+    if (userRole === 'knowledge_partner' && (pathname.includes('/course-review') || pathname.includes('/live-sessions'))) {
+      // Small delay to allow the page to update first
+      const timer = setTimeout(() => {
+        fetchPendingCounts();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, userRole]);
+
+  // Expose refresh function globally for external calls
+  useEffect(() => {
+    if (userRole === 'knowledge_partner') {
+      (window as any).refreshSidebarCounts = fetchPendingCounts;
+    }
+  }, [userRole]);
 
   const getMenuItems = (): MenuItem[] => {
     const baseItems: MenuItem[] = [
@@ -176,7 +236,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             ),
-            badge: '3',
           },
         ];
 
@@ -271,15 +330,17 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             ),
+            badge: pendingCounts.courses > 0 ? pendingCounts.courses : undefined,
           },
           {
-            label: 'Live Sessions',
+            label: 'Live Sessions Review',
             href: '/dashboard/kp/live-sessions',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             ),
+            badge: pendingCounts.liveSessions > 0 ? pendingCounts.liveSessions : undefined,
           },
           {
             label: 'Payments',
@@ -492,14 +553,19 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white'
               }`}
             >
-              <span className={`${isCollapsed ? 'mx-auto' : 'mr-3'}`}>
+              <span className={`${isCollapsed ? 'mx-auto' : 'mr-3'} relative`}>
                 {item.icon}
+                {isCollapsed && item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold">
+                    {item.badge}
+                  </span>
+                )}
               </span>
               {!isCollapsed && (
                 <>
                   <span className="flex-1 font-medium">{item.label}</span>
-                  {item.badge && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">
+                  {item.badge && item.badge > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2 min-w-[20px] text-center">
                       {item.badge}
                     </span>
                   )}

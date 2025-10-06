@@ -207,6 +207,10 @@ export default function CourseReviewPage() {
       setReviewNotes('');
       fetchCourses();
       fetchStats();
+      // Refresh sidebar counts
+      if ((window as any).refreshSidebarCounts) {
+        (window as any).refreshSidebarCounts();
+      }
     } catch (err) {
       console.error('Error approving course:', err);
       alert(err instanceof Error ? err.message : 'Failed to approve course');
@@ -241,6 +245,10 @@ export default function CourseReviewPage() {
       setReviewNotes('');
       fetchCourses();
       fetchStats();
+      // Refresh sidebar counts
+      if ((window as any).refreshSidebarCounts) {
+        (window as any).refreshSidebarCounts();
+      }
     } catch (err) {
       console.error('Error rejecting course:', err);
       alert(err instanceof Error ? err.message : 'Failed to reject course');
@@ -561,73 +569,127 @@ export default function CourseReviewPage() {
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Course Overview */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Course Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Instructor:</span>
-                      <span className="font-medium">{selectedCourse.tutor?.full_name}</span>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
+                  Course Overview
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Course Title</span>
+                      <span className="text-sm text-gray-900 font-semibold">{selectedCourse.title}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{selectedCourse.duration_weeks} weeks</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Instructor</span>
+                      <span className="text-sm text-gray-900">{selectedCourse.tutor?.full_name}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Price:</span>
-                      <span className="font-medium">₹{selectedCourse.price}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Category</span>
+                      <span className="text-sm text-gray-900 capitalize">{selectedCourse.category.replace('_', ' ')}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Level:</span>
-                      <span className="font-medium capitalize">{selectedCourse.level}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Level</span>
+                      <span className="text-sm text-gray-900 capitalize">{selectedCourse.level}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Category:</span>
-                      <span className="font-medium capitalize">{selectedCourse.category.replace('_', ' ')}</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Price</span>
+                      <span className="text-sm text-gray-900 font-semibold">₹{selectedCourse.price}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Duration</span>
+                      <span className="text-sm text-gray-900">{selectedCourse.duration_weeks} weeks</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Enrollments</span>
+                      <span className="text-sm text-gray-900">{selectedCourse.enrollment_count || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Status</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCourse.approval_status)}`}>
                         {selectedCourse.approval_status.replace('_', ' ').toUpperCase()}
                       </span>
                     </div>
                   </div>
                 </div>
-                
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Description</h4>
-                  <p className="text-sm text-gray-600">{selectedCourse.description}</p>
+              </div>
+
+              {/* Course Description */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Course Description</h4>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedCourse.description}</p>
                 </div>
               </div>
+
+              {/* Course Short Description */}
+              {selectedCourse.short_description && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Course Summary</h4>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">{selectedCourse.short_description}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Course Content */}
               {selectedCourse.modules && selectedCourse.modules.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Course Content</h4>
-                  <div className="space-y-4">
+                  <p className="text-sm text-gray-600 mb-6">
+                    {Math.round(selectedCourse.total_duration_minutes / 60)}h {selectedCourse.total_duration_minutes % 60}m • {selectedCourse.modules.length} Sections • {selectedCourse.lessons_count} Lessons
+                  </p>
+                  
+                  <div className="space-y-1">
                     {selectedCourse.modules.map((module, moduleIndex) => (
-                      <div key={module.id} className="border border-gray-200 rounded-lg p-4">
-                        <h5 className="font-medium text-gray-900 mb-2">
-                          Module {moduleIndex + 1}: {module.title}
-                        </h5>
-                        <p className="text-sm text-gray-600 mb-3">{module.description}</p>
+                      <div key={module.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-8 h-8 bg-gray-300 rounded-lg flex items-center justify-center text-gray-700 font-semibold text-sm">
+                              {moduleIndex + 1}
+                            </div>
+                            <div>
+                              <h5 className="font-semibold text-gray-900 text-base">
+                                {module.title}
+                              </h5>
+                              <p className="text-sm text-gray-600">
+                                {module.lessons?.length || 0} lessons • {module.lessons?.reduce((total, lesson) => total + (lesson.duration_minutes || 0), 0) || 0}m
+                              </p>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {/* Show lessons directly under each module */}
                         {module.lessons && module.lessons.length > 0 && (
-                          <div className="space-y-2">
-                            {module.lessons.map((lesson, lessonIndex) => (
-                              <div key={lesson.id} className="flex items-center space-x-3 bg-gray-50 rounded-lg p-3">
-                                <div className="p-1 bg-blue-100 rounded">
+                          <div className="mt-4 pl-12 space-y-1">
+                            {module.lessons.map((lesson) => (
+                              <div key={lesson.id} className="flex items-center space-x-3 py-2 hover:bg-gray-100 rounded-lg px-2">
+                                <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
                                   {getLessonIcon(lesson.lesson_type)}
                                 </div>
                                 <div className="flex-1">
                                   <p className="text-sm font-medium text-gray-900">
-                                    {lessonIndex + 1}. {lesson.title}
+                                    {lesson.title}
                                   </p>
-                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                    <span>{lesson.lesson_type}</span>
-                                    <span>{lesson.duration_minutes} min</span>
-                                    {lesson.is_preview && <span className="text-blue-600">Preview</span>}
-                                    {lesson.is_mandatory && <span className="text-red-600">Mandatory</span>}
-                                  </div>
+                                  <p className="text-xs text-gray-500 capitalize">
+                                    {lesson.lesson_type}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs text-gray-500">{lesson.duration_minutes}m</span>
+                                  {lesson.is_preview && (
+                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Preview</span>
+                                  )}
+                                  {lesson.is_mandatory && (
+                                    <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Mandatory</span>
+                                  )}
                                 </div>
                               </div>
                             ))}

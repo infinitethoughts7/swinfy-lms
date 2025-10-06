@@ -60,6 +60,11 @@ export default function KnowledgePartnerLiveSessionsPage() {
       
       // Refresh the sessions list to ensure we have the latest data
       await fetchSessions();
+      
+      // Refresh sidebar counts
+      if ((window as any).refreshSidebarCounts) {
+        (window as any).refreshSidebarCounts();
+      }
     } catch (err: unknown) {
       console.error('Error updating session:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update session';
@@ -121,7 +126,7 @@ export default function KnowledgePartnerLiveSessionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Live Session Approvals</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Live Sessions Review</h1>
           <p className="text-gray-600">Review and approve live sessions from instructors</p>
         </div>
         <div className="text-sm text-gray-500">
@@ -205,16 +210,62 @@ export default function KnowledgePartnerLiveSessionsPage() {
                       <p className="text-gray-600 mb-1">
                         <span className="font-medium">Instructor:</span> {session.instructor_name}
                       </p>
-                    </div>
-                    <div>
                       <p className="text-gray-600 mb-1">
                         <span className="font-medium">Platform:</span> {session.meeting_platform_display}
                       </p>
+                    </div>
+                    <div>
                       <p className="text-gray-600 mb-1">
                         <span className="font-medium">Duration:</span> {session.formatted_duration}
                       </p>
+                      <p className="text-gray-600 mb-1">
+                        <span className="font-medium">Max Participants:</span> {session.max_participants ? `${session.max_participants}` : 'Unlimited'}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        <span className="font-medium">Session ID:</span> {session.id.slice(0, 8)}...
+                      </p>
                     </div>
                   </div>
+
+                  {/* Meeting Link - Show prominently for all sessions */}
+                  {session.meeting_link && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-blue-900 mb-1">Meeting Link</h4>
+                          <p className="text-sm text-blue-700 break-all">{session.meeting_link}</p>
+                        </div>
+                        <a
+                          href={session.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium ml-4 flex-shrink-0"
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          Join Meeting
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Meeting Details */}
+                  {session.meeting_id && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Meeting Details</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        {session.meeting_id && (
+                          <p className="text-gray-600">
+                            <span className="font-medium">Meeting ID:</span> {session.meeting_id}
+                          </p>
+                        )}
+                        {session.meeting_password && (
+                          <p className="text-gray-600">
+                            <span className="font-medium">Password:</span> {session.meeting_password}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
                     <span className="flex items-center gap-1">
@@ -243,19 +294,6 @@ export default function KnowledgePartnerLiveSessionsPage() {
                     </div>
                   )}
 
-                  {session.meeting_link && session.is_approved && (
-                    <div className="mt-4">
-                      <a
-                        href={session.meeting_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                      >
-                        <Video className="w-4 h-4 mr-2" />
-                        View Session
-                      </a>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
