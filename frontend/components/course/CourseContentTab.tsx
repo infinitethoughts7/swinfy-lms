@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Play, FileText, Lock, BookOpen, Video, ClipboardList, Download, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface Lesson {
   id: string;
@@ -52,25 +52,22 @@ export default function CourseContentTab({ modules, lessons, isEnrolled }: Cours
   const totalHours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
 
-  const getLessonIcon = (lessonType: string, isPreview: boolean) => {
-    if (isPreview) return Play;
-    if (!isEnrolled) return Lock;
-    
+  const getLessonTypeLabel = (lessonType: string) => {
     switch (lessonType) {
       case 'video':
-        return Video;
+        return 'Video';
       case 'text':
-        return BookOpen;
+        return 'Reading';
       case 'quiz':
-        return ClipboardList;
+        return 'Quiz';
       case 'assignment':
-        return FileText;
+        return 'Assignment';
       case 'live_session':
-        return Users;
+        return 'Live Session';
       case 'download':
-        return Download;
+        return 'Download';
       default:
-        return FileText;
+        return 'Content';
     }
   };
 
@@ -104,7 +101,7 @@ export default function CourseContentTab({ modules, lessons, isEnrolled }: Cours
         {modules.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
             <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FileText className="w-5 h-5 text-gray-500" />
+              <div className="w-5 h-5 bg-gray-400 rounded"></div>
             </div>
             <h3 className="text-sm font-medium text-gray-700 mb-1">No Course Content Yet</h3>
             <p className="text-xs text-gray-500">The instructor is preparing the materials.</p>
@@ -150,57 +147,54 @@ export default function CourseContentTab({ modules, lessons, isEnrolled }: Cours
                     ) : (
                       <div className="divide-y divide-gray-200">
                         {moduleLessons.map((lesson) => {
-                          const LessonIcon = getLessonIcon(lesson.lesson_type, lesson.is_preview);
                           const isLocked = !isEnrolled && !lesson.is_preview;
 
                           return (
                             <div
                               key={lesson.id}
-                              className={`flex items-center justify-between px-4 py-2.5 ${
+                              className={`px-4 py-3 ${
                                 isLocked ? 'opacity-50' : 'hover:bg-white cursor-pointer'
                               } transition-colors`}
                             >
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${
-                                  lesson.is_completed 
-                                    ? 'bg-green-100 text-green-600' 
-                                    : lesson.is_preview 
-                                    ? 'bg-blue-100 text-blue-600' 
-                                    : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {lesson.is_completed ? (
-                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <LessonIcon className={`w-3.5 h-3.5 ${
-                                      lesson.is_preview ? 'text-blue-600' : 'text-gray-600'
-                                    }`} />
-                                  )}
+                              <div className="flex items-start gap-3">
+                                {/* Simple bullet point */}
+                                <div className="flex-shrink-0 mt-1.5">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    lesson.is_completed 
+                                      ? 'bg-green-500' 
+                                      : lesson.is_preview 
+                                      ? 'bg-blue-500' 
+                                      : 'bg-gray-400'
+                                  }`}></div>
                                 </div>
+                                
+                                {/* Lesson content */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-sm font-medium text-gray-900 truncate">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-sm font-medium text-gray-900">
                                       {lesson.title}
                                     </h4>
                                     {lesson.is_preview && (
-                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded flex-shrink-0">
+                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
                                         Preview
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-0.5">
-                                    {lesson.lesson_type_display}
-                                  </p>
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <span>{getLessonTypeLabel(lesson.lesson_type)}</span>
+                                    <span>•</span>
+                                    <span>{formatDuration(lesson.duration_minutes)}</span>
+                                    {isLocked && (
+                                      <>
+                                        <span>•</span>
+                                        <div className="flex items-center gap-1">
+                                          <Lock className="w-3 h-3" />
+                                          <span>Locked</span>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-xs text-gray-500">
-                                  {formatDuration(lesson.duration_minutes)}
-                                </span>
-                                {isLocked && (
-                                  <Lock className="w-3.5 h-3.5 text-gray-400" />
-                                )}
                               </div>
                             </div>
                           );
@@ -217,12 +211,22 @@ export default function CourseContentTab({ modules, lessons, isEnrolled }: Cours
 
       {/* Enrollment CTA - White Theme */}
       {!isEnrolled && modules.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Ready to start learning?</h3>
-          <p className="text-sm text-gray-600 mb-3">Enroll now to access all {totalLessons} lessons</p>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition-colors text-sm">
-            Enroll Now
-          </button>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to start learning?</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Click the <span className="font-semibold text-gray-900">&quot;Start learning now&quot;</span> button in the sidebar to enroll and access all {totalLessons} lessons
+          </p>
+          <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <span>Look for the button on the right</span>
+          </div>
         </div>
       )}
     </div>
