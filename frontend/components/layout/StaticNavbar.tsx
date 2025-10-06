@@ -66,13 +66,16 @@ const StaticNavbar = () => {
         'learner': 'learner',
         'knowledge_partner_instructor': 'instructor',
         'knowledge_partner': 'kp',
-        'learner': 'learner',
         'tutor': 'tutor',
         'admin': 'admin'
       };
       const dashboardPath = roleToDashboard[user.role] || user.role;
       router.push(`/dashboard/${dashboardPath}`);
     }
+  };
+
+  const handleMyPurchaseClick = () => {
+    router.push('/dashboard/learner/courses');
   };
   
   return (
@@ -159,6 +162,14 @@ const StaticNavbar = () => {
                   >
                     Dashboard
                   </button>
+                  {user?.role === 'learner' && (
+                    <button
+                      onClick={handleMyPurchaseClick}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      My Purchase
+                    </button>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

@@ -284,10 +284,10 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
                       {isSigningOut ? (
                         <>
                           <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600 mr-2"></div>
-                          Signing out...
+                          Logging out...
                         </>
                       ) : (
-                        'Sign Out'
+                        'Log out'
                       )}
                     </button>
                   </div>
