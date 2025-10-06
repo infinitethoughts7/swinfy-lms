@@ -39,12 +39,18 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     courses: number;
     liveSessions: number;
   }>({ courses: 0, liveSessions: 0 });
+  const [hasLiveSessionNow, setHasLiveSessionNow] = useState(false);
 
   // Fetch KP profile data and pending counts if user is a knowledge partner
   useEffect(() => {
     if (userRole === 'knowledge_partner') {
       fetchKPProfile();
       fetchPendingCounts();
+    }
+    if (userRole === 'learner') {
+      fetchLearnerLiveNow();
+      const interval = setInterval(fetchLearnerLiveNow, 30000); // refresh every 30s
+      return () => clearInterval(interval);
     }
   }, [userRole]);
 
@@ -97,6 +103,20 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     }
   };
 
+  // Check if there is at least one live session for learners
+  const fetchLearnerLiveNow = async () => {
+    try {
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/live-sessions/learner/live-sessions/`);
+      if (!response.ok) return;
+      const data = await response.json();
+      const sessions = Array.isArray(data) ? data : (data.results || []);
+      const liveNow = sessions.some((s: { is_live_now?: boolean; status?: string }) => s?.is_live_now === true || s?.status === 'live');
+      setHasLiveSessionNow(liveNow);
+    } catch (error) {
+      console.error('Failed to check live sessions for learner:', error);
+    }
+  };
+
   // Refresh counts when pathname changes (user navigates)
   useEffect(() => {
     if (userRole === 'knowledge_partner' && (pathname.includes('/course-review') || pathname.includes('/live-sessions'))) {
@@ -106,12 +126,19 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
       }, 1000);
       return () => clearTimeout(timer);
     }
+    if (userRole === 'learner') {
+      // refresh live-now indicator on navigation
+      const timer = setTimeout(() => {
+        fetchLearnerLiveNow();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, [pathname, userRole]);
 
   // Expose refresh function globally for external calls
   useEffect(() => {
     if (userRole === 'knowledge_partner') {
-      (window as any).refreshSidebarCounts = fetchPendingCounts;
+      (window as unknown as { refreshSidebarCounts?: () => void }).refreshSidebarCounts = fetchPendingCounts;
     }
   }, [userRole]);
 
@@ -555,6 +582,15 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             >
               <span className={`${isCollapsed ? 'mx-auto' : 'mr-3'} relative`}>
                 {item.icon}
+                {userRole === 'learner' && item.href === '/dashboard/learner/live-sessions' && hasLiveSessionNow && (
+                  <>
+                    {/* pulsing red dot */}
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                    </span>
+                  </>
+                )}
                 {isCollapsed && item.badge && item.badge > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold">
                     {item.badge}
@@ -564,6 +600,14 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               {!isCollapsed && (
                 <>
                   <span className="flex-1 font-medium">{item.label}</span>
+                  {userRole === 'learner' && item.href === '/dashboard/learner/live-sessions' && hasLiveSessionNow && (
+                    <span className="ml-2 flex items-center">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                      </span>
+                    </span>
+                  )}
                   {item.badge && item.badge > 0 && (
                     <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2 min-w-[20px] text-center">
                       {item.badge}
