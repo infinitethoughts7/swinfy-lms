@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { instructorApi, type LiveSession, type Course } from '@/lib/api';
+import { instructorApi, type LiveSession } from '@/lib/api';
 import CreateLiveSessionModal from '@/components/live-session/CreateLiveSessionModal';
 import { 
   Plus, 
@@ -12,18 +12,15 @@ import {
   Users, 
   Edit, 
   Trash2, 
-  Eye, 
   CheckCircle, 
   XCircle, 
   AlertCircle,
   Play,
-  Pause,
   Square
 } from 'lucide-react';
 
 export default function InstructorLiveSessionsPage() {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'draft' | 'pending_approval' | 'approved' | 'live' | 'completed' | 'cancelled'>('all');
@@ -38,13 +35,9 @@ export default function InstructorLiveSessionsPage() {
       setLoading(true);
       setError(null);
       
-      const [sessionsData, coursesData] = await Promise.all([
-        instructorApi.liveSessions.list(),
-        instructorApi.courses.list()
-      ]);
+      const sessionsData = await instructorApi.liveSessions.list();
       
       setSessions(sessionsData);
-      setCourses(coursesData);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load live sessions');
@@ -167,7 +160,7 @@ export default function InstructorLiveSessionsPage() {
           ].map((filterOption) => (
             <button
               key={filterOption.key}
-              onClick={() => setFilter(filterOption.key as any)}
+              onClick={() => setFilter(filterOption.key as typeof filter)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                 filter === filterOption.key
                   ? 'bg-blue-100 text-blue-800'
@@ -347,14 +340,6 @@ export default function InstructorLiveSessionsPage() {
                     title="Edit Session"
                   >
                     <Edit className="w-4 h-4" />
-                  </Link>
-
-                  <Link
-                    href={`/dashboard/instructor/sessions/${session.id}`}
-                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4" />
                   </Link>
 
                   {session.status === 'draft' && (
