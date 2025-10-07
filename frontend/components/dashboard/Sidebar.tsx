@@ -495,7 +495,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   const KPLogo = () => {
     if (!kpProfile) {
       return (
-        <Link href="/" className="flex items-center">
+        <Link href="/dashboard/kp" className="flex items-center">
           <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
         </Link>
       );
@@ -504,7 +504,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     if (kpProfile.logo) {
       // Show only custom logo if uploaded
       return (
-        <Link href="/dashboard/kp" className="flex items-center hover:opacity-80 transition-opacity">
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
           <div className={`relative ${isCollapsed ? 'w-8 h-8' : 'w-8 h-8 mr-3'}`}>
             <Image
               src={kpProfile.logo}
