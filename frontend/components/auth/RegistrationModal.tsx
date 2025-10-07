@@ -49,6 +49,54 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     }
   };
 
+  // OTP API methods for registration
+  const sendOTPForRegistration = async (email: string): Promise<void> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: email,
+        purpose: 'email_verification'
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || '');
+    }
+  };
+
+  const verifyOTPForRegistration = async (email: string, otpCode: string): Promise<void> => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        email: email,
+        otp_code: otpCode,
+        purpose: 'email_verification'
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'OTP verification failed');
+    }
+    
+    // Call the success handler with user data
+    handleOTPVerificationSuccess(data.user, data.tokens);
+  };
+
+  const handleEmailVerified = () => {
+    // This will be called by the OTPVerification component
+    // The actual verification logic is in verifyOTPForRegistration
+  };
+
 
   const handleSuccessComplete = () => {
     onOpenChange(false);
@@ -128,8 +176,10 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
                      ) : currentStep === 'otp-verification' ? (
                        <OTPVerification
                          email={registrationEmail}
-                         onVerificationSuccess={handleOTPVerificationSuccess}
-                         onBack={handleBackToRegistration}
+                         onVerified={handleEmailVerified}
+                         onSendOTP={sendOTPForRegistration}
+                         onVerifyOTP={verifyOTPForRegistration}
+                         isVerified={false}
                        />
                      ) : currentStep === 'pending-approval' ? (
                        <PendingApprovalScreen
