@@ -494,13 +494,17 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   // Component for rendering Knowledge Partner logo and name
   const KPLogo = () => {
     if (!kpProfile) {
-      return <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />;
+      return (
+        <Link href="/" className="flex items-center">
+          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
+        </Link>
+      );
     }
 
     if (kpProfile.logo) {
       // Show only custom logo if uploaded
       return (
-        <div className="flex items-center">
+        <Link href="/dashboard/kp" className="flex items-center hover:opacity-80 transition-opacity">
           <div className={`relative ${isCollapsed ? 'w-8 h-8' : 'w-8 h-8 mr-3'}`}>
             <Image
               src={kpProfile.logo}
@@ -515,11 +519,15 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               {kpProfile.name}
             </span>
           )}
-        </div>
+        </Link>
       );
     } else {
       // Show OLLA logo with 4 dots if no custom logo
-      return <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />;
+      return (
+        <Link href="/dashboard/kp" className="flex items-center">
+          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
+        </Link>
+      );
     }
   };
 
