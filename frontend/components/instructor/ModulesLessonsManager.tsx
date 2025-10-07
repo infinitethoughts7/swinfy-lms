@@ -685,26 +685,6 @@ const AddLessonModal = ({ courseSlug, moduleId, onClose, onSuccess }: {
             </div>
           )}
 
-          <div className="flex items-center justify-center space-x-8 bg-gray-50 rounded-xl p-4">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_preview}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_preview: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-5 h-5"
-              />
-              <span className="ml-3 text-sm font-semibold text-gray-700">🆓 Free Preview</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_mandatory}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_mandatory: e.target.checked }))}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-5 h-5"
-              />
-              <span className="ml-3 text-sm font-semibold text-gray-700">⭐ Mandatory</span>
-            </label>
-          </div>
 
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
