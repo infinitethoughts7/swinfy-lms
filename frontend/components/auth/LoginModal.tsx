@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -35,6 +35,28 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+
+  // Reset function to clear all form data and return to initial state
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setIsLoading(false);
+    setError('');
+    setShowPassword(false);
+    setForgotPasswordStep(null); // This ensures we start from the login form, not forgot password
+    setOtpCode(['', '', '', '', '', '']);
+    setNewPassword('');
+    setConfirmPassword('');
+    setOtpSent(false);
+    setTimeLeft(0);
+  };
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

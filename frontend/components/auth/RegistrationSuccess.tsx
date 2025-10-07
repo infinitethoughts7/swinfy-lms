@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/shared/Logo';
 import ProfileCompletionScreen from './ProfileCompletionScreen';
+import LearnerSuccessScreen from './LearnerSuccessScreen';
 
 interface RegistrationSuccessProps {
   userRole: 'learner' | 'knowledge_partner_instructor' | 'knowledge_partner';
@@ -14,7 +15,7 @@ interface RegistrationSuccessProps {
 export default function RegistrationSuccess({ userRole, userEmail, onComplete }: RegistrationSuccessProps) {
   const [showCheckmark, setShowCheckmark] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'success' | 'profile-completion'>('success');
+  const [currentStep, setCurrentStep] = useState<'success' | 'profile-completion' | 'learner-success'>('success');
 
   useEffect(() => {
     // Trigger checkmark animation
@@ -39,8 +40,18 @@ export default function RegistrationSuccess({ userRole, userEmail, onComplete }:
       <ProfileCompletionScreen
         userRole={userRole}
         userEmail={userEmail}
+        onComplete={() => setCurrentStep('learner-success')}
+        onSkip={() => setCurrentStep('learner-success')}
+      />
+    );
+  }
+
+  // Render learner success screen after profile completion
+  if (currentStep === 'learner-success') {
+    return (
+      <LearnerSuccessScreen
+        userEmail={userEmail}
         onComplete={onComplete}
-        onSkip={onComplete}
       />
     );
   }

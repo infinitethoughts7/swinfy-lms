@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import RegistrationForm from './RegistrationForm';
 import OTPVerification from './OTPVerification';
 import RegistrationSuccess from './RegistrationSuccess';
 import PendingApprovalScreen from './PendingApprovalScreen';
+import LearnerSuccessScreen from './LearnerSuccessScreen';
 import Logo from '@/components/shared/Logo';
 
 interface RegistrationModalProps {
@@ -29,6 +30,21 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
   const [hasOrganization, setHasOrganization] = useState(false);
   const [organizationName, setOrganizationName] = useState<string | undefined>();
 
+  // Reset function to clear all modal data and return to initial step
+  const resetModal = () => {
+    setCurrentStep('registration'); // This ensures we start from the registration form, not OTP or success steps
+    setRegistrationEmail('');
+    setHasOrganization(false);
+    setOrganizationName(undefined);
+  };
+
+  // Reset modal when it closes
+  useEffect(() => {
+    if (!open) {
+      resetModal();
+    }
+  }, [open]);
+
   const handleRegistrationSuccess = (email: string, hasOrg: boolean, orgName?: string) => {
     setRegistrationEmail(email);
     setHasOrganization(hasOrg);
@@ -41,7 +57,7 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     console.log('OTP verification successful:', { user, tokens });
     
     // If user selected an organization, show pending approval screen
-    // Otherwise show regular success screen
+    // Otherwise show regular success screen (which will lead to profile completion and then learner success)
     if (hasOrganization) {
       setCurrentStep('pending-approval');
     } else {
@@ -52,44 +68,69 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
   // OTP API methods for registration
   const sendOTPForRegistration = async (email: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const response = await fetch(`${API_BASE_URL}/api/auth/send-otp/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        email: email,
-        purpose: 'email_verification'
-      }),
-    });
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-otp/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: email,
+          purpose: 'email_verification'
+        }),
+      });
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || '');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || data.detail || '');
+      }
+      
+      // Success - OTP sent
+      console.log('OTP sent successfully to:', email);
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Failed to send OTP. Please try again.');
+      }
     }
   };
 
   const verifyOTPForRegistration = async (email: string, otpCode: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        email: email,
-        otp_code: otpCode,
-        purpose: 'email_verification'
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'OTP verification failed');
-    }
     
-    // Call the success handler with user data
-    handleOTPVerificationSuccess(data.user, data.tokens);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: email,
+          otp_code: otpCode,
+          purpose: 'email_verification'
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || data.detail || 'OTP verification failed');
+      }
+      
+      // Call the success handler with user data
+      handleOTPVerificationSuccess(data.user, data.tokens);
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('OTP verification failed. Please try again.');
+      }
+    }
   };
 
   const handleEmailVerified = () => {
@@ -102,10 +143,7 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     onOpenChange(false);
     // Reset state when modal closes
     setTimeout(() => {
-      setCurrentStep('registration');
-      setRegistrationEmail('');
-      setHasOrganization(false);
-      setOrganizationName(undefined);
+      resetModal();
     }, 300);
   };
 

@@ -55,13 +55,18 @@ const OTPVerification = ({
   };
 
   const handleSendOTP = async () => {
-    if (!email || disabled) return;
+    if (!email || disabled) {
+      console.log('Cannot send OTP:', { email, disabled });
+      return;
+    }
     
+    console.log('Sending OTP to:', email);
     setIsSending(true);
     setError('');
     
     try {
       await onSendOTP(email);
+      console.log('OTP sent successfully to:', email);
       setResendCooldown(120); // 2 minutes cooldown
       const interval = setInterval(() => {
         setResendCooldown(prev => {
@@ -73,6 +78,7 @@ const OTPVerification = ({
         });
       }, 1000);
     } catch (error: unknown) {
+      console.error('Error sending OTP:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
       setError(errorMessage);
     } finally {
@@ -106,9 +112,17 @@ const OTPVerification = ({
   };
 
   const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
+    if (resendCooldown > 0 || isSending) return;
+    
     setOtpCode(['', '', '', '', '', '']); // Clear OTP fields
-    await handleSendOTP();
+    setError(''); // Clear any previous errors
+    
+    try {
+      await handleSendOTP();
+    } catch (error) {
+      console.error('Error resending OTP:', error);
+      // Error will be handled by handleSendOTP
+    }
   };
 
   if (isVerified) {
