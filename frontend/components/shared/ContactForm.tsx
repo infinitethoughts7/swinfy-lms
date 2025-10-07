@@ -1,6 +1,7 @@
 // File: components/shared/ContactForm.tsx (Client Component)
 "use client";
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Send, Building2, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import OTPVerification from './OTPVerification';
 
@@ -23,6 +24,7 @@ interface ApiError {
 type FormStep = 'filling' | 'verifying_email' | 'submitting';
 
 const ContactForm = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     knowledge_partner_name: '',
     knowledge_partner_type: '',
@@ -46,30 +48,17 @@ const ContactForm = () => {
   const [otpSending, setOtpSending] = useState(false);
 
 
-  // Auto-close success message after 5 seconds
+  // Auto-close success message and navigate to home after 5 seconds
   useEffect(() => {
     if (submitSuccess) {
       const timer = setTimeout(() => {
-        setSubmitSuccess(false);
-        setCurrentStep('filling');
-        setIsEmailVerified(false);
-        // Reset form data
-        setFormData({
-          knowledge_partner_name: '',
-          knowledge_partner_type: '',
-          knowledge_partner_email: '',
-          contact_number: '',
-          website_url: '',
-          courses_interested_in: '',
-          experience_years: '',
-          expected_tutors: '',
-          partner_message: ''
-        });
+        // Navigate to home page
+        router.push('/');
       }, 5000);
       
       return () => clearTimeout(timer);
     }
-  }, [submitSuccess]);
+  }, [submitSuccess, router]);
 
   const KP_TYPE_CHOICES = [
     { value: 'company', label: 'Company' },
