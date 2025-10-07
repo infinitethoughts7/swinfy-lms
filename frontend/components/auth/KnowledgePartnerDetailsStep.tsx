@@ -110,7 +110,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="name"
                 value={knowledgePartnerDetails.name}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="Enter your knowledge partner name"
@@ -135,7 +135,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="type"
                 value={knowledgePartnerDetails.type}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.type ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
               >
@@ -166,7 +166,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="location"
                 value={knowledgePartnerDetails.location}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.location ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="City, State, Country"
@@ -192,7 +192,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="website"
                 value={knowledgePartnerDetails.website || ''}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.website ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="https://example.com"
@@ -219,7 +219,7 @@ export default function KnowledgePartnerDetailsStep({
               value={knowledgePartnerDetails.description}
               onChange={handleInputChange}
               rows={4}
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                 errors?.description ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
               }`}
               placeholder="Describe your knowledge partner organization, its mission, and what makes it unique..."
@@ -254,7 +254,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="address"
                 value={knowledgePartnerDetails.address || ''}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
                 placeholder="Street address, city, state, zip code"
               />
             </div>
@@ -270,7 +270,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="contact_email"
                 value={knowledgePartnerDetails.contact_email || ''}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.contact_email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="contact@organization.com"
@@ -296,7 +296,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="contact_phone"
                 value={knowledgePartnerDetails.contact_phone || ''}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -312,7 +312,7 @@ export default function KnowledgePartnerDetailsStep({
                 name="linkedin_url"
                 value={knowledgePartnerDetails.linkedin_url || ''}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors?.linkedin_url ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="https://linkedin.com/company/your-organization"

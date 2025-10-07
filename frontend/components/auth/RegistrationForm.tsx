@@ -254,7 +254,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
               name="full_name"
               value={formData.full_name}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                 errors.full_name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
               }`}
               placeholder="Enter your full name"
@@ -280,7 +280,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                 errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
               }`}
               placeholder="Enter your email address"
@@ -305,7 +305,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                 errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
               }`}
               placeholder="Create a strong password"
@@ -335,7 +335,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
                 name="confirm_password"
                 value={formData.confirm_password}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 pr-10 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors.confirm_password
                     ? 'border-red-500 focus:ring-red-500'
                     : formData.confirm_password && formData.password === formData.confirm_password
@@ -415,7 +415,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
                 value={formData.knowledge_partner_id}
                 onChange={handleInputChange}
                 disabled={loadingKPs}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
                   errors.knowledge_partner_id ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
                 }`}
               >

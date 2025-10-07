@@ -164,7 +164,7 @@ const OTPVerification = ({
               value={digit}
               onChange={(e) => handleOtpInputChange(index, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(index, e)}
-              className="w-10 h-10 text-center text-lg font-bold border border-gray-300 rounded focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-10 h-10 text-center text-lg font-bold border border-gray-300 rounded focus:ring-1 focus:outline-none focus:ring-blue-500"
               disabled={disabled || isSending}
             />
           ))}

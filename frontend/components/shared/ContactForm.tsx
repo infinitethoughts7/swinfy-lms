@@ -45,20 +45,6 @@ const ContactForm = () => {
   const [emailVerificationError, setEmailVerificationError] = useState('');
   const [otpSending, setOtpSending] = useState(false);
 
-  // Load previously saved details for auto-fill (dev UX)
-  useEffect(() => {
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('kpApplicationForm') : null;
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          setFormData((prev) => ({ ...prev, ...parsed }));
-        }
-      }
-    } catch {
-      // ignore storage errors
-    }
-  }, []);
 
   // Auto-close success message after 5 seconds
   useEffect(() => {
@@ -79,10 +65,6 @@ const ContactForm = () => {
           expected_tutors: '',
           partner_message: ''
         });
-        // Clear localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('kpApplicationForm');
-        }
       }, 5000);
       
       return () => clearTimeout(timer);
@@ -161,14 +143,6 @@ const ContactForm = () => {
       setEmailVerificationError('');
     }
     
-    // Persist as-you-type
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('kpApplicationForm', JSON.stringify(next));
-      }
-    } catch {
-      // ignore storage errors
-    }
     
     // Clear error for this field
     if (errors[name]) {

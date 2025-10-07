@@ -98,7 +98,7 @@ export default function EmailVerificationForm({
             id="verification-code"
             value={verificationCode}
             onChange={(e) => setVerificationCode(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 text-center text-lg tracking-widest"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 text-center text-lg tracking-widest"
             placeholder="Enter 6-digit code"
             maxLength={6}
             autoComplete="one-time-code"

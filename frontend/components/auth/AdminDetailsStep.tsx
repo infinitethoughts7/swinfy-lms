@@ -83,7 +83,7 @@ export default function AdminDetailsStep({
             name="job_title"
             value={adminDetails.job_title}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
               errors?.job_title ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 hover:border-gray-400'
             }`}
             placeholder="e.g., CEO, Director, Manager"
@@ -109,7 +109,7 @@ export default function AdminDetailsStep({
             value={adminDetails.bio}
             onChange={handleInputChange}
             rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
             placeholder="Tell us about yourself and your role in the organization"
           />
         </div>
@@ -125,7 +125,7 @@ export default function AdminDetailsStep({
             name="phone_number"
             value={adminDetails.phone_number}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
             placeholder="+1 (555) 123-4567"
           />
         </div>
@@ -141,7 +141,7 @@ export default function AdminDetailsStep({
             name="office_location"
             value={adminDetails.office_location}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
             placeholder="City, State, Country"
           />
         </div>
@@ -157,7 +157,7 @@ export default function AdminDetailsStep({
             name="professional_email"
             value={adminDetails.professional_email}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400 ${
               errors?.professional_email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'
             }`}
             placeholder="admin@organization.com"
@@ -183,7 +183,7 @@ export default function AdminDetailsStep({
             name="profile_picture"
             onChange={handleFileChange}
             accept="image/*"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
           />
           <p className="mt-1 text-xs text-gray-500">Optional: Upload a profile picture (JPG, PNG, GIF)</p>
         </div>

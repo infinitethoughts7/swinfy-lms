@@ -221,22 +221,7 @@ export default function KPCoursesPage() {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {safeCourses.length > 0 
-                  ? (safeCourses.reduce((total, course) => total + course.rating, 0) / safeCourses.length).toFixed(1)
-                  : '0.0'
-                }
-              </p>
-            </div>
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Star className="h-5 w-5 text-yellow-600" />
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Search and Filters */}
@@ -251,7 +236,7 @@ export default function KPCoursesPage() {
                 placeholder="Search courses, instructors, or descriptions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>

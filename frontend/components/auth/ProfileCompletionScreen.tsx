@@ -206,7 +206,7 @@ export default function ProfileCompletionScreen({
           value={formData.bio || ''}
           onChange={(e) => handleInputChange('bio', e.target.value)}
           placeholder="Share a bit about your background and interests..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
           rows={3}
         />
       </div>
@@ -218,7 +218,7 @@ export default function ProfileCompletionScreen({
         <select
           value={formData.education_level || ''}
           onChange={(e) => handleInputChange('education_level', e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         >
           <option value="">Select your education level</option>
           <option value="high_school">High School</option>
@@ -238,7 +238,7 @@ export default function ProfileCompletionScreen({
           value={formData.field_of_study || ''}
           onChange={(e) => handleInputChange('field_of_study', e.target.value)}
           placeholder="e.g., Computer Science, Business, etc."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         />
       </div>
 
@@ -251,7 +251,7 @@ export default function ProfileCompletionScreen({
           value={formData.current_institution || ''}
           onChange={(e) => handleInputChange('current_institution', e.target.value)}
           placeholder="Name of your school/university"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         />
       </div>
 
@@ -263,7 +263,7 @@ export default function ProfileCompletionScreen({
           value={formData.learning_goals || ''}
           onChange={(e) => handleInputChange('learning_goals', e.target.value)}
           placeholder="What do you hope to achieve through your learning journey?"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
           rows={3}
         />
       </div>
@@ -280,7 +280,7 @@ export default function ProfileCompletionScreen({
           value={formData.bio || ''}
           onChange={(e) => handleInputChange('bio', e.target.value)}
           placeholder="Tell learners about your professional background and teaching approach..."
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.bio ? 'border-red-500' : 'border-gray-300'
           }`}
           rows={4}
@@ -297,7 +297,7 @@ export default function ProfileCompletionScreen({
           value={formData.title || ''}
           onChange={(e) => handleInputChange('title', e.target.value)}
           placeholder="e.g., Senior Software Engineer, Data Scientist"
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.title ? 'border-red-500' : 'border-gray-300'
           }`}
         />
@@ -311,7 +311,7 @@ export default function ProfileCompletionScreen({
         <select
           value={formData.highest_education || ''}
           onChange={(e) => handleInputChange('highest_education', e.target.value)}
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.highest_education ? 'border-red-500' : 'border-gray-300'
           }`}
         >
@@ -334,7 +334,7 @@ export default function ProfileCompletionScreen({
           value={formData.specializations || ''}
           onChange={(e) => handleInputChange('specializations', e.target.value)}
           placeholder="e.g., Web Development, Machine Learning, Data Science"
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.specializations ? 'border-red-500' : 'border-gray-300'
           }`}
         />
@@ -350,7 +350,7 @@ export default function ProfileCompletionScreen({
           value={formData.technologies || ''}
           onChange={(e) => handleInputChange('technologies', e.target.value)}
           placeholder="e.g., React, Python, Django, PostgreSQL"
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.technologies ? 'border-red-500' : 'border-gray-300'
           }`}
         />
@@ -367,7 +367,7 @@ export default function ProfileCompletionScreen({
           onChange={(e) => handleInputChange('years_of_experience', parseInt(e.target.value) || 0)}
           placeholder="Number of years"
           min="0"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         />
       </div>
 
@@ -381,7 +381,7 @@ export default function ProfileCompletionScreen({
           onChange={(e) => handleInputChange('hourly_rate', parseInt(e.target.value) || 0)}
           placeholder="Your hourly teaching rate"
           min="0"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         />
       </div>
 
@@ -393,7 +393,7 @@ export default function ProfileCompletionScreen({
           value={formData.certifications || ''}
           onChange={(e) => handleInputChange('certifications', e.target.value)}
           placeholder="List your professional certifications..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
           rows={3}
         />
       </div>
@@ -411,7 +411,7 @@ export default function ProfileCompletionScreen({
           value={formData.job_title || ''}
           onChange={(e) => handleInputChange('job_title', e.target.value)}
           placeholder="e.g., Director of Education, Training Manager"
-          className={`w-full p-3 border rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200 ${
+          className={`w-full p-3 border rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200 ${
             errors.job_title ? 'border-red-500' : 'border-gray-300'
           }`}
         />
@@ -427,7 +427,7 @@ export default function ProfileCompletionScreen({
           value={formData.department || ''}
           onChange={(e) => handleInputChange('department', e.target.value)}
           placeholder="e.g., Human Resources, Learning & Development"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
         />
       </div>
 
@@ -439,7 +439,7 @@ export default function ProfileCompletionScreen({
           value={formData.bio || ''}
           onChange={(e) => handleInputChange('bio', e.target.value)}
           placeholder="Tell us about your role and responsibilities..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
           rows={3}
         />
       </div>
@@ -524,7 +524,7 @@ export default function ProfileCompletionScreen({
             value={formData.phone_number || ''}
             onChange={(e) => handleInputChange('phone_number', e.target.value)}
             placeholder="+91 98765 43210"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 focus:bg-gray-50 transition-all duration-200"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 transition-all duration-200"
           />
         </div>
       </div>
