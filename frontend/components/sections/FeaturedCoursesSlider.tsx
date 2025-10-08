@@ -54,6 +54,7 @@ const FeaturedCoursesSlider = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const coursesPerView = 3;
 
   // Fetch featured courses from API
@@ -83,15 +84,19 @@ const FeaturedCoursesSlider = () => {
     fetchFeaturedCourses();
   }, []);
 
-  const maxIndex = Math.max(0, courses.length - coursesPerView);
+  // Auto-slide functionality
+  useEffect(() => {
+    if (courses.length <= coursesPerView || isHovered) return;
 
-  const prevSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? maxIndex : prevIndex - 1));
-  };
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const maxIndex = Math.ceil(courses.length / coursesPerView) - 1;
+        return prevIndex >= maxIndex ? 0 : prevIndex + 1;
+      });
+    }, 4000); // Auto-slide every 4 seconds
 
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex >= maxIndex ? 0 : prevIndex + 1));
-  };
+    return () => clearInterval(interval);
+  }, [courses.length, coursesPerView, isHovered]);
 
   // Show loading state
   if (loading) {
@@ -155,31 +160,15 @@ const FeaturedCoursesSlider = () => {
           <h2 className="text-3xl font-bold text-gray-900">Featured Courses</h2>
         </div>
         
-        <div className="relative max-w-7xl mx-auto">
-          {/* Slider controls */}
-          {courses.length > coursesPerView && (
-            <>
-              <button 
-                className="absolute top-1/2 -left-4 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 z-10 border border-gray-200"
-                onClick={prevSlide}
-                disabled={currentIndex === 0}
-              >
-                <ChevronLeft className={`w-6 h-6 ${currentIndex === 0 ? 'text-gray-400' : 'text-gray-600'}`} />
-              </button>
-              <button
-                className="absolute top-1/2 -right-4 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 z-10 border border-gray-200"
-                onClick={nextSlide}
-                disabled={currentIndex >= maxIndex}
-              >
-                <ChevronRight className={`w-6 h-6 ${currentIndex >= maxIndex ? 'text-gray-400' : 'text-gray-600'}`} />
-              </button>
-            </>
-          )}
-
+        <div 
+          className="relative max-w-7xl mx-auto"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           {/* Course cards container */}
           <div className="overflow-hidden">
             <div 
-              className="flex transition-transform duration-300 ease-in-out gap-6"
+              className="flex transition-transform duration-700 ease-in-out gap-6"
               style={{ transform: `translateX(-${currentIndex * (100 / coursesPerView)}%)` }}
             >
               {courses.map((course) => (
@@ -295,10 +284,10 @@ const FeaturedCoursesSlider = () => {
           {/* Pagination dots */}
           {courses.length > coursesPerView && (
             <div className="flex justify-center space-x-2 mt-8">
-              {Array.from({ length: maxIndex + 1 }, (_, index) => (
+              {Array.from({ length: Math.ceil(courses.length / coursesPerView) }, (_, index) => (
                 <button
                   key={index}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
+                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                     index === currentIndex 
                       ? 'bg-blue-600 w-8' 
                       : 'bg-gray-300 hover:bg-gray-400'
