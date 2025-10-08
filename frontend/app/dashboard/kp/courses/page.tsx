@@ -371,8 +371,6 @@ export default function KPCoursesPage() {
                       href={`/courses/${course.slug}`}
                       className="px-3 py-1 text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
                     >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
                     </Link>
                   </div>
                 </div>
