@@ -190,17 +190,6 @@ const HeroSection = () => {
                     </div>
                   </div>
                 </div>
-                
-                {/* Bottom-Right Figma Logo */}
-                <div className="absolute -bottom-2 lg:-bottom-4 -right-2 lg:-right-4">
-                  <div className="p-2 sm:p-3 bg-white/90 backdrop-blur-sm shadow-lg rounded-lg">
-                    <img 
-                      src="/assets/images/logos/figma.svg" 
-                      alt="Figma" 
-                      className="w-6 h-6 sm:w-8 sm:h-8" 
-                    />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
