@@ -63,11 +63,9 @@ const FeaturedCoursesSlider = () => {
         setLoading(true);
         setError('');
         
-        // Fetch featured courses (limit to 5-6 courses)
         const data = await coursesApi.getCourses({ featured: true });
         const coursesData = data.results || data;
         
-        // Take only first 5-6 courses for the slider
         const featuredCourses = Array.isArray(coursesData) 
           ? coursesData.slice(0, 6) 
           : [];
@@ -95,16 +93,15 @@ const FeaturedCoursesSlider = () => {
     setCurrentIndex((prevIndex) => (prevIndex >= maxIndex ? 0 : prevIndex + 1));
   };
 
-
   // Show loading state
   if (loading) {
     return (
       <section className="bg-gray-50 py-16">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Featured Courses</h2>
-          <div className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center justify-center py-12 min-h-[300px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Loading featured courses...</span>
+            <span className="mt-3 text-gray-600 text-center">Loading featured courses...</span>
           </div>
         </div>
       </section>
@@ -115,7 +112,7 @@ const FeaturedCoursesSlider = () => {
   if (error) {
     return (
       <section className="bg-gray-50 py-16">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Featured Courses</h2>
           <div className="text-center py-12">
             <p className="text-red-600 mb-4">{error}</p>
@@ -135,7 +132,7 @@ const FeaturedCoursesSlider = () => {
   if (courses.length === 0) {
     return (
       <section className="bg-gray-50 py-16">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Featured Courses</h2>
           <div className="text-center py-12">
             <p className="text-gray-600 mb-4">No featured courses available at the moment.</p>
@@ -153,7 +150,7 @@ const FeaturedCoursesSlider = () => {
 
   return (
     <section className="bg-gray-50 py-16">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Featured Courses</h2>
           <Link 
@@ -197,50 +194,103 @@ const FeaturedCoursesSlider = () => {
                     href={`/courses/course/${course.slug}`}
                     className="block"
                   >
-                    <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border-0 shadow-md cursor-pointer group">
+                    <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border-0 shadow-md cursor-pointer group overflow-hidden">
                       <CardHeader className="p-0">
-                        <div className="relative h-40 overflow-hidden rounded-t-lg">
-                          <img 
-                            src={course.thumbnail_url || course.thumbnail || '/assets/courses/default.svg'}
-                            alt={course.title}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                          <div className="absolute top-3 right-3">
-                            <span className="bg-black/60 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full">
-                              {course.level_display || course.level}
+                        {/* Thumbnail */}
+                        <div className="relative h-40 overflow-hidden bg-gray-100">
+                          {(course.thumbnail_url || course.thumbnail) ? (
+                            <img
+                              src={course.thumbnail_url || course.thumbnail || ''}
+                              alt={course.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback gradient */}
+                          <div 
+                            className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+                            style={{ display: (course.thumbnail_url || course.thumbnail) ? 'none' : 'flex' }}
+                          >
+                            <div className="text-white text-center">
+                              <div className="text-4xl mb-2">📚</div>
+                              <div className="text-sm font-medium">{course.category_display}</div>
+                            </div>
+                          </div>
+                          
+                          {/* Badges */}
+                          <div className="absolute inset-x-0 top-0 p-3 flex items-start justify-between">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
+                              course.level_display === 'Beginner' ? 'bg-green-600 text-white' :
+                              course.level_display === 'Intermediate' ? 'bg-yellow-600 text-white' :
+                              course.level_display === 'Advanced' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                            }`}>{course.level_display || course.level}</span>
+                          </div>
+                          <div className="absolute bottom-3 left-3">
+                            <span className="px-2.5 py-0.5 bg-white/95 text-gray-800 text-[10px] font-medium rounded-full border border-gray-200">
+                              {course.category_display || course.category}
                             </span>
                           </div>
                         </div>
                       </CardHeader>
+                      
                       <CardContent className="p-4">
-                        <CardTitle className="text-base font-bold mb-2 text-gray-900 line-clamp-2 leading-tight">
-                          {course.title}
-                        </CardTitle>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-bold text-blue-600">
+                        {/* Organization name */}
+                        {course.training_partner && (
+                          <div className="mb-1 flex items-center text-sm font-medium text-blue-600">
                             {course.training_partner.name}
-                          </span>
-                          <span className="text-sm text-gray-800 font-medium">
-                            {course.category_display || course.category}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
-                            <div className="flex text-yellow-400">
-                              {[...Array(Math.floor(parseFloat(course.rating) || 0))].map((_, i) => (
-                                <Star key={i} className="w-3 h-3 fill-current" />
-                              ))}
-                              {(parseFloat(course.rating) || 0) % 1 !== 0 && (
-                                <Star className="w-3 h-3 fill-current opacity-50" />
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-600 ml-1">
-                              {course.rating || '0.0'}
+                          </div>
+                        )}
+                        
+                        <h3 className="text-lg font-sora font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                          {course.title}
+                        </h3>
+                        
+                        <p className="text-gray-600 font-inter text-xs mb-3 line-clamp-2">
+                          {course.short_description}
+                        </p>
+                        
+                        {/* Instructor Info */}
+                        {course.tutor && (
+                          <div className="mb-3 text-xs text-gray-600 inline-flex items-center px-2 py-1 bg-gray-50 rounded border border-gray-200">
+                            <svg className="w-3 h-3 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-gray-500 mr-1">Instructor:</span>
+                            {course.tutor.full_name}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between text-xs mb-3">
+                          <div className="flex items-center text-gray-600 gap-4">
+                            <span className="inline-flex items-center">
+                              <svg className="w-4 h-4 mr-1 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              {parseFloat(course.rating || '0').toFixed(1)}
+                            </span>
+                            <span className="inline-flex items-center">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {course.duration_weeks ? `${course.duration_weeks} weeks` : 'TBD'}
+                            </span>
+                            <span className="inline-flex items-center">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+                              </svg>
+                              {(course.enrollment_count || 0).toLocaleString()} students
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">
-                            ({course.total_reviews || 0})
-                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-blue-600 font-medium text-sm group-hover:text-blue-700">View Details →</span>
+                          <span className="text-xs text-gray-500">{course.enrollment_count > 0 ? `${course.enrollment_count} enrolled` : 'New course'}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -256,9 +306,9 @@ const FeaturedCoursesSlider = () => {
               {Array.from({ length: maxIndex + 1 }, (_, index) => (
                 <button
                   key={index}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                  className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
                     index === currentIndex 
-                      ? 'bg-blue-600 scale-110' 
+                      ? 'bg-blue-600 w-8' 
                       : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   onClick={() => setCurrentIndex(index)}
