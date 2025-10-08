@@ -2,8 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronLeft, ChevronRight} from 'lucide-react';
+
 import { coursesApi } from '@/lib/api';
 import Link from 'next/link';
 
@@ -93,10 +93,25 @@ const FeaturedCoursesSlider = () => {
         const maxIndex = Math.ceil(courses.length / coursesPerView) - 1;
         return prevIndex >= maxIndex ? 0 : prevIndex + 1;
       });
-    }, 4000); // Auto-slide every 4 seconds
+    }, 2000); // Auto-slide every 4 seconds
 
     return () => clearInterval(interval);
   }, [courses.length, coursesPerView, isHovered]);
+
+  // Manual navigation functions
+  const prevSlide = () => {
+    setCurrentIndex((prevIndex) => {
+      const maxIndex = Math.ceil(courses.length / coursesPerView) - 1;
+      return prevIndex === 0 ? maxIndex : prevIndex - 1;
+    });
+  };
+
+  const nextSlide = () => {
+    setCurrentIndex((prevIndex) => {
+      const maxIndex = Math.ceil(courses.length / coursesPerView) - 1;
+      return prevIndex >= maxIndex ? 0 : prevIndex + 1;
+    });
+  };
 
   // Show loading state
   if (loading) {
@@ -165,6 +180,24 @@ const FeaturedCoursesSlider = () => {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
+          {/* Slider controls */}
+          {courses.length > coursesPerView && (
+            <>
+              <button 
+                className="absolute top-1/2 -left-12 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 z-10 border border-gray-200 hover:bg-gray-50"
+                onClick={prevSlide}
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-600" />
+              </button>
+              <button
+                className="absolute top-1/2 -right-12 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 z-10 border border-gray-200 hover:bg-gray-50"
+                onClick={nextSlide}
+              >
+                <ChevronRight className="w-6 h-6 text-gray-600" />
+              </button>
+            </>
+          )}
+
           {/* Course cards container */}
           <div className="overflow-hidden">
             <div 
