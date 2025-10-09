@@ -517,7 +517,7 @@ export default function StudentProfilePage() {
             )}
 
             {/* Profile Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-gray-500">Profile Created</p>
                 <p className="text-lg font-semibold text-blue-600">
@@ -536,7 +536,7 @@ export default function StudentProfilePage() {
                   }
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         )}
       </div>
