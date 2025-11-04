@@ -8,11 +8,11 @@ interface LearnerSuccessScreenProps {
 }
 
 const LearnerSuccessScreen = ({ userEmail, onComplete }: LearnerSuccessScreenProps) => {
-  // Auto-close after 3 seconds
+  // Auto-close after 3 seconds and open login modal
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 5000);
+    }, 3000); // Reduced to 3 seconds for faster transition
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -51,8 +51,11 @@ const LearnerSuccessScreen = ({ userEmail, onComplete }: LearnerSuccessScreenPro
           All the best for your learning journey!
         </p>
         <p className="text-sm text-gray-500">
-          Please login to access your dashboard
+          Redirecting you to login...
         </p>
+        <div className="flex justify-center mt-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
       </div>
     </div>
   );

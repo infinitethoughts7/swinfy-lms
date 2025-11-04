@@ -114,11 +114,11 @@ export default function PendingApprovalScreen({
           onClick={onComplete}
           className="w-full py-3 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200 font-medium"
         >
-          Start Learning Now
+          Continue to Login
         </Button>
         
         <p className="text-xs text-gray-500">
-          You can update your profile and preferences after logging in
+          Please login to access your dashboard and start learning
         </p>
       </div>
     </div>

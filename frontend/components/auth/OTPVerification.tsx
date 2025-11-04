@@ -22,16 +22,25 @@ const OTPVerification = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [hasAutoSent, setHasAutoSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(120); // Start with cooldown since OTP is already sent during registration
+  const [hasAutoSent, setHasAutoSent] = useState(true); // Mark as auto-sent since registration sends OTP
 
-  // Auto-send OTP when component mounts
+  // Start countdown timer when component mounts (OTP already sent by registration)
   useEffect(() => {
-    if (email && !isVerified && !hasAutoSent && !disabled) {
-      handleSendOTP();
-      setHasAutoSent(true);
+    if (resendCooldown > 0) {
+      const interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
     }
-  }, [email, isVerified, hasAutoSent, disabled]);
+  }, []);
 
   const handleOtpInputChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -143,26 +152,26 @@ const OTPVerification = ({
           <span>Sending verification code...</span>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
           <p className="text-sm text-gray-600">
             Enter 6-digit code sent to <strong>{email}</strong>
           </p>
           
-          {resendCooldown > 0 ? (
-            <span className="text-xs text-gray-500">
-              Resend in {Math.floor(resendCooldown / 60)}:{(resendCooldown % 60).toString().padStart(2, '0')}
-            </span>
-          ) : (
-            hasAutoSent && (
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                className="text-xs text-blue-600 hover:text-blue-800 underline"
-              >
-                Resend OTP
-              </button>
-            )
-          )}
+          <div className="flex items-center justify-end gap-2">
+            {resendCooldown > 0 && (
+              <span className="text-sm text-gray-600 font-medium">
+                {Math.floor(resendCooldown / 60)}:{(resendCooldown % 60).toString().padStart(2, '0')}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResendOTP}
+              disabled={resendCooldown > 0 || isSending}
+              className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline transition-colors"
+            >
+              Resend OTP
+            </button>
+          </div>
         </div>
       )}
 

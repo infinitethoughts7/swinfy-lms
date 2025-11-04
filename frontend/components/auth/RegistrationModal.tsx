@@ -20,11 +20,12 @@ interface RegistrationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSwitchToLogin?: () => void;
+  onRegistrationComplete?: () => void;
 }
 
 
 
-export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin }: RegistrationModalProps) {
+export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin, onRegistrationComplete }: RegistrationModalProps) {
   const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'success' | 'pending-approval'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
   const [hasOrganization, setHasOrganization] = useState(false);
@@ -69,8 +70,11 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
   const sendOTPForRegistration = async (email: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     
+    console.log('Attempting to resend OTP to:', email);
+    console.log('API URL:', `${API_BASE_URL}/api/auth/resend-otp/`);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-otp/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,16 +85,32 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
         }),
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse JSON response:', jsonError);
+        throw new Error('Server returned invalid response. Please check if backend is running.');
+      }
       
       if (!response.ok) {
-        throw new Error(data.message || data.detail || '');
+        const errorMessage = data.message || data.detail || data.error || 'Failed to send OTP';
+        console.error('Server error:', errorMessage, data);
+        throw new Error(errorMessage);
       }
       
       // Success - OTP sent
-      console.log('OTP sent successfully to:', email);
+      console.log('OTP resent successfully to:', email);
     } catch (error) {
       console.error('Error sending OTP:', error);
+      
+      // Check for network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Cannot connect to server. Please ensure backend is running on ' + API_BASE_URL);
+      }
+      
       if (error instanceof Error) {
         throw error;
       } else {
@@ -144,6 +164,10 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin 
     // Reset state when modal closes
     setTimeout(() => {
       resetModal();
+      // Automatically open login modal after registration is complete
+      if (onRegistrationComplete) {
+        onRegistrationComplete();
+      }
     }, 300);
   };
 
