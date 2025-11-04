@@ -151,10 +151,10 @@ const ContactForm = () => {
   const handleVerifyEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form before sending OTP
+    // Validate form before sending OTP (website_url is now optional)
     if (!formData.knowledge_partner_name || !formData.knowledge_partner_type || 
         !formData.knowledge_partner_email || !formData.contact_number || 
-        !formData.website_url || !formData.courses_interested_in || 
+        !formData.courses_interested_in || 
         !formData.experience_years || !formData.expected_tutors) {
       setEmailVerificationError('Please fill in all required fields before verifying email.');
       return;
@@ -244,7 +244,6 @@ const ContactForm = () => {
                          formData.knowledge_partner_type && 
                          formData.knowledge_partner_email && 
                          formData.contact_number && 
-                         formData.website_url && 
                          formData.courses_interested_in && 
                          formData.experience_years && 
                          formData.expected_tutors;
@@ -328,11 +327,10 @@ const ContactForm = () => {
             <input
               type="url"
               name="website_url"
-              placeholder="Official Website URL *"
+              placeholder="Official Website URL (optional)"
               value={formData.website_url}
               autoComplete="url"
               onChange={handleChange}
-              required
               disabled={currentStep !== 'filling'}
               className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
                 errors.website_url ? 'border-red-500' : 'border-gray-300'
