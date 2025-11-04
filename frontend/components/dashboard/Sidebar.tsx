@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Logo from '@/components/shared/Logo';
 import { authenticatedFetch } from '@/lib/auth';
+import { getThemeForRole, getRoleDisplayName, type UserRole } from '@/lib/theme-config';
 
 interface SidebarProps {
   userRole: 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin';
@@ -41,6 +42,9 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   }>({ courses: 0, liveSessions: 0 });
   const [hasLiveSessionNow, setHasLiveSessionNow] = useState(false);
 
+  // Get theme colors for current role
+  const theme = getThemeForRole(userRole as UserRole);
+
   // Fetch KP profile data and pending counts if user is a knowledge partner
   useEffect(() => {
     if (userRole === 'knowledge_partner') {
@@ -49,7 +53,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     }
     if (userRole === 'learner') {
       fetchLearnerLiveNow();
-      const interval = setInterval(fetchLearnerLiveNow, 30000); // refresh every 30s
+      const interval = setInterval(fetchLearnerLiveNow, 30000);
       return () => clearInterval(interval);
     }
   }, [userRole]);
@@ -68,42 +72,27 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
 
   const fetchPendingCounts = async () => {
     try {
-      // Fetch pending courses count
       const coursesResponse = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/stats/`);
       let coursesCount = 0;
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
-        // Handle both possible response structures
         coursesCount = coursesData.stats?.total_pending || coursesData.total_pending || 0;
-        console.log('Course review stats:', coursesData);
-        console.log('Pending courses count:', coursesCount);
-      } else {
-        console.error('Failed to fetch course review stats:', coursesResponse.status, coursesResponse.statusText);
-        const errorText = await coursesResponse.text();
-        console.error('Error response:', errorText);
       }
 
-      // Fetch pending live sessions count
       const sessionsResponse = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/live-sessions/training-partner/live-sessions/`);
       let sessionsCount = 0;
       if (sessionsResponse.ok) {
         const sessionsData = await sessionsResponse.json();
         const sessions = Array.isArray(sessionsData) ? sessionsData : sessionsData.results || [];
         sessionsCount = sessions.filter((session: { status: string }) => session.status === 'pending_approval').length;
-        console.log('Live sessions data:', sessionsData);
-        console.log('Pending sessions count:', sessionsCount);
-      } else {
-        console.error('Failed to fetch live sessions:', sessionsResponse.status, sessionsResponse.statusText);
       }
 
-      console.log('Setting pending counts:', { courses: coursesCount, liveSessions: sessionsCount });
       setPendingCounts({ courses: coursesCount, liveSessions: sessionsCount });
     } catch (error) {
       console.error('Failed to fetch pending counts:', error);
     }
   };
 
-  // Check if there is at least one live session for learners
   const fetchLearnerLiveNow = async () => {
     try {
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/live-sessions/learner/live-sessions/`);
@@ -117,17 +106,14 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     }
   };
 
-  // Refresh counts when pathname changes (user navigates)
   useEffect(() => {
     if (userRole === 'knowledge_partner' && (pathname.includes('/course-review') || pathname.includes('/live-sessions'))) {
-      // Small delay to allow the page to update first
       const timer = setTimeout(() => {
         fetchPendingCounts();
       }, 1000);
       return () => clearTimeout(timer);
     }
     if (userRole === 'learner') {
-      // refresh live-now indicator on navigation
       const timer = setTimeout(() => {
         fetchLearnerLiveNow();
       }, 500);
@@ -135,7 +121,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     }
   }, [pathname, userRole]);
 
-  // Expose refresh function globally for external calls
   useEffect(() => {
     if (userRole === 'knowledge_partner') {
       (window as unknown as { refreshSidebarCounts?: () => void }).refreshSidebarCounts = fetchPendingCounts;
@@ -204,15 +189,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               </svg>
             ),
           },
-          // {
-          //   label: 'Analytics',
-          //   href: '/dashboard/learner/analytics',
-          //   icon: (
-          //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          //     </svg>
-          //   ),
-          // },
           {
             label: 'Payments',
             href: '/dashboard/learner/payments',
@@ -222,16 +198,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               </svg>
             ),
           },
-
-          // {
-          //   label: 'Notifications',
-          //   href: '/dashboard/learner/notifications',
-          //   icon: (
-          //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          //     </svg>
-          //   ),
-          // },
         ];
 
       case 'tutor':
@@ -348,7 +314,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               </svg>
             ),
           },
-
           {
             label: 'Course Review',
             href: '/dashboard/kp/course-review',
@@ -378,17 +343,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               </svg>
             ),
           },
-
-          // {
-          //   label: 'Analytics',
-          //   href: '/dashboard/kp/analytics',
-          //   icon: (
-          //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          //     </svg>
-          //   ),
-          // },
-
         ];
 
       case 'knowledge_partner_instructor':
@@ -449,7 +403,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               </svg>
             ),
           },
-
         ];
 
       case 'super_admin':
@@ -491,7 +444,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
 
   const menuItems = getMenuItems();
 
-  // Component for rendering Knowledge Partner logo and name
   const KPLogo = () => {
     if (!kpProfile) {
       return (
@@ -502,7 +454,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     }
 
     if (kpProfile.logo) {
-      // Show only custom logo if uploaded
       return (
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
           <div className={`relative ${isCollapsed ? 'w-8 h-8' : 'w-8 h-8 mr-3'}`}>
@@ -522,7 +473,6 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
         </Link>
       );
     } else {
-      // Show OLLA logo with 4 dots if no custom logo
       return (
         <Link href="/dashboard/kp" className="flex items-center">
           <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
@@ -532,11 +482,19 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
   };
 
   return (
-    <div className={`bg-gray-900 text-white h-screen flex flex-col transition-all duration-300 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
+    <div 
+      className={`text-white h-screen flex flex-col transition-all duration-300 ${
+        isCollapsed ? 'w-16' : 'w-64'
+      } relative`}
+      style={{
+        background: 'linear-gradient(180deg, #1a1f35 0%, #0f1419 100%)',
+        boxShadow: '2px 0 12px rgba(0, 0, 0, 0.3)'
+      }}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700/50" style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)'
+      }}>
         <div className="flex items-center justify-between">
           {userRole === 'knowledge_partner' ? (
             <KPLogo />
@@ -567,14 +525,11 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
-          // Precise active state logic - only exact match or sub-pages (but not dashboard root)
           let isActive = false;
           
           if (pathname === item.href) {
-            // Exact match
             isActive = true;
           } else if (item.href !== '/dashboard/kp' && item.href !== '/dashboard/learner' && item.href !== '/dashboard/tutor' && item.href !== '/dashboard/admin' && item.href !== '/dashboard/instructor' && item.href !== '/dashboard/super-admin') {
-            // For non-dashboard root pages, check if current path starts with the item href
             isActive = pathname.startsWith(item.href + '/');
           }
           
@@ -582,17 +537,33 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+              className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
                 isActive 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'text-white' 
+                  : 'text-gray-400 hover:text-white'
               }`}
+              style={{
+                backgroundColor: isActive ? `${theme.primary}20` : 'transparent',
+                borderLeft: isActive ? `3px solid ${theme.primary}` : '3px solid transparent',
+                boxShadow: isActive ? `0 0 20px ${theme.primary}40, inset 0 0 20px ${theme.primary}15` : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = `${theme.primary}10`;
+                  e.currentTarget.style.borderLeft = `3px solid ${theme.primary}40`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderLeft = '3px solid transparent';
+                }
+              }}
             >
               <span className={`${isCollapsed ? 'mx-auto' : 'mr-3'} relative`}>
                 {item.icon}
                 {userRole === 'learner' && item.href === '/dashboard/learner/live-sessions' && hasLiveSessionNow && (
                   <>
-                    {/* pulsing red dot */}
                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
@@ -600,7 +571,10 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
                   </>
                 )}
                 {isCollapsed && item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold">
+                  <span 
+                    className="absolute -top-1 -right-1 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center text-[10px] font-bold"
+                    style={{ backgroundColor: theme.accent }}
+                  >
                     {item.badge}
                   </span>
                 )}
@@ -617,7 +591,10 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
                     </span>
                   )}
                   {item.badge && item.badge > 0 && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2 min-w-[20px] text-center">
+                    <span 
+                      className="text-white text-xs px-2 py-0.5 rounded-full ml-2 min-w-[20px] text-center"
+                      style={{ backgroundColor: theme.accent }}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -629,18 +606,22 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
       </nav>
 
       {/* User Role Badge */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700/50" style={{
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)'
+      }}>
         {!isCollapsed && (
           <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              userRole === 'super_admin' ? 'bg-purple-500' :
-              userRole === 'admin' ? 'bg-red-500' :
-              userRole === 'tutor' ? 'bg-blue-500' : 'bg-green-500'
-            }`}></div>
+            <div 
+              className="w-2 h-2 rounded-full mr-2 animate-pulse"
+              style={{ 
+                backgroundColor: theme.primary,
+                boxShadow: `0 0 8px ${theme.primary}80`
+              }}
+            ></div>
             <span className="text-sm text-gray-400 capitalize">
               {userRole === 'knowledge_partner' && kpProfile 
                 ? `${kpProfile.name} Dashboard` 
-                : `${userRole} Dashboard`}
+                : getRoleDisplayName(userRole as UserRole)}
             </span>
           </div>
         )}
