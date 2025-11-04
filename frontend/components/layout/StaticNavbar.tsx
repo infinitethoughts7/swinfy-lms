@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import MobileMenuToggle from './MobileMenuToggle';
 import { useModal } from '@/components/providers/ModalProvider';
 import Logo from '@/components/shared/Logo';
@@ -17,10 +17,29 @@ interface User {
 const StaticNavbar = () => {
   const { openRegistrationModal, openLoginModal } = useModal();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // Sync search term with URL when on courses page
+  useEffect(() => {
+    if (pathname === '/courses') {
+      const urlSearchTerm = searchParams.get('search') || '';
+      setSearchTerm(urlSearchTerm);
+    }
+  }, [pathname, searchParams]);
+
+  // Auto-navigate to /courses when search is cleared (empty)
+  useEffect(() => {
+    // Only navigate if we're on courses page, search is empty, and there's a search param in URL
+    if (pathname === '/courses' && searchTerm === '' && searchParams.get('search')) {
+      // Navigate to /courses without search param to show all courses
+      router.push('/courses');
+    }
+  }, [searchTerm, pathname, searchParams, router]);
 
   useEffect(() => {
     // Check authentication status on component mount
@@ -90,6 +109,10 @@ const StaticNavbar = () => {
       handleSearch(e);
     }
   };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
   
   return (
     <nav
@@ -144,7 +167,7 @@ const StaticNavbar = () => {
                 {searchTerm && (
                   <button
                     type="button"
-                    onClick={() => setSearchTerm('')}
+                    onClick={handleClearSearch}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                     aria-label="Clear search"
                   >
