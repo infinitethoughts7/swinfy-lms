@@ -539,18 +539,18 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
               href={item.href}
               className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
                 isActive 
-                  ? 'text-white' 
+                  ? 'text-white font-semibold' 
                   : 'text-gray-400 hover:text-white'
               }`}
               style={{
-                backgroundColor: isActive ? `${theme.primary}20` : 'transparent',
+                backgroundColor: isActive ? theme.primary : 'transparent',
                 borderLeft: isActive ? `3px solid ${theme.primary}` : '3px solid transparent',
-                boxShadow: isActive ? `0 0 20px ${theme.primary}40, inset 0 0 20px ${theme.primary}15` : 'none',
+                boxShadow: isActive ? `0 4px 12px ${theme.primary}40` : 'none',
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = `${theme.primary}10`;
-                  e.currentTarget.style.borderLeft = `3px solid ${theme.primary}40`;
+                  e.currentTarget.style.backgroundColor = `${theme.primary}30`;
+                  e.currentTarget.style.borderLeft = `3px solid ${theme.primary}80`;
                 }
               }}
               onMouseLeave={(e) => {
