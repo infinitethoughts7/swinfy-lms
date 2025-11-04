@@ -660,15 +660,20 @@ class LearnerCourseContentView(generics.RetrieveAPIView):
         course = self.get_object()
         
         # Get modules with lessons
-        modules = course.modules.all().prefetch_related('lessons')
+        modules = course.modules.all().prefetch_related('lessons').order_by('order')
         
         # Serialize the data
         from ..serializers.content_serializers import CourseModuleSerializer, LessonSerializer
         
         modules_data = []
         for module in modules:
-            module_data = CourseModuleSerializer(module).data
-            lessons_data = LessonSerializer(module.lessons.all(), many=True).data
+            module_data = CourseModuleSerializer(module, context={'request': request}).data
+            # Pass request context to LessonSerializer so it can check completion status
+            lessons_data = LessonSerializer(
+                module.lessons.all().order_by('order'), 
+                many=True, 
+                context={'request': request}
+            ).data
             module_data['lessons'] = lessons_data
             modules_data.append(module_data)
         

@@ -367,7 +367,15 @@ export default function CourseLearningPage() {
         const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
         setEnrollment(currentEnrollment || null);
         
+        // Refresh course content from backend to ensure we have the latest completion status
+        await fetchCourseContent();
+        
+        // Show success message
         alert('Lesson completed successfully!');
+        
+        // Close the modal after user clicks OK
+        setSelectedLesson(null);
+        setShowVideoPlayer(false);
       } else {
         const errorData = await response.json();
         alert(errorData.detail || 'Failed to complete lesson');
