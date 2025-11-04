@@ -587,8 +587,18 @@ class UserProfileDetailView(APIView):
             if profile_data:
                 try:
                     if user.role == 'learner':
-                        profile, created = user.learner_profile, False
-                        if not hasattr(user, 'learner_profile'):
+                        # Properly check if learner_profile exists
+                        # Use a direct query check which is more reliable than accessing the attribute
+                        try:
+                            profile = LearnerProfile.objects.get(user=user)
+                            created = False
+                        except LearnerProfile.DoesNotExist:
+                            # Profile doesn't exist, create it
+                            profile = None
+                            created = True
+                        except Exception as e:
+                            # Catch any other exceptions and log them
+                            print(f"Error checking learner_profile: {type(e).__name__}: {str(e)}")
                             profile = None
                             created = True
                         
@@ -600,6 +610,7 @@ class UserProfileDetailView(APIView):
                             serializer_data['profile_picture'] = request.FILES['profile_picture']
                         
                         if created:
+                            # Create new profile
                             profile_serializer = LearnerProfileSerializer(
                                 data=serializer_data
                             )
@@ -608,10 +619,11 @@ class UserProfileDetailView(APIView):
                             else:
                                 return Response({
                                     'success': False,
-                                    'error': 'Failed to update profile data',
+                                    'error': 'Failed to create profile data',
                                     'errors': {'profile_data': profile_serializer.errors}
                                 }, status=status.HTTP_400_BAD_REQUEST)
                         else:
+                            # Update existing profile
                             profile_serializer = LearnerProfileSerializer(
                                 profile,
                                 data=serializer_data,
