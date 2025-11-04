@@ -956,7 +956,7 @@ export const userApi = {
       }
     }
     
-    const response = await enhancedFetch('/api/auth/profile/detail/', {
+    const response = await authenticatedFetchWithRefresh('/api/auth/profile/detail/', {
       method: 'PATCH',
       body: formData,
       // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
@@ -965,13 +965,28 @@ export const userApi = {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Profile update error response:', errorText);
+      
+      // Check if response is HTML (Django error page)
+      if (errorText.trim().startsWith('<!DOCTYPE') || errorText.trim().startsWith('<html')) {
+        console.error('Received HTML error page instead of JSON');
+        // Try to extract error message from HTML
+        const match = errorText.match(/<title>([^<]+)<\/title>/i) || errorText.match(/RuntimeError[^<]*/i);
+        const errorMessage = match ? match[1] || match[0] : 'An error occurred on the server';
+        throw new Error(`Server error: ${errorMessage}. Please check the server logs for details.`);
+      }
+      
+      // Try to parse as JSON
       let error;
       try {
         error = JSON.parse(errorText);
       } catch {
-        throw new Error('Failed to update profile: ' + errorText);
+        // If not JSON, return the raw text
+        throw new Error(errorText || 'Failed to update profile');
       }
-      throw new Error(error.error || error.message || JSON.stringify(error) || 'Failed to update profile');
+      
+      // Extract error message from JSON response
+      const errorMessage = error.error || error.message || error.detail || JSON.stringify(error);
+      throw new Error(errorMessage || 'Failed to update profile');
     }
     
     const result = await response.json();

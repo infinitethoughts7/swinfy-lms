@@ -539,129 +539,155 @@ class UserProfileDetailView(APIView):
     
     def patch(self, request):
         """Update user profile data."""
-        user = request.user
-        
-        # Handle both JSON and FormData requests
-        user_data = None
-        profile_data = None
-        
-        if request.content_type == 'application/json':
-            # Handle JSON request
-            if 'user_data' in request.data:
-                user_data = request.data['user_data']
-            if 'profile_data' in request.data:
-                profile_data = request.data['profile_data']
-        else:
-            # Handle FormData request
-            if 'user_data' in request.data:
-                import json
-                user_data = json.loads(request.data['user_data'])
-            if 'profile_data' in request.data:
-                import json
-                profile_data = json.loads(request.data['profile_data'])
-        
-        # Update basic user data if provided
-        if user_data:
-            user_serializer = UserProfileSerializer(
-                user, 
-                data=user_data, 
-                partial=True
-            )
-            if user_serializer.is_valid():
-                user_serializer.save()
-            else:
-                return Response({
-                    'success': False,
-                    'errors': {'user_data': user_serializer.errors}
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Update role-specific profile data if provided
-        if profile_data:
-            try:
-                if user.role == 'learner':
-                    profile, created = user.learner_profile, False
-                    if not hasattr(user, 'learner_profile'):
-                        profile = None
-                        created = True
-                    
-                    # Prepare data for serializer
-                    serializer_data = profile_data.copy()
-                    
-                    # Handle profile picture upload
-                    if 'profile_picture' in request.FILES:
-                        serializer_data['profile_picture'] = request.FILES['profile_picture']
-                    
-                    if created:
-                        profile_serializer = LearnerProfileSerializer(
-                            data=serializer_data
-                        )
-                        if profile_serializer.is_valid():
-                            profile_serializer.save(user=user)
-                        else:
-                            return Response({
-                                'success': False,
-                                'errors': {'profile_data': profile_serializer.errors}
-                            }, status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        profile_serializer = LearnerProfileSerializer(
-                            profile,
-                            data=serializer_data,
-                            partial=True
-                        )
-                        if profile_serializer.is_valid():
-                            profile_serializer.save()
-                        else:
-                            return Response({
-                                'success': False,
-                                'errors': {'profile_data': profile_serializer.errors}
-                            }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Similar logic for instructor and admin...
-                elif user.role == 'knowledge_partner_instructor':
-                    try:
-                        profile = user.instructor_profile
-                        created = False
-                    except:
-                        profile = None
-                        created = True
-                    
-                    if created:
-                        profile_serializer = InstructorProfileSerializer(
-                            data=request.data['profile_data']
-                        )
-                        if profile_serializer.is_valid():
-                            profile_serializer.save(user=user)
-                        else:
-                            return Response({
-                                'success': False,
-                                'errors': {'profile_data': profile_serializer.errors}
-                            }, status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        profile_serializer = InstructorProfileSerializer(
-                            profile,
-                            data=request.data['profile_data'],
-                            partial=True
-                        )
-                        if profile_serializer.is_valid():
-                            profile_serializer.save()
-                        else:
-                            return Response({
-                                'success': False,
-                                'errors': {'profile_data': profile_serializer.errors}
-                            }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Admin profile update removed - KPAProfile model not available
+        try:
+            user = request.user
             
-            except Exception as e:
-                return Response({
-                    'success': False,
-                    'errors': {'profile_data': str(e)}
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response({
-            'success': True,
-            'message': 'Profile updated successfully'
-        })
+            # Handle both JSON and FormData requests
+            user_data = None
+            profile_data = None
+            
+            if request.content_type and 'application/json' in request.content_type:
+                # Handle JSON request
+                if 'user_data' in request.data:
+                    user_data = request.data['user_data']
+                if 'profile_data' in request.data:
+                    profile_data = request.data['profile_data']
+            else:
+                # Handle FormData request
+                if 'user_data' in request.data:
+                    import json
+                    try:
+                        user_data = json.loads(request.data['user_data'])
+                    except (json.JSONDecodeError, TypeError):
+                        user_data = request.data['user_data']
+                if 'profile_data' in request.data:
+                    import json
+                    try:
+                        profile_data = json.loads(request.data['profile_data'])
+                    except (json.JSONDecodeError, TypeError):
+                        profile_data = request.data['profile_data']
+            
+            # Update basic user data if provided
+            if user_data:
+                user_serializer = UserProfileSerializer(
+                    user, 
+                    data=user_data, 
+                    partial=True
+                )
+                if user_serializer.is_valid():
+                    user_serializer.save()
+                else:
+                    return Response({
+                        'success': False,
+                        'error': 'Failed to update user data',
+                        'errors': {'user_data': user_serializer.errors}
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Update role-specific profile data if provided
+            if profile_data:
+                try:
+                    if user.role == 'learner':
+                        profile, created = user.learner_profile, False
+                        if not hasattr(user, 'learner_profile'):
+                            profile = None
+                            created = True
+                        
+                        # Prepare data for serializer
+                        serializer_data = profile_data.copy()
+                        
+                        # Handle profile picture upload
+                        if 'profile_picture' in request.FILES:
+                            serializer_data['profile_picture'] = request.FILES['profile_picture']
+                        
+                        if created:
+                            profile_serializer = LearnerProfileSerializer(
+                                data=serializer_data
+                            )
+                            if profile_serializer.is_valid():
+                                profile_serializer.save(user=user)
+                            else:
+                                return Response({
+                                    'success': False,
+                                    'error': 'Failed to update profile data',
+                                    'errors': {'profile_data': profile_serializer.errors}
+                                }, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            profile_serializer = LearnerProfileSerializer(
+                                profile,
+                                data=serializer_data,
+                                partial=True
+                            )
+                            if profile_serializer.is_valid():
+                                profile_serializer.save()
+                            else:
+                                return Response({
+                                    'success': False,
+                                    'error': 'Failed to update profile data',
+                                    'errors': {'profile_data': profile_serializer.errors}
+                                }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Similar logic for instructor and admin...
+                    elif user.role == 'knowledge_partner_instructor':
+                        try:
+                            profile = user.instructor_profile
+                            created = False
+                        except:
+                            profile = None
+                            created = True
+                        
+                        if created:
+                            profile_serializer = InstructorProfileSerializer(
+                                data=profile_data
+                            )
+                            if profile_serializer.is_valid():
+                                profile_serializer.save(user=user)
+                            else:
+                                return Response({
+                                    'success': False,
+                                    'error': 'Failed to update profile data',
+                                    'errors': {'profile_data': profile_serializer.errors}
+                                }, status=status.HTTP_400_BAD_REQUEST)
+                        else:
+                            profile_serializer = InstructorProfileSerializer(
+                                profile,
+                                data=profile_data,
+                                partial=True
+                            )
+                            if profile_serializer.is_valid():
+                                profile_serializer.save()
+                            else:
+                                return Response({
+                                    'success': False,
+                                    'error': 'Failed to update profile data',
+                                    'errors': {'profile_data': profile_serializer.errors}
+                                }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Admin profile update removed - KPAProfile model not available
+                    
+                except Exception as e:
+                    import traceback
+                    error_trace = traceback.format_exc()
+                    print(f"Error updating profile data: {error_trace}")
+                    return Response({
+                        'success': False,
+                        'error': 'Failed to update profile data',
+                        'message': str(e),
+                        'errors': {'profile_data': str(e)}
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response({
+                'success': True,
+                'message': 'Profile updated successfully'
+            })
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"Error updating profile: {error_trace}")
+            return Response({
+                'success': False,
+                'error': 'An error occurred while updating your profile',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # =========================
