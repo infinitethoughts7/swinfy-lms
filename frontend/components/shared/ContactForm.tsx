@@ -89,6 +89,8 @@ const ContactForm = () => {
   // OTP API methods for contact form
   const sendOTPForEmail = async (email: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    console.log('Sending OTP to:', email);
+    
     const response = await fetch(`${API_BASE_URL}/api/auth/send-contact-form-otp/`, {
       method: 'POST',
       headers: {
@@ -101,6 +103,8 @@ const ContactForm = () => {
     });
 
     const data = await response.json();
+    console.log('Send OTP response:', data);
+    
     if (!response.ok) {
       throw new Error(data.message || 'Failed to send OTP');
     }
@@ -108,6 +112,8 @@ const ContactForm = () => {
 
   const verifyOTPForEmail = async (email: string, otpCode: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    console.log('Verifying OTP:', { email, otpCode, purpose: 'email_verification' });
+    
     const response = await fetch(`${API_BASE_URL}/api/auth/verify-contact-form-otp/`, {
       method: 'POST',
       headers: {
@@ -121,6 +127,8 @@ const ContactForm = () => {
     });
 
     const data = await response.json();
+    console.log('OTP verification response:', data);
+    
     if (!response.ok) {
       throw new Error(data.message || 'OTP verification failed');
     }
@@ -223,6 +231,8 @@ const ContactForm = () => {
         courses_interested_in: formData.areas_of_focus.join(', ')
       };
       
+      console.log('Submitting KP application:', submissionData);
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/knowledge-partner/apply/`, {
         method: 'POST',
         headers: {
@@ -232,6 +242,7 @@ const ContactForm = () => {
       });
       
       const data = await response.json();
+      console.log('KP application response:', data);
       
       if (response.ok && data.success) {
         setSubmitSuccess(true);
@@ -246,16 +257,28 @@ const ContactForm = () => {
             if (errorMsg.includes('already exists') || errorMsg.includes('already pending')) {
               setDuplicateMessage(errorMsg);
               setShowDuplicateWarning(true);
+              // Reset to filling step so user can edit
+              setCurrentStep('filling');
+              setIsEmailVerified(false);
             }
           }
           setErrors(data.errors || data);
+          // Reset to filling step for any other errors too
+          setCurrentStep('filling');
+          setIsEmailVerified(false);
         } else {
           alert('Error: ' + (data.message || 'Something went wrong'));
+          // Reset to filling step on general errors
+          setCurrentStep('filling');
+          setIsEmailVerified(false);
         }
       }
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('There was an error submitting your application. Please check your connection and try again.');
+      // Reset to filling step on network errors
+      setCurrentStep('filling');
+      setIsEmailVerified(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -412,9 +435,6 @@ const ContactForm = () => {
                 errors.website_url ? 'border-red-500' : 'border-gray-300'
               } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
-            {errors.website_url && (
-              <p className="mt-1 text-xs text-red-500">{errors.website_url[0]}</p>
-            )}
           </div>
         </div>
 

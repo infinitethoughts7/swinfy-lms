@@ -31,7 +31,9 @@ class KnowledgePartnerApplication(models.Model):
         ('cybersecurity', 'Cybersecurity'),
         ('cloud_computing', 'Cloud Computing'),
         ('digital_marketing', 'Digital Marketing'),
-        ('soft_skills', 'Soft Skills'),
+        ('soft_skills', 'Soft Skills & Professional Development'),
+        ('business', 'Business & Management'),
+        ('design', 'Design & Creative'),
         ('other', 'Other'),
     ]
     
@@ -65,12 +67,12 @@ class KnowledgePartnerApplication(models.Model):
             ('other', 'Other'),
         ]
     )
-    website_url = models.URLField()
+    website_url = models.URLField(blank=True, default='')
     knowledge_partner_email = models.EmailField()
     contact_number = models.CharField(max_length=20)
     
     # Quick Questions
-    courses_interested_in = models.CharField(max_length=50, choices=COURSE_CATEGORIES)
+    courses_interested_in = models.TextField(blank=True, null=True, help_text="Comma-separated list of areas of focus")
     experience_years = models.CharField(max_length=10, choices=EXPERIENCE_CHOICES)
     expected_tutors = models.CharField(max_length=10, choices=TUTOR_COUNT_CHOICES)
     partner_message = models.TextField(blank=True, null=True)
@@ -138,12 +140,13 @@ class KnowledgePartnerApplication(models.Model):
         from django.utils import timezone
         
         # Create Knowledge Partner
+        areas = self.courses_interested_in or 'Various areas'
         knowledge_partner = KPProfile.objects.create(
             name=self.knowledge_partner_name,
             type=self.knowledge_partner_type,
-            description=f"Knowledge Partner specializing in {self.get_courses_interested_in_display()}.",
+            description=f"Knowledge Partner specializing in {areas}.",
             location="To be updated",
-            website=self.website_url,
+            website=self.website_url or '',
             email=self.knowledge_partner_email,
             phone=self.contact_number,
             is_verified=True,

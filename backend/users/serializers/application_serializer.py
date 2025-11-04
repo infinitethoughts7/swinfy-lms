@@ -73,9 +73,9 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate_website_url(self, value):
-        """Validate website URL."""
-        if not value:
-            raise serializers.ValidationError("Website URL is required.")
+        """Validate website URL - now optional."""
+        if not value or value.strip() == '':
+            return ''
         
         # Add protocol if missing
         if not re.match(r'^https?://', value):
@@ -112,7 +112,6 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
 class KnowledgePartnerApplicationListSerializer(serializers.ModelSerializer):
     """Serializer for listing knowledge partner applications (admin view)."""
     
-    courses_interested_display = serializers.CharField(source='get_courses_interested_in_display', read_only=True)
     experience_display = serializers.CharField(source='get_experience_years_display', read_only=True)
     tutors_display = serializers.CharField(source='get_expected_tutors_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -130,7 +129,6 @@ class KnowledgePartnerApplicationListSerializer(serializers.ModelSerializer):
             'contact_number',
             'website_url',
             'courses_interested_in',
-            'courses_interested_display',
             'experience_years',
             'experience_display',
             'expected_tutors',

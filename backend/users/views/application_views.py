@@ -133,7 +133,7 @@ Organization Details:
 - Email: {application.knowledge_partner_email}
 - Phone: {application.contact_number}
 
-Course Interest: {application.get_courses_interested_in_display()}
+Areas of Focus: {application.courses_interested_in or 'Not specified'}
 Experience: {application.get_experience_years_display()}
 Expected Tutors: {application.get_expected_tutors_display()}
 
@@ -231,13 +231,14 @@ def approve_application(request, application_id):
             )
 
             # Create Knowledge Partner Profile and link to admin user
+            areas = application.courses_interested_in or 'Various areas'
             knowledge_partner = KPProfile.objects.create(
                 user=admin_user,
                 name=application.knowledge_partner_name,
                 type=application.knowledge_partner_type,
-                description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
+                description=f"Knowledge Partner specializing in {areas}.",
                 location="To be updated",
-                website=application.website_url,
+                website=application.website_url or '',
                 kp_admin_name=admin_user.full_name,
                 kp_admin_email=application.knowledge_partner_email,
                 kp_admin_phone=application.contact_number,
@@ -378,10 +379,10 @@ Never share your password with anyone, including our support team.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🏢 Organization: {knowledge_partner.name}
-🔗 Website: {knowledge_partner.website}
+🔗 Website: {knowledge_partner.website or 'Not provided'}
 📧 Contact Email: {knowledge_partner.kp_admin_email}
 📱 Phone: {knowledge_partner.kp_admin_phone}
-🎯 Focus Area: {application.get_courses_interested_in_display()}
+🎯 Focus Area: {application.courses_interested_in or 'Not specified'}
 ⭐ Experience: {application.get_experience_years_display()}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

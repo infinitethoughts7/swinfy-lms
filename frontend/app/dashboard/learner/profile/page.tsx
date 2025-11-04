@@ -153,33 +153,46 @@ export default function StudentProfilePage() {
       }));
       
       // Add profile data
-      const profileDataToSend: any = {
-        bio: formData.bio,
-        phone_number: formData.phone_number,
-        learning_goals: formData.learning_goals,
-        interests: formData.interests,
+      const profileDataToSend: {
+        bio: string;
+        phone_number: string;
+        learning_goals: string;
+        interests: string;
+      } = {
+        bio: formData.bio || '',
+        phone_number: formData.phone_number || '',
+        learning_goals: formData.learning_goals || '',
+        interests: formData.interests || '',
       };
+      
+      formDataToSend.append('profile_data', JSON.stringify(profileDataToSend));
       
       // Add profile picture if uploaded
       if (profilePicture) {
         formDataToSend.append('profile_picture', profilePicture);
       }
-      
-      formDataToSend.append('profile_data', JSON.stringify(profileDataToSend));
+
+      console.log('Updating profile with data:', {
+        user_data: { full_name: formData.full_name },
+        profile_data: profileDataToSend,
+        has_picture: !!profilePicture
+      });
 
       // Update user profile with file upload
-      await userApi.updateProfileWithFile(formDataToSend);
+      const result = await userApi.updateProfileWithFile(formDataToSend);
+      console.log('Profile update result:', result);
 
       // Refresh profile data
       await fetchProfileData();
       setIsEditing(false);
+      alert('Profile updated successfully!');
       
       // Reset image states
       setProfilePicture(null);
       setProfilePicturePreview(null);
     } catch (err) {
       console.error('Error updating profile:', err);
-      setProfileError('Failed to update profile. Please try again.');
+      setProfileError(err instanceof Error ? err.message : 'Failed to update profile. Please try again.');
     } finally {
       setProfileLoading(false);
     }
