@@ -4,36 +4,52 @@ import TestimonialsCarousel from '../TestimonialsCarousel';
 const TestimonialsSection = () => {
   const clients = [
     {
-      name: "Google",
-      logo: "/assets/client/google.svg"
+      name: "TGCHE",
+      logo: "/assets/client/tgche-logo1.png"
     },
     {
-      name: "Microsoft",
-      logo: "/assets/client/microsoft.svg"
+      name: "UWH",
+      logo: "/assets/client/UWH1.png"
     },
     {
-      name: "Netflix",
-      logo: "/assets/client/netflix.svg"
+      name: "NSDC",
+      logo: "/assets/client/NSDC1.png"
     },
     {
-      name: "LinkedIn",
-      logo: "/assets/client/linkedin.svg"
+      name: "Padma Hanumaiah",
+      logo: "/assets/client/padma_hanumaiah1.png"
     },
     {
-      name: "Coca-Cola",
-      logo: "/assets/client/coca-cola.svg"
+      name: "Swinfy",
+      logo: "/assets/client/swinfy_logo1.png"
     },
     {
-      name: "Envato",
-      logo: "/assets/client/envato.svg"
+      name: "TSMC",
+      logo: "/assets/client/tsmc1.png"
     },
     {
-      name: "Yamaha",
-      logo: "/assets/client/yamaha.svg"
+      name: "TTWD",
+      logo: "/assets/client/ttwd1.png"
     },
     {
-      name: "Mastercard",
-      logo: "/assets/client/mastercard.svg"
+      name: "Unnamed",
+      logo: "/assets/client/unnamed.png"
+    },
+    {
+      name: "Unnamed 1",
+      logo: "/assets/client/unnamed (1).png"
+    },
+    {
+      name: "Unnamed 2",
+      logo: "/assets/client/unnamed (2).png"
+    },
+    {
+      name: "Unnamed 3",
+      logo: "/assets/client/unnamed (3).png"
+    },
+    {
+      name: "Bharat Dekho",
+      logo: "/assets/client/bharat_dekho1.png"
     }
   ];
 
@@ -65,18 +81,19 @@ const TestimonialsSection = () => {
           </p>
           
           {/* Client Logos Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-8 lg:gap-12 items-center max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 items-center max-w-6xl mx-auto">
             {clients.map((client, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-center p-6 transition-all duration-300 hover:scale-110"
+                className="flex items-center justify-center p-6 sm:p-8 lg:p-10 transition-all duration-300 hover:scale-110"
               >
-                <div className="relative w-full h-16">
+                <div className="relative w-full h-24 sm:h-28 md:h-32 lg:h-36">
                   <Image 
                     src={client.logo} 
                     alt={`${client.name} Logo`}
                     fill
                     className="object-contain"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
                 </div>
               </div>
