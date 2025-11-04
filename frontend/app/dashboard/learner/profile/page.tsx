@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { userApi } from '@/lib/api';
 import { getBaseApiUrl } from '@/lib/api-config';
-import { Edit3, Save, X, User, Mail, Phone, Target, Heart, Camera, Upload } from 'lucide-react';
+import { Edit3, Save, X, User, Mail, Phone, Target, Heart, Upload } from 'lucide-react';
 
 interface LearnerProfile {
   id: string;
@@ -111,9 +111,13 @@ export default function StudentProfilePage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Clear any previous errors
+      setProfileError('');
+      
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setProfileError('Please select a valid image file.');
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        setProfileError('Please select a valid image file (JPG, PNG, GIF, or WEBP).');
         return;
       }
       
@@ -123,12 +127,19 @@ export default function StudentProfilePage() {
         return;
       }
       
+      console.log('Image selected:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
       setProfilePicture(file);
       
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProfilePicturePreview(e.target?.result as string);
+        const result = e.target?.result as string;
+        setProfilePicturePreview(result);
+        console.log('Preview created successfully');
+      };
+      reader.onerror = () => {
+        setProfileError('Failed to read the image file. Please try again.');
+        setProfilePicture(null);
       };
       reader.readAsDataURL(file);
     }
@@ -264,14 +275,14 @@ export default function StudentProfilePage() {
             )}
 
             {/* Profile Picture Section */}
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
                   {profilePicturePreview ? (
                     <img
                       src={profilePicturePreview}
                       alt="Profile Preview"
-                      className="w-24 h-24 rounded-full object-cover"
+                      className="w-full h-full object-cover"
                     />
                   ) : profileData.profile?.profile_picture ? (
                     <img
@@ -280,62 +291,58 @@ export default function StudentProfilePage() {
                         : `${getBaseApiUrl()}${profileData.profile.profile_picture}`
                       }
                       alt="Profile"
-                      className="w-24 h-24 rounded-full object-cover"
+                      className="w-full h-full object-cover"
                       onLoad={() => console.log('Profile image loaded successfully in edit mode')}
                       onError={(e) => {
                         console.error('Profile image failed to load in edit mode:', e.currentTarget.src);
-                        // Hide image if it fails to load
+                        // Show placeholder if image fails to load
                         e.currentTarget.style.display = 'none';
                       }}
                     />
                   ) : (
-                    <User className="w-12 h-12 text-gray-400" />
+                    <User className="w-16 h-16 text-gray-400" />
                   )}
                 </div>
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer">
-                  <Camera className="w-4 h-4" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
                 {profilePicture && (
-                  <button
-                    onClick={handleImageRemove}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-3 py-1 rounded-full shadow-lg">
+                    Ready to upload
+                  </div>
                 )}
               </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Profile Picture</h3>
-                <p className="text-sm text-gray-500">
-                  {profilePicture ? 'New image selected' : 'Click the camera icon to upload a new photo'}
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Picture</h3>
+                <p className="text-sm text-gray-500 mb-3">
+                  {profilePicture ? (
+                    <span className="text-green-600 font-medium">✓ {profilePicture.name} ({(profilePicture.size / 1024).toFixed(1)} KB)</span>
+                  ) : (
+                    'Upload a professional photo for your profile'
+                  )}
                 </p>
-                <div className="mt-2 space-x-2">
-                  <label className="text-sm text-blue-600 hover:text-blue-700 flex items-center cursor-pointer">
-                    <Upload className="w-4 h-4 mr-1" />
+                <div className="flex items-center space-x-3">
+                  <label className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Upload className="w-4 h-4 mr-2" />
                     {profilePicture ? 'Change Photo' : 'Upload Photo'}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                       onChange={handleImageUpload}
+                      disabled={profileLoading}
                       className="hidden"
                     />
                   </label>
                   {profilePicture && (
                     <button
+                      type="button"
                       onClick={handleImageRemove}
-                      className="text-sm text-red-600 hover:text-red-700"
+                      disabled={profileLoading}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      <X className="w-4 h-4 mr-2" />
                       Remove
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Max size: 10MB. Supported formats: JPG, PNG, GIF</p>
+                <p className="text-xs text-gray-400 mt-2">Max size: 10MB. Supported formats: JPG, PNG, GIF, WEBP</p>
               </div>
             </div>
 

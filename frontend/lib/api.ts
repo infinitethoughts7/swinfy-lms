@@ -169,13 +169,19 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
   console.log('Request body:', options.body);
   
   const makeRequest = async (authToken: string | null) => {
+    const headers: HeadersInit = {
+      ...(authToken && { Authorization: `Bearer ${authToken}` }),
+      ...options.headers,
+    };
+    
+    // Only set Content-Type if body is not FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
     const config: RequestInit = {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken && { Authorization: `Bearer ${authToken}` }),
-        ...options.headers,
-      },
+      headers,
     };
     
     // Debug the request configuration
@@ -940,22 +946,37 @@ export const userApi = {
 
   // Update user profile with file upload
   updateProfileWithFile: async (formData: FormData) => {
-    const token = getAuthToken();
+    console.log('=== UPDATE PROFILE WITH FILE ===');
+    console.log('FormData entries:');
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, value.type, value.size, 'bytes');
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
     
-    const response = await fetch(`${API_BASE_URL}/api/auth/profile/detail/`, {
+    const response = await enhancedFetch('/api/auth/profile/detail/', {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
       body: formData,
+      // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update profile');
+      const errorText = await response.text();
+      console.error('Profile update error response:', errorText);
+      let error;
+      try {
+        error = JSON.parse(errorText);
+      } catch {
+        throw new Error('Failed to update profile: ' + errorText);
+      }
+      throw new Error(error.error || error.message || JSON.stringify(error) || 'Failed to update profile');
     }
     
-    return response.json();
+    const result = await response.json();
+    console.log('Profile update success:', result);
+    return result;
   },
 
   // Get dashboard stats based on user role
