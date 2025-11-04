@@ -180,13 +180,14 @@ def approve_kp_application(request, application_id):
             )
 
             # Create Knowledge Partner Profile and link to admin user
+            areas = application.courses_interested_in or 'Various areas'
             knowledge_partner = KPProfile.objects.create(
                 user=admin_user,
                 name=application.knowledge_partner_name,
                 type=application.knowledge_partner_type,
-                description=f"Knowledge Partner specializing in {application.get_courses_interested_in_display()}.",
+                description=f"Knowledge Partner specializing in {areas}.",
                 location="To be updated",
-                website=application.website_url,
+                website=application.website_url or '',
                 kp_admin_name=admin_user.full_name,
                 kp_admin_email=application.knowledge_partner_email,
                 kp_admin_phone=application.contact_number,

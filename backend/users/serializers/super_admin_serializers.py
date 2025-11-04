@@ -11,7 +11,6 @@ class KnowledgePartnerApplicationSerializer(serializers.ModelSerializer):
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     type_display = serializers.CharField(source='get_knowledge_partner_type_display', read_only=True)
-    courses_interested_display = serializers.CharField(source='get_courses_interested_in_display', read_only=True)
     experience_display = serializers.CharField(source='get_experience_years_display', read_only=True)
     expected_tutors_display = serializers.CharField(source='get_expected_tutors_display', read_only=True)
     
@@ -26,7 +25,6 @@ class KnowledgePartnerApplicationSerializer(serializers.ModelSerializer):
             'contact_number',
             'website_url',
             'courses_interested_in',
-            'courses_interested_display',
             'experience_years',
             'experience_display',
             'expected_tutors',
@@ -42,7 +40,7 @@ class KnowledgePartnerApplicationSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = [
-            'id', 'status_display', 'type_display', 'courses_interested_display',
+            'id', 'status_display', 'type_display',
             'experience_display', 'expected_tutors_display', 'reviewed_by_name',
             'created_at', 'updated_at'
         ]
