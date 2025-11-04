@@ -11,7 +11,7 @@ interface FormData {
   knowledge_partner_email: string;
   contact_number: string;
   website_url: string;
-  courses_interested_in: string;
+  areas_of_focus: string[];
   experience_years: string;
   expected_tutors: string;
   partner_message: string;
@@ -31,7 +31,7 @@ const ContactForm = () => {
     knowledge_partner_email: '',
     contact_number: '',
     website_url: '',
-    courses_interested_in: '',
+    areas_of_focus: [],
     experience_years: '',
     expected_tutors: '',
     partner_message: ''
@@ -69,14 +69,16 @@ const ContactForm = () => {
     { value: 'other', label: 'Other' }
   ];
 
-  const COURSE_CATEGORIES = [
+  const AREAS_OF_FOCUS = [
     { value: 'ai_ml', label: 'AI & Machine Learning' },
     { value: 'programming', label: 'Programming & Development' },
     { value: 'data_science', label: 'Data Science & Analytics' },
     { value: 'cybersecurity', label: 'Cybersecurity' },
     { value: 'cloud_computing', label: 'Cloud Computing' },
     { value: 'digital_marketing', label: 'Digital Marketing' },
-    { value: 'soft_skills', label: 'Soft Skills' },
+    { value: 'soft_skills', label: 'Soft Skills & Professional Development' },
+    { value: 'business', label: 'Business & Management' },
+    { value: 'design', label: 'Design & Creative' },
     { value: 'other', label: 'Other' }
   ];
 
@@ -142,6 +144,27 @@ const ContactForm = () => {
     }
   };
 
+  const handleCheckboxChange = (value: string) => {
+    setFormData(prev => {
+      const newAreasOfFocus = prev.areas_of_focus.includes(value)
+        ? prev.areas_of_focus.filter(area => area !== value)
+        : [...prev.areas_of_focus, value];
+      
+      return {
+        ...prev,
+        areas_of_focus: newAreasOfFocus
+      };
+    });
+    
+    // Clear error for this field
+    if (errors.areas_of_focus) {
+      setErrors(prev => ({
+        ...prev,
+        areas_of_focus: []
+      }));
+    }
+  };
+
   const handleEmailVerified = () => {
     setIsEmailVerified(true);
     setCurrentStep('submitting');
@@ -154,7 +177,7 @@ const ContactForm = () => {
     // Validate form before sending OTP (website_url is now optional)
     if (!formData.knowledge_partner_name || !formData.knowledge_partner_type || 
         !formData.knowledge_partner_email || !formData.contact_number || 
-        !formData.courses_interested_in || 
+        formData.areas_of_focus.length === 0 || 
         !formData.experience_years || !formData.expected_tutors) {
       setEmailVerificationError('Please fill in all required fields before verifying email.');
       return;
@@ -188,12 +211,19 @@ const ContactForm = () => {
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      // Convert areas_of_focus array to comma-separated string for backend
+      const submissionData = {
+        ...formData,
+        courses_interested_in: formData.areas_of_focus.join(', ')
+      };
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/knowledge-partner/apply/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submissionData)
       });
       
       const data = await response.json();
@@ -244,7 +274,7 @@ const ContactForm = () => {
                          formData.knowledge_partner_type && 
                          formData.knowledge_partner_email && 
                          formData.contact_number && 
-                         formData.courses_interested_in && 
+                         formData.areas_of_focus.length > 0 && 
                          formData.experience_years && 
                          formData.expected_tutors;
 
@@ -421,34 +451,47 @@ const ContactForm = () => {
         )}
 
         {/* Quick Questions */}
-        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
           <h5 className="text-gray-800 font-medium text-sm">
             Quick Questions
           </h5>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <select 
-                name="courses_interested_in"
-                value={formData.courses_interested_in}
-                onChange={handleChange}
-                required
-                disabled={currentStep !== 'filling'}
-                className={`w-full px-3 py-2 bg-white border rounded-md text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all ${
-                  errors.courses_interested_in ? 'border-red-500' : 'border-gray-300'
-                } ${currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''}`}
-              >
-                <option value="">Course category *</option>
-                {COURSE_CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-              {errors.courses_interested_in && (
-                <p className="mt-1 text-xs text-red-500">{errors.courses_interested_in[0]}</p>
-              )}
+          {/* Areas of Focus - Checkboxes */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Areas of Focus * <span className="text-xs text-gray-500">(Select all that apply)</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-white rounded-md border border-gray-300">
+              {AREAS_OF_FOCUS.map((area) => (
+                <label
+                  key={area.value}
+                  className={`flex items-center space-x-2 p-2 rounded hover:bg-blue-50 cursor-pointer transition-colors ${
+                    currentStep !== 'filling' ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    value={area.value}
+                    checked={formData.areas_of_focus.includes(area.value)}
+                    onChange={() => handleCheckboxChange(area.value)}
+                    disabled={currentStep !== 'filling'}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <span className="text-sm text-gray-700">{area.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.areas_of_focus && (
+              <p className="mt-1 text-xs text-red-500">{errors.areas_of_focus[0]}</p>
+            )}
+            {formData.areas_of_focus.length > 0 && (
+              <p className="mt-1 text-xs text-green-600">
+                ✓ {formData.areas_of_focus.length} area{formData.areas_of_focus.length > 1 ? 's' : ''} selected
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
             <div>
               <select 
