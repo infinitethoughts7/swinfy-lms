@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { coursesApi } from '@/lib/api';
 
 // Interface for course data from backend
@@ -65,13 +66,22 @@ const categories = [
 const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 export default function CoursesPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
+  const urlSearchTerm = searchParams.get('search') || '';
+  
+  const [searchTerm, setSearchTerm] = useState(urlSearchTerm);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Update search term when URL parameter changes
+  useEffect(() => {
+    if (urlSearchTerm) {
+      setSearchTerm(urlSearchTerm);
+    }
+  }, [urlSearchTerm]);
 
   // Fetch courses from backend
   useEffect(() => {
