@@ -81,13 +81,13 @@ const TestimonialsSection = () => {
           </p>
           
           {/* Client Logos Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 items-center max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 items-center max-w-6xl mx-auto">
             {clients.map((client, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-center p-6 sm:p-8 lg:p-10 transition-all duration-300 hover:scale-110"
+                className="flex items-center justify-center p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-110"
               >
-                <div className="relative w-full h-24 sm:h-28 md:h-32 lg:h-36">
+                <div className="relative w-full h-32 sm:h-36 md:h-40 lg:h-44">
                   <Image 
                     src={client.logo} 
                     alt={`${client.name} Logo`}
