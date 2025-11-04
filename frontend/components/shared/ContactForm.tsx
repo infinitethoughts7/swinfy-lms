@@ -46,6 +46,10 @@ const ContactForm = () => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [emailVerificationError, setEmailVerificationError] = useState('');
   const [otpSending, setOtpSending] = useState(false);
+  
+  // Duplicate name handling
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState('');
 
 
   // Auto-close success message and navigate to home after 5 seconds
@@ -208,6 +212,7 @@ const ContactForm = () => {
     setIsSubmitting(true);
     setErrors({});
     setEmailVerificationError('');
+    setShowDuplicateWarning(false);
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -232,6 +237,17 @@ const ContactForm = () => {
         setSubmitSuccess(true);
       } else {
         if (data.errors || response.status === 400) {
+          // Check if it's a duplicate name error
+          if (data.errors?.knowledge_partner_name) {
+            const errorMsg = Array.isArray(data.errors.knowledge_partner_name) 
+              ? data.errors.knowledge_partner_name[0] 
+              : data.errors.knowledge_partner_name;
+            
+            if (errorMsg.includes('already exists') || errorMsg.includes('already pending')) {
+              setDuplicateMessage(errorMsg);
+              setShowDuplicateWarning(true);
+            }
+          }
           setErrors(data.errors || data);
         } else {
           alert('Error: ' + (data.message || 'Something went wrong'));
@@ -243,6 +259,17 @@ const ContactForm = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  const handleClearAndEdit = () => {
+    setFormData(prev => ({ ...prev, knowledge_partner_name: '' }));
+    setShowDuplicateWarning(false);
+    setDuplicateMessage('');
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.knowledge_partner_name;
+      return newErrors;
+    });
   };
 
   // Show success message if submission was successful
@@ -326,6 +353,25 @@ const ContactForm = () => {
               />
               {errors.knowledge_partner_name && (
                 <p className="mt-1 text-xs text-red-500">{errors.knowledge_partner_name[0]}</p>
+              )}
+              
+              {/* Duplicate Warning Banner */}
+              {showDuplicateWarning && (
+                <div className="mt-2 bg-yellow-50 border border-yellow-300 rounded-md p-3 animate-slideDown">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-yellow-800 font-medium mb-2">{duplicateMessage}</p>
+                      <button
+                        type="button"
+                        onClick={handleClearAndEdit}
+                        className="text-sm bg-yellow-600 text-white px-3 py-1.5 rounded hover:bg-yellow-700 transition-colors"
+                      >
+                        Clear & Edit Name
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -594,9 +640,9 @@ const ContactForm = () => {
           {currentStep === 'submitting' && (
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isEmailVerified}
               className={`py-3 px-6 rounded-md font-medium text-sm flex items-center justify-center gap-2 min-w-[180px] transition-all ${
-                !isSubmitting
+                !isSubmitting && isEmailVerified
                   ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg' 
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
