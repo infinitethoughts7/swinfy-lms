@@ -2,9 +2,49 @@
 
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import views
 
-# Import only essential application views
+# Import auth views
+from .views.auth_views import (
+    RegisterView,
+    LoginView,
+    LogoutView,
+    VerifyOTPView,
+    ResendOTPView,
+    ForgotPasswordView,
+    VerifyResetOTPView,
+    ResetPasswordView,
+    send_otp,
+    send_contact_form_otp,
+    verify_contact_form_otp,
+    verify_email,
+)
+
+# Import profile views
+from .views.profile_views import (
+    UserProfileView,
+    ChangePasswordView,
+    ProfileCompletionView,
+    UserProfileDetailView,
+    KPProfileView,
+    upload_logo,
+    remove_logo,
+    profile_stats,
+)
+
+# Import KP admin views
+from .views.kp_admin_views import (
+    KPInstructorListCreateView,
+    KPInstructorDetailView,
+    KPLearnerListView,
+)
+
+# Import dashboard views
+from .views.dashboard_views import (
+    dashboard_stats,
+    get_knowledge_partners,
+)
+
+# Import application views
 from .views.application_views import (
     KnowledgePartnerApplicationCreateView,
     KnowledgePartnerApplicationListView,
@@ -23,14 +63,6 @@ from .views.course_review_views import (
     course_review_stats,
 )
 
-# Import profile views
-from .views.profile_views import (
-    KPProfileView,
-    upload_logo,
-    remove_logo,
-    profile_stats,
-)
-
 # Import super admin views
 from .views.super_admin_views import (
     DashboardStatsView,
@@ -44,43 +76,42 @@ app_name = 'users'
 
 urlpatterns = [
     # Authentication endpoints
-    path('register/', views.RegisterView.as_view(), name='register'),
-    path('login/', views.LoginView.as_view(), name='login'),
-    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # OTP Verification endpoints
-    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify_otp'),
-    path('resend-otp/', views.ResendOTPView.as_view(), name='resend_otp'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
     
     # Contact Form OTP endpoints (no user account required)
-    path('send-contact-form-otp/', views.send_contact_form_otp, name='send_contact_form_otp'),
-    path('verify-contact-form-otp/', views.verify_contact_form_otp, name='verify_contact_form_otp'),
+    path('send-contact-form-otp/', send_contact_form_otp, name='send_contact_form_otp'),
+    path('verify-contact-form-otp/', verify_contact_form_otp, name='verify_contact_form_otp'),
     
     # Password reset endpoints
-    path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
-    path('verify-reset-otp/', views.VerifyResetOTPView.as_view(), name='verify_reset_otp'),
-    path('reset-password/', views.ResetPasswordView.as_view(), name='reset_password'),
-    path('send-otp/', views.send_otp, name='send_otp'),
-    path('cleanup-otps/', views.cleanup_otps, name='cleanup_otps'),
+    path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('verify-reset-otp/', VerifyResetOTPView.as_view(), name='verify_reset_otp'),
+    path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
+    path('send-otp/', send_otp, name='send_otp'),
     
     # User profile endpoints
-    path('profile/', views.UserProfileView.as_view(), name='profile'),
-    path('profile/complete/', views.ProfileCompletionView.as_view(), name='profile_completion'),
-    path('profile/detail/', views.UserProfileDetailView.as_view(), name='profile_detail'),
-    path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
-    path('verify-email/', views.verify_email, name='verify_email'),
+    path('profile/', UserProfileView.as_view(), name='profile'),
+    path('profile/complete/', ProfileCompletionView.as_view(), name='profile_completion'),
+    path('profile/detail/', UserProfileDetailView.as_view(), name='profile_detail'),
+    path('change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('verify-email/', verify_email, name='verify_email'),
     
     # Utility endpoints
-    path('knowledge-partners/', views.get_knowledge_partners, name='knowledge_partners'),
-    path('dashboard/', views.dashboard_stats, name='dashboard'),
+    path('knowledge-partners/', get_knowledge_partners, name='knowledge_partners'),
+    path('dashboard/', dashboard_stats, name='dashboard'),
     
     # KP Instructor management (KP Admin only)
-    path('kp/instructors/', views.KPInstructorListCreateView.as_view(), name='kp_instructor_list_create'),
-    path('kp/instructors/<uuid:id>/', views.KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
+    path('kp/instructors/', KPInstructorListCreateView.as_view(), name='kp_instructor_list_create'),
+    path('kp/instructors/<uuid:id>/', KPInstructorDetailView.as_view(), name='kp_instructor_detail'),
     
     # KP Learner management (KP Admin only)
-    path('kp/learners/', views.KPLearnerListView.as_view(), name='kp_learner_list'),
+    path('kp/learners/', KPLearnerListView.as_view(), name='kp_learner_list'),
     
     # ==========================================
     # KNOWLEDGE PARTNER APPLICATION - SIMPLIFIED

@@ -96,23 +96,16 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['full_name', 'role']
     
     def save(self, *args, **kwargs):
-        """Override save to set first_name and last_name from full_name."""
+        """
+        Override save to set first_name and last_name from full_name.
+        
+        NOTE: Business logic (approval rules) moved to services layer.
+        This method now only handles data transformation (name splitting).
+        """
         if self.full_name:
             name_parts = self.full_name.strip().split(' ', 1)
             self.first_name = name_parts[0]
             self.last_name = name_parts[1] if len(name_parts) > 1 else ''
-        
-        # Handle approval logic based on role and KP association
-        if self.role == 'learner':
-            # Learners are always approved for platform access
-            self.is_approved = True
-            # But KP association needs separate approval
-            if self.knowledge_partner and self.kp_approval_status == 'none':
-                self.kp_approval_status = 'pending'
-        elif self.role in ['knowledge_partner']:
-            self.is_approved = True
-        elif self.role == 'knowledge_partner_instructor' and not self.pk:
-            self.is_approved = False
         
         super().save(*args, **kwargs)
     

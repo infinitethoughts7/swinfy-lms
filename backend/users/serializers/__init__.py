@@ -1,20 +1,31 @@
-from .serializers import (
+# Auth & OTP serializers
+from .auth_serializers import (
     UserRegistrationSerializer,
-    UserProfileSerializer,
     ChangePasswordSerializer,
-    KPProfileSerializer,
-    ProfileCompletionSerializer,
-    LearnerProfileSerializer,
-    InstructorProfileSerializer,
-    KPInstructorUserSerializer,
-    KPInstructorCreateSerializer,
-    KPInstructorListSerializer,
-    KPInstructorDetailSerializer,
-    KPInstructorUpdateSerializer,
     SendOTPSerializer,
     VerifyOTPSerializer,
     ResendOTPSerializer
 )
+
+# Profile serializers
+from .profile_serializers import (
+    UserProfileSerializer,
+    KPProfileSerializer,
+    LearnerProfileSerializer,
+    InstructorProfileSerializer,
+    ProfileCompletionSerializer
+)
+
+# KP Instructor management serializers
+from .kp_instructor_serializers import (
+    KPInstructorUserSerializer,
+    KPInstructorCreateSerializer,
+    KPInstructorListSerializer,
+    KPInstructorDetailSerializer,
+    KPInstructorUpdateSerializer
+)
+
+# Application serializers
 from .application_serializer import (
     KnowledgePartnerApplicationCreateSerializer,
     KnowledgePartnerApplicationListSerializer,
@@ -23,23 +34,31 @@ from .application_serializer import (
 )
 
 __all__ = [
+    # Auth
     'UserRegistrationSerializer',
-    'UserProfileSerializer', 
     'ChangePasswordSerializer',
+    'SendOTPSerializer',
+    'VerifyOTPSerializer',
+    'ResendOTPSerializer',
+    
+    # Profile
+    'UserProfileSerializer',
     'KPProfileSerializer',
-    'ProfileCompletionSerializer',
     'LearnerProfileSerializer',
     'InstructorProfileSerializer',
+    'ProfileCompletionSerializer',
+    
+    # KP Instructor
     'KPInstructorUserSerializer',
     'KPInstructorCreateSerializer',
     'KPInstructorListSerializer',
     'KPInstructorDetailSerializer',
     'KPInstructorUpdateSerializer',
-    'SendOTPSerializer',
-    'VerifyOTPSerializer',
-    'ResendOTPSerializer',
+    
+    # Application
     'KnowledgePartnerApplicationCreateSerializer',
     'KnowledgePartnerApplicationListSerializer',
     'ApplicationApprovalSerializer',
     'ApplicationRejectionSerializer'
 ]
+

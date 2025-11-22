@@ -12,13 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile, OTPVerification
 from ..permissions import IsKnowledgePartnerAdmin
-from ..utils import (
-    create_otp_verification, 
-    verify_otp_code, 
-    check_rate_limit, 
-    increment_rate_limit,
-    cleanup_expired_otps
-)  
+from users.services import otp_service, email_service
 
 from ..serializers import (
     UserRegistrationSerializer, 
