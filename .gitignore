@@ -24,8 +24,12 @@ venv.bak/
 */staticfiles/
 */media/
 
+backend/fix_production_kp_constraints.sql 
+backend/fix_production_registration.py
+backend/production_fixes.md
+backend/debug_registration.py 
 
-/BACKEND_STRUCTURE.md
+/BACKEND_STRUCTURE.md 
 
 
 # Environment variables
