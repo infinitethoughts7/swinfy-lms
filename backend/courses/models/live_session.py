@@ -305,7 +305,7 @@ class LiveSession(models.Model):
             return False
         
         if self.notification_sent:
-            print(f"ℹ️  Notification already sent for session '{self.title}'")
+            print(f"ℹ️   Notification already sent for session '{self.title}'")
             return False  # Already sent
         
         enrolled_learners = self.get_enrolled_learners()

@@ -21,6 +21,7 @@ from ..serializers import (
     CourseResourceSerializer, CourseResourceCreateSerializer, CourseNotificationSerializer
 )
 from ..filters import CourseFilter
+from ..services import CourseService, EnrollmentService, ProgressService
 
 User = get_user_model()
 
@@ -34,7 +35,6 @@ class CoursePagination(PageNumberPagination):
 
 class CourseListView(generics.ListAPIView):
     """List all published courses with filtering and search."""
-    queryset = Course.objects.filter(is_published=True).select_related('training_partner', 'tutor')
     serializer_class = CourseListSerializer
     pagination_class = CoursePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -43,6 +43,14 @@ class CourseListView(generics.ListAPIView):
     ordering_fields = ['created_at', 'price', 'rating', 'enrollment_count']
     ordering = ['-created_at']
     permission_classes = [permissions.AllowAny]
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
+    def get_queryset(self):
+        """Get published courses using service."""
+        return self.course_service.get_published_courses().select_related('training_partner', 'tutor')
 
 
 class CourseDetailView(generics.RetrieveAPIView):
@@ -52,10 +60,14 @@ class CourseDetailView(generics.RetrieveAPIView):
     lookup_field = 'slug'
     permission_classes = [permissions.AllowAny]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
     def retrieve(self, request, *args, **kwargs):
         """Increment view count when course is viewed."""
         instance = self.get_object()
-        instance.increment_view_count()
+        self.course_service.increment_view_count(instance)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -66,9 +78,21 @@ class CourseCreateView(generics.CreateAPIView):
     serializer_class = CourseCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
     def perform_create(self, serializer):
-        """Set the tutor to the current user."""
-        serializer.save(tutor=self.request.user)
+        """Create course using service."""
+        validated_data = serializer.validated_data
+        success, course, error = self.course_service.create_course(validated_data, self.request.user)
+        
+        if not success:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(error)
+        
+        # Update serializer instance
+        serializer.instance = course
 
 
 class CourseUpdateView(generics.UpdateAPIView):
@@ -105,12 +129,16 @@ class CourseApprovalView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'slug'
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
     def get_queryset(self):
         """Only allow admins to approve courses."""
         if self.request.user.role == 'admin':
-            return Course.objects.filter(training_partner=self.request.user.training_partner)
+            return self.course_service.get_courses_by_training_partner(self.request.user.training_partner)
         elif self.request.user.role == 'super_admin':
-            return Course.objects.all()
+            return self.course_service.course_repo.get_all()
         return Course.objects.none()
     
     def update(self, request, *args, **kwargs):
@@ -122,15 +150,14 @@ class CourseApprovalView(generics.UpdateAPIView):
         approval_notes = request.data.get('approval_notes', '')
         
         if action == 'approve':
-            if user.role == 'admin':
-                course.is_approved_by_training_partner = True
-                course.training_partner_admin_approved_by = user
-                course.approval_status = 'approved'
+            success, error = self.course_service.approve_course(course, user, approval_notes)
         elif action == 'reject':
-            course.approval_status = 'rejected'
+            success, error = self.course_service.reject_course(course, user, approval_notes)
+        else:
+            return Response({'error': 'Invalid action. Use "approve" or "reject".'}, status=status.HTTP_400_BAD_REQUEST)
         
-        course.approval_notes = approval_notes
-        course.save()
+        if not success:
+            return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = CourseSerializer(course)
         return Response(serializer.data)
@@ -140,28 +167,13 @@ class CourseStatsView(generics.GenericAPIView):
     """Get course statistics."""
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
     def get(self, request):
         """Return course statistics based on user role."""
-        user = request.user
-        
-        if user.role == 'admin' and hasattr(user, 'organization') and user.organization:
-            # Admin sees courses from their training partner
-            queryset = Course.objects.filter(training_partner=user.organization)
-        elif user.role == 'tutor':
-            # Tutor sees their own courses
-            queryset = Course.objects.filter(tutor=user)
-        else:
-            queryset = Course.objects.none()
-        
-        stats = {
-            'total_courses': queryset.count(),
-            'published_courses': queryset.filter(is_published=True).count(),
-            'draft_courses': queryset.filter(is_draft=True).count(),
-            'pending_approval': queryset.filter(approval_status='pending_approval').count(),
-            'total_enrollments': queryset.aggregate(total=Count('enrollment_count'))['total'] or 0,
-            'average_rating': queryset.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0,
-            'featured_courses': queryset.filter(is_featured=True).count()
-        }
+        stats = self.course_service.get_stats_for_user(request.user)
         
         serializer = CourseStatsSerializer(stats)
         return Response(serializer.data)
@@ -169,10 +181,17 @@ class CourseStatsView(generics.GenericAPIView):
 
 class FeaturedCoursesView(generics.ListAPIView):
     """Get featured courses."""
-    queryset = Course.objects.filter(is_published=True, is_featured=True).select_related('training_partner', 'tutor')
     serializer_class = CourseListSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = CoursePagination
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
+    def get_queryset(self):
+        """Get featured courses using service."""
+        return self.course_service.get_featured_courses().select_related('training_partner', 'tutor')
 
 
 class MyCoursesView(generics.ListAPIView):
@@ -181,37 +200,37 @@ class MyCoursesView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CoursePagination
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+        self.course_service = CourseService()
+    
     def get_queryset(self):
         """Return appropriate courses based on user role."""
         if self.request.user.role == 'learner':
             # For learners, return enrolled courses
-            from ..models import Enrollment
-            enrolled_course_ids = Enrollment.objects.filter(
-                learner=self.request.user
-            ).values_list('course_id', flat=True)
+            enrollments = self.enrollment_service.get_learner_enrollments(self.request.user)
+            enrolled_course_ids = [e.course_id for e in enrollments]
             return Course.objects.filter(
                 id__in=enrolled_course_ids
             ).select_related('training_partner', 'tutor')
         elif self.request.user.role in ['tutor', 'admin']:
             # For tutors/admins, return courses they created
-            return Course.objects.filter(tutor=self.request.user).select_related('training_partner', 'tutor')
+            return self.course_service.get_courses_by_tutor(self.request.user).select_related('training_partner', 'tutor')
         return Course.objects.none()
     
     def list(self, request, *args, **kwargs):
         """Override list method to return enrollment data for learners."""
         if request.user.role == 'learner':
-            from ..models import Enrollment
             from ..serializers import EnrollmentSerializer
             
-            # Get enrollments for the learner
-            enrollments = Enrollment.objects.filter(
-                learner=request.user
-            ).select_related('course', 'course__training_partner', 'course__tutor').order_by('-enrollment_date')
+            # Get enrollments for the learner using service
+            enrollments = self.enrollment_service.get_learner_enrollments(request.user)
             
             # Serialize enrollments
             serializer = EnrollmentSerializer(enrollments, many=True)
             return Response({
-                'count': enrollments.count(),
+                'count': len(enrollments),
                 'next': None,
                 'previous': None,
                 'results': serializer.data
@@ -223,7 +242,6 @@ class MyCoursesView(generics.ListAPIView):
 
 class CourseSearchView(generics.ListAPIView):
     """Advanced course search with filters."""
-    queryset = Course.objects.filter(is_published=True).select_related('training_partner', 'tutor')
     serializer_class = CourseListSerializer
     pagination_class = CoursePagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -232,13 +250,22 @@ class CourseSearchView(generics.ListAPIView):
     ordering_fields = ['created_at', 'price', 'rating', 'enrollment_count']
     ordering = ['-created_at']
     permission_classes = [permissions.AllowAny]
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+    
+    def get_queryset(self):
+        """Get published courses using service."""
+        return self.course_service.get_published_courses().select_related('training_partner', 'tutor')
 
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def course_list(request):
     """Legacy course list endpoint."""
-    courses = Course.objects.filter(is_published=True)
+    course_service = CourseService()
+    courses = course_service.get_published_courses()
     serializer = CourseListSerializer(courses, many=True)
     return Response({'courses': serializer.data})
 
@@ -247,11 +274,15 @@ def course_list(request):
 @permission_classes([permissions.AllowAny])
 def course_stats(request):
     """Legacy course stats endpoint."""
+    course_service = CourseService()
+    published = course_service.get_published_courses()
+    featured = course_service.get_featured_courses()
+    
     stats = {
-        'total_courses': Course.objects.filter(is_published=True).count(),
-        'featured_courses': Course.objects.filter(is_published=True, is_featured=True).count(),
-        'total_enrollments': Course.objects.aggregate(total=Count('enrollment_count'))['total'] or 0,
-        'average_rating': Course.objects.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
+        'total_courses': published.count(),
+        'featured_courses': featured.count(),
+        'total_enrollments': published.aggregate(total=Count('enrollment_count'))['total'] or 0,
+        'average_rating': published.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
     }
     return Response(stats)
 
@@ -260,7 +291,8 @@ def course_stats(request):
 @permission_classes([permissions.AllowAny])
 def featured_courses(request):
     """Legacy featured courses endpoint."""
-    courses = Course.objects.filter(is_published=True, is_featured=True)
+    course_service = CourseService()
+    courses = course_service.get_featured_courses()
     serializer = CourseListSerializer(courses, many=True)
     return Response({'courses': serializer.data})
 
@@ -272,19 +304,32 @@ class CourseEnrollView(generics.CreateAPIView):
     serializer_class = EnrollmentCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+        self.progress_service = ProgressService()
+        self.course_service = CourseService()
+    
     def get_queryset(self):
         course_slug = self.kwargs['slug']
-        return Course.objects.filter(slug=course_slug, is_published=True)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if course:
+            return Course.objects.filter(id=course.id)
+        return Course.objects.none()
     
     def perform_create(self, serializer):
         course = get_object_or_404(Course, slug=self.kwargs['slug'], is_published=True)
-        serializer.save(learner=self.request.user, course=course)
+        learner = self.request.user
         
-        # Create course progress record
-        CourseProgress.objects.get_or_create(
-            enrollment=serializer.instance,
-            defaults={'overall_progress': 0.0}
-        )
+        # Use service to enroll learner
+        success, enrollment, error = self.enrollment_service.enroll_learner(learner, course)
+        
+        if not success:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(error)
+        
+        # Create course progress record using service
+        self.progress_service.get_course_progress(enrollment)
 
 
 class CourseModulesView(generics.ListAPIView):
@@ -292,9 +337,16 @@ class CourseModulesView(generics.ListAPIView):
     serializer_class = CourseModuleSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.enrollment_service = EnrollmentService()
+    
     def get_queryset(self):
         course_slug = self.kwargs['slug']
-        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if not course:
+            raise Http404("Course not found")
         
         # Check if user can access this course content
         user = self.request.user
@@ -311,13 +363,9 @@ class CourseModulesView(generics.ListAPIView):
         
         # For learners, check if they have an active enrollment
         if user.role == 'learner':
-            from ..models import Enrollment
-            try:
-                enrollment = Enrollment.objects.get(learner=user, course=course)
-                if enrollment.can_access_content:
-                    return CourseModule.objects.filter(course=course).order_by('order')
-            except Enrollment.DoesNotExist:
-                pass
+            enrollment = self.enrollment_service.get_enrollment(user, course)
+            if enrollment and enrollment.can_access_content:
+                return CourseModule.objects.filter(course=course).order_by('order')
         
         raise permissions.PermissionDenied("You don't have access to this course content.")
 
@@ -338,10 +386,17 @@ class ModuleLessonsView(generics.ListAPIView):
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.enrollment_service = EnrollmentService()
+    
     def get_queryset(self):
         course_slug = self.kwargs['slug']
         module_id = self.kwargs['module_id']
-        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if not course:
+            raise Http404("Course not found")
         module = get_object_or_404(CourseModule, id=module_id, course=course)
         
         # Check if user can access this course content
@@ -359,13 +414,9 @@ class ModuleLessonsView(generics.ListAPIView):
         
         # For learners, check if they have an active enrollment
         if user.role == 'learner':
-            from ..models import Enrollment
-            try:
-                enrollment = Enrollment.objects.get(learner=user, course=course)
-                if enrollment.can_access_content:
-                    return Lesson.objects.filter(module=module).order_by('order')
-            except Enrollment.DoesNotExist:
-                pass
+            enrollment = self.enrollment_service.get_enrollment(user, course)
+            if enrollment and enrollment.can_access_content:
+                return Lesson.objects.filter(module=module).order_by('order')
         
         raise permissions.PermissionDenied("You don't have access to this course content.")
 
@@ -388,22 +439,24 @@ class CourseProgressView(generics.RetrieveAPIView):
     serializer_class = CourseProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.enrollment_service = EnrollmentService()
+        self.progress_service = ProgressService()
+    
     def get_object(self):
         course_slug = self.kwargs['slug']
-        course = get_object_or_404(Course, slug=course_slug, is_published=True)
-        enrollment = get_object_or_404(Enrollment, course=course, learner=self.request.user)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if not course:
+            raise Http404("Course not found")
         
-        # Create CourseProgress if it doesn't exist
-        course_progress, created = CourseProgress.objects.get_or_create(
-            enrollment=enrollment,
-            defaults={'overall_progress': 0.0}
-        )
+        enrollment = self.enrollment_service.get_enrollment(self.request.user, course)
+        if not enrollment:
+            raise Http404("Enrollment not found")
         
-        # Update progress if it was just created
-        if created:
-            course_progress.update_progress()
-        
-        return course_progress
+        # Get or create CourseProgress using service
+        return self.progress_service.get_course_progress(enrollment)
 
 
 class LessonCompleteView(generics.UpdateAPIView):
@@ -411,37 +464,39 @@ class LessonCompleteView(generics.UpdateAPIView):
     serializer_class = LessonProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+        self.progress_service = ProgressService()
+    
     def get_object(self):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
+        enrollment = self.enrollment_service.get_enrollment(self.request.user, lesson.module.course)
+        if not enrollment:
+            raise Http404("Enrollment not found")
         
-        # Create LessonProgress if it doesn't exist
-        lesson_progress, created = LessonProgress.objects.get_or_create(
-            lesson=lesson,
-            enrollment=enrollment,
-            defaults={'is_completed': False, 'is_started': False}
-        )
+        # Get lesson progress using service
+        lesson_progress = self.progress_service.get_lesson_progress(enrollment, lesson)
+        if not lesson_progress:
+            # Create if doesn't exist
+            _, lesson_progress, _ = self.progress_service.complete_lesson(enrollment, lesson)
         
         return lesson_progress
     
     def perform_update(self, serializer):
-        serializer.save(is_completed=True, completed_at=timezone.now())
-        
-        # Update course progress
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = self.get_object().enrollment
-        self._update_course_progress(enrollment)
-    
-    def _update_course_progress(self, enrollment):
-        """Update overall course progress."""
-        # Get course progress or create if doesn't exist
-        course_progress, created = CourseProgress.objects.get_or_create(
-            enrollment=enrollment,
-            defaults={'overall_progress': 0.0}
-        )
         
-        # Update progress using the model method
-        course_progress.update_progress()
+        # Use service to complete lesson
+        success, lesson_progress, error = self.progress_service.complete_lesson(enrollment, lesson)
+        
+        if not success:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(error)
+        
+        serializer.instance = lesson_progress
 
 
 class LessonMaterialsView(generics.ListAPIView):
@@ -459,19 +514,19 @@ class LessonVideoView(APIView):
     """Serve lesson video with proper headers for streaming."""
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+    
     def get(self, request, lesson_id):
         lesson = get_object_or_404(Lesson, id=lesson_id)
         
         # Check if user has access to the course
         user = request.user
         if user.role == 'learner':
-            from ..models import Enrollment
-            try:
-                enrollment = Enrollment.objects.get(learner=user, course=lesson.module.course)
-                if not enrollment.can_access_content:
-                    return Response({'error': 'Access denied'}, status=403)
-            except Enrollment.DoesNotExist:
-                return Response({'error': 'Not enrolled in course'}, status=403)
+            can_access, reason = self.enrollment_service.can_access_course_content(user, lesson.module.course)
+            if not can_access:
+                return Response({'error': reason}, status=403)
         
         if not lesson.video_file:
             return Response({'error': 'No video file found'}, status=404)
@@ -489,17 +544,23 @@ class LessonProgressView(generics.RetrieveUpdateAPIView):
     serializer_class = LessonProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+        self.progress_service = ProgressService()
+    
     def get_object(self):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
+        enrollment = self.enrollment_service.get_enrollment(self.request.user, lesson.module.course)
+        if not enrollment:
+            raise Http404("Enrollment not found")
         
-        # Create LessonProgress if it doesn't exist
-        lesson_progress, created = LessonProgress.objects.get_or_create(
-            lesson=lesson,
-            enrollment=enrollment,
-            defaults={'is_completed': False, 'is_started': False}
-        )
+        # Get lesson progress using service
+        lesson_progress = self.progress_service.get_lesson_progress(enrollment, lesson)
+        if not lesson_progress:
+            # Create if doesn't exist by starting the lesson
+            _, lesson_progress, _ = self.progress_service.start_lesson(enrollment, lesson)
         
         return lesson_progress
 
@@ -509,37 +570,39 @@ class LessonStartView(generics.UpdateAPIView):
     serializer_class = LessonProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.enrollment_service = EnrollmentService()
+        self.progress_service = ProgressService()
+    
     def get_object(self):
         lesson_id = self.kwargs['lesson_id']
         lesson = get_object_or_404(Lesson, id=lesson_id)
-        enrollment = get_object_or_404(Enrollment, course=lesson.module.course, learner=self.request.user)
+        enrollment = self.enrollment_service.get_enrollment(self.request.user, lesson.module.course)
+        if not enrollment:
+            raise Http404("Enrollment not found")
         
-        # Create LessonProgress if it doesn't exist
-        lesson_progress, created = LessonProgress.objects.get_or_create(
-            lesson=lesson,
-            enrollment=enrollment,
-            defaults={'is_completed': False, 'is_started': False}
-        )
+        # Get lesson progress using service
+        lesson_progress = self.progress_service.get_lesson_progress(enrollment, lesson)
+        if not lesson_progress:
+            # Create if doesn't exist by starting the lesson
+            _, lesson_progress, _ = self.progress_service.start_lesson(enrollment, lesson)
         
         return lesson_progress
     
     def perform_update(self, serializer):
-        serializer.save(is_started=True, started_at=timezone.now(), last_accessed=timezone.now())
-        
-        # Update course progress
+        lesson_id = self.kwargs['lesson_id']
+        lesson = get_object_or_404(Lesson, id=lesson_id)
         enrollment = self.get_object().enrollment
-        self._update_course_progress(enrollment)
-    
-    def _update_course_progress(self, enrollment):
-        """Update overall course progress."""
-        # Get course progress or create if doesn't exist
-        course_progress, created = CourseProgress.objects.get_or_create(
-            enrollment=enrollment,
-            defaults={'overall_progress': 0.0}
-        )
         
-        # Update progress using the model method
-        course_progress.update_progress()
+        # Use service to start lesson
+        success, lesson_progress, error = self.progress_service.start_lesson(enrollment, lesson)
+        
+        if not success:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(error)
+        
+        serializer.instance = lesson_progress
 
 
 # ==================== CONTENT MANAGEMENT ENDPOINTS ====================
@@ -610,20 +673,24 @@ class LearnerCourseResourceView(generics.ListAPIView):
     serializer_class = CourseResourceSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.enrollment_service = EnrollmentService()
+    
     def get_queryset(self):
         course_slug = self.kwargs['slug']
-        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if not course:
+            raise Http404("Course not found")
+        
         user = self.request.user
         
         # Check if user is enrolled in the course
         if user.role == 'learner':
-            from ..models import Enrollment
-            try:
-                enrollment = Enrollment.objects.get(learner=user, course=course)
-                if enrollment.can_access_content:
-                    return CourseResource.objects.filter(course=course, is_public=True)
-            except Enrollment.DoesNotExist:
-                pass
+            can_access, _ = self.enrollment_service.can_access_course_content(user, course)
+            if can_access:
+                return CourseResource.objects.filter(course=course, is_public=True)
         
         # If not enrolled or no access, return empty queryset
         return CourseResource.objects.none()
@@ -633,25 +700,29 @@ class LearnerCourseContentView(generics.RetrieveAPIView):
     """Get full course content (modules and lessons) for enrolled learners."""
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.enrollment_service = EnrollmentService()
+    
     def get_serializer_class(self):
         from ..serializers.content_serializers import CourseModuleSerializer
         return CourseModuleSerializer
     
     def get_object(self):
         course_slug = self.kwargs['slug']
-        course = get_object_or_404(Course, slug=course_slug, is_published=True)
+        course = self.course_service.get_course_by_slug(course_slug, published_only=True)
+        if not course:
+            raise Http404("Course not found")
+        
         user = self.request.user
         
         # Check if user is enrolled in the course
         if user.role == 'learner':
-            from ..models import Enrollment
-            try:
-                enrollment = Enrollment.objects.get(learner=user, course=course)
-                if enrollment.can_access_content:
-                    # Return the course with modules and lessons
-                    return course
-            except Enrollment.DoesNotExist:
-                pass
+            can_access, _ = self.enrollment_service.can_access_course_content(user, course)
+            if can_access:
+                # Return the course with modules and lessons
+                return course
         
         # If not enrolled or no access, return 404
         raise Http404("Course not found or access denied")
@@ -696,33 +767,20 @@ class LearnerProgressAnalyticsView(generics.ListAPIView):
     serializer_class = CourseProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.progress_service = ProgressService()
+    
     def get_queryset(self):
         # Learners can only see their own progress
         if not self.request.user.is_staff:
-            return CourseProgress.objects.filter(enrollment__learner=self.request.user)
+            return self.progress_service.progress_repo.find_by_learner(self.request.user)
         # Admins can see all progress
-        return CourseProgress.objects.all()
+        return self.progress_service.progress_repo.get_all()
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        
-        # Calculate analytics
-        total_courses = queryset.count()
-        completed_courses = queryset.filter(overall_progress=100).count()
-        in_progress_courses = queryset.filter(overall_progress__gt=0, overall_progress__lt=100).count()
-        not_started_courses = queryset.filter(overall_progress=0).count()
-        
-        avg_progress = queryset.aggregate(avg=Avg('overall_progress'))['avg'] or 0
-        
-        analytics = {
-            'total_courses': total_courses,
-            'completed_courses': completed_courses,
-            'in_progress_courses': in_progress_courses,
-            'not_started_courses': not_started_courses,
-            'average_progress': round(avg_progress, 2),
-            'completion_rate': round((completed_courses / total_courses * 100) if total_courses > 0 else 0, 2)
-        }
-        
+        # Use service to get analytics
+        analytics = self.progress_service.get_learner_analytics(request.user)
         return Response(analytics)
 
 
@@ -730,34 +788,33 @@ class CoursePerformanceAnalyticsView(generics.ListAPIView):
     """Get course performance analytics (Admin/Tutor only)."""
     permission_classes = [permissions.IsAuthenticated]
     
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.course_service = CourseService()
+        self.progress_service = ProgressService()
+        self.enrollment_service = EnrollmentService()
+    
     def get(self, request, *args, **kwargs):
         if not (request.user.is_staff or request.user.is_tutor):
             raise permissions.PermissionDenied("Only admins and tutors can view course analytics.")
         
-        # Course performance metrics
-        total_courses = Course.objects.count()
-        published_courses = Course.objects.filter(is_published=True).count()
-        draft_courses = Course.objects.filter(is_draft=True).count()
-        featured_courses = Course.objects.filter(is_featured=True).count()
+        # Get stats using services
+        course_stats = self.course_service.get_stats_for_user(request.user)
+        progress_analytics = self.progress_service.get_course_analytics()
         
-        # Enrollment metrics
-        total_enrollments = Enrollment.objects.count()
-        avg_rating = Course.objects.aggregate(avg=Avg('rating'))['avg'] or 0
-        
-        # Progress metrics
-        total_progress_records = CourseProgress.objects.count()
-        completed_courses = CourseProgress.objects.filter(overall_progress=100).count()
+        # Enrollment count from repository
+        total_enrollments = self.enrollment_service.enrollment_repo.get_total_count()
         
         analytics = {
-            'total_courses': total_courses,
-            'published_courses': published_courses,
-            'draft_courses': draft_courses,
-            'featured_courses': featured_courses,
+            'total_courses': course_stats.get('total_courses', 0),
+            'published_courses': course_stats.get('published_courses', 0),
+            'draft_courses': course_stats.get('draft_courses', 0),
+            'featured_courses': course_stats.get('featured_courses', 0),
             'total_enrollments': total_enrollments,
-            'average_rating': round(avg_rating, 2),
-            'total_progress_records': total_progress_records,
-            'completed_courses': completed_courses,
-            'completion_rate': round((completed_courses / total_progress_records * 100) if total_progress_records > 0 else 0, 2)
+            'average_rating': course_stats.get('average_rating', 0),
+            'total_progress_records': progress_analytics.get('total_progress_records', 0),
+            'completed_courses': progress_analytics.get('completed_courses', 0),
+            'completion_rate': progress_analytics.get('completion_rate', 0)
         }
         
         return Response(analytics)
@@ -820,36 +877,18 @@ class NotificationDetailView(generics.RetrieveUpdateAPIView):
 def enrollment_status(request, slug):
     """Get enrollment status for a course"""
     try:
-        course = get_object_or_404(Course, slug=slug)
-        enrollment = Enrollment.objects.filter(
-            learner=request.user,
-            course=course
-        ).first()
+        course_service = CourseService()
+        enrollment_service = EnrollmentService()
         
-        if enrollment:
-            # Get payment status from related payment if exists
-            payment_status = 'pending'  # Default
-            if hasattr(enrollment, 'payment'):
-                payment_status = enrollment.payment.status
-            elif enrollment.payment_status:
-                payment_status = enrollment.payment_status
-            
-            return Response({
-                'enrolled': True,
-                'status': enrollment.status,
-                'payment_status': payment_status,
-                'enrolled_at': enrollment.created_at,
-                'course_title': course.title,
-                'course_slug': course.slug
-            })
-        else:
-            return Response({
-                'enrolled': False,
-                'status': 'not_enrolled',
-                'payment_status': 'pending',
-                'course_title': course.title,
-                'course_slug': course.slug
-            })
+        course = course_service.get_course_by_slug(slug, published_only=False)
+        if not course:
+            raise Http404("Course not found")
+        
+        enrollment_status_data = enrollment_service.get_enrollment_status(request.user, course)
+        enrollment_status_data['course_title'] = course.title
+        enrollment_status_data['course_slug'] = course.slug
+        
+        return Response(enrollment_status_data)
     except Exception as e:
         return Response(
             {'error': 'Failed to check enrollment status'}, 
