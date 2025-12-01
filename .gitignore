@@ -1,4 +1,7 @@
 # Dependencies
+
+backend/users/tests/*
+backend/users/REFACTORING_SUMMARY.md 
 clean_test_users.py 
 
 node_modules/
