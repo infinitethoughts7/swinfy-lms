@@ -323,15 +323,37 @@ class ResetPasswordView(APIView):
                 'error_code': 'MISSING_FIELDS'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Verify OTP via service
-        success, message, otp_record = otp_service.verify_otp(email, otp_code, 'password_reset')
+        # Check if OTP was already verified (from verify-reset-otp step)
+        from users.repositories import otp_repository
+        otp_record = otp_repository.get_by_email_code_and_purpose(email, otp_code, 'password_reset')
         
-        if not success:
-            return Response({
-                'success': False,
-                'message': message,
-                'error_code': 'INVALID_OTP'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # If not found (might be already verified), check for verified OTP
+        if not otp_record:
+            from users.models import OTPVerification
+            otp_record = OTPVerification.objects.filter(
+                email=email,
+                otp_code=otp_code,
+                purpose='password_reset',
+                is_verified=True
+            ).order_by('-created_at').first()
+        
+        # If still not found, try to verify it
+        if not otp_record:
+            success, message, otp_record = otp_service.verify_otp(email, otp_code, 'password_reset')
+            if not success:
+                return Response({
+                    'success': False,
+                    'message': message,
+                    'error_code': 'INVALID_OTP'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # OTP was already verified, check if it's expired
+            if otp_record.is_expired():
+                return Response({
+                    'success': False,
+                    'message': 'OTP has expired. Please request a new one.',
+                    'error_code': 'OTP_EXPIRED'
+                }, status=status.HTTP_400_BAD_REQUEST)
         
         # Get user and update password via service
         from users.services import user_service

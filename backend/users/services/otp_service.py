@@ -17,7 +17,7 @@ from django.utils import timezone
 from datetime import timedelta
 from users.models import User
 from users.repositories import otp_repository
-from users.services import email_service
+from users.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class OTPService:
             tuple: (bool, str) - (success, message)
         """
         # Step 1: Validate email format
-        if not email_service.is_valid_email(email):
+        if not EmailService.is_valid_email(email):
             logger.error(f"Invalid email format: {email}")
             return False, "Invalid email format"
         
@@ -130,6 +130,9 @@ class OTPService:
         
         # Step 6: Send email
         try:
+            # Import email_service here to avoid circular import issues
+            from users.services import email_service
+            
             # Get user object for email (or create temp user object)
             if user:
                 email_user = user

@@ -214,6 +214,14 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     } catch (error: unknown) {
       console.error('Password update error:', error);
       const msg = error instanceof Error ? error.message : 'Failed to update password. Please try again.';
+      
+      // If OTP is invalid or expired, go back to OTP step
+      if (msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('code') || msg.toLowerCase().includes('expired')) {
+        setForgotPasswordStep('otp');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+      
       setError(msg);
     }
 

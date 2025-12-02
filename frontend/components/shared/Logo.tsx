@@ -7,6 +7,7 @@ interface LogoProps {
   href?: string;
   className?: string;
   textClassName?: string;
+  disableLink?: boolean;
 }
 
 export default function Logo({ 
@@ -14,7 +15,8 @@ export default function Logo({
   showText = true, 
   href = '/', 
   className = '',
-  textClassName = ''
+  textClassName = '',
+  disableLink = false
 }: LogoProps) {
   const sizeClasses = {
     sm: {
@@ -64,7 +66,7 @@ export default function Logo({
     </div>
   );
 
-  if (href && href !== '') {
+  if (href && href !== '' && !disableLink) {
     return (
       <Link href={href} className="flex items-center" aria-label="OLLA - Home">
         {logoContent}

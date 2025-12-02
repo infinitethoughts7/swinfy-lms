@@ -177,7 +177,10 @@ OLLA LMS Team
         """
         subject = f"Welcome to {kp_name} on OLLA LMS"
         
-        message = f"""Hello {instructor_user.full_name.split()[0]},
+        # Safely get first name or use full name
+        first_name = instructor_user.full_name.split()[0] if instructor_user.full_name and instructor_user.full_name.strip() else 'there'
+        
+        message = f"""Hello {first_name},
 
 You have been invited to join {kp_name} as an Instructor on OLLA LMS!
 

@@ -5,6 +5,7 @@ Handles KP-specific operations: instructor management, learner tracking.
 Uses services for business logic, NO direct database queries.
 """
 
+import logging
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +21,8 @@ from users.serializers import (
     KPInstructorDetailSerializer,
     KPInstructorUpdateSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class KPInstructorListCreateView(APIView):
@@ -51,60 +54,31 @@ class KPInstructorListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        """Create new instructor via service."""
+        """Create new instructor via serializer."""
         # Validate input
         serializer = KPInstructorCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         
-        # Get KP profile
-        kp_profile = profile_service.get_kp_profile(request.user)
-        if not kp_profile:
-            return Response({
-                'detail': 'Knowledge Partner profile not found'
-            }, status=status.HTTP_403_FORBIDDEN)
+        # Create instructor (serializer handles user + profile creation)
+        user = serializer.save()
         
-        # Extract validated data
-        validated_data = serializer.validated_data
-        email = validated_data['email']
-        full_name = validated_data['full_name']
-        bio = validated_data['bio']
-        title = validated_data['title']
-        highest_education = validated_data['highest_education']
-        specializations = validated_data['specializations']
-        technologies = validated_data['technologies']
-        
-        # Remove these from validated_data for additional_fields
-        for field in ['email', 'full_name', 'bio', 'title', 'highest_education', 
-                      'specializations', 'technologies']:
-            validated_data.pop(field, None)
-        
-        # Create instructor via service (handles user creation + profile creation)
-        success, message, user, temp_password = kp_service.create_instructor(
-            kp_profile=kp_profile,
-            email=email,
-            full_name=full_name,
-            bio=bio,
-            title=title,
-            highest_education=highest_education,
-            specializations=specializations,
-            technologies=technologies,
-            **validated_data
-        )
-        
-        if not success:
-            return Response({
-                'success': False,
-                'message': message
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Send invitation email
-        if temp_password:
-            email_service.send_instructor_invitation(user, kp_profile.name, temp_password)
-        
-        # Get profile and serialize
+        # Get the profile that was created by the serializer
         profile = instructor_profile_repository.get_by_user(user)
-        detail_serializer = KPInstructorDetailSerializer(profile)
         
+        # Send invitation email with login credentials
+        # Always send email if temp_password is available (whether generated or provided)
+        if hasattr(user, '_temp_password') and user._temp_password:
+            kp_profile = profile.knowledge_partner if profile else None
+            if kp_profile:
+                try:
+                    email_service.send_instructor_invitation(user, kp_profile.name, user._temp_password)
+                    logger.info(f"Invitation email sent to instructor: {user.email}")
+                except Exception as e:
+                    # Log error but don't fail the creation
+                    logger.error(f"Failed to send invitation email to {user.email}: {str(e)}")
+        
+        # Serialize and return
+        detail_serializer = KPInstructorDetailSerializer(profile)
         return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
 
 

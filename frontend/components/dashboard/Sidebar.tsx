@@ -448,7 +448,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     if (!kpProfile) {
       return (
         <Link href="/dashboard/kp" className="flex items-center">
-          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
+          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" disableLink={true} />
         </Link>
       );
     }
@@ -475,7 +475,7 @@ const Sidebar = ({ userRole, isCollapsed = false, onToggle }: SidebarProps) => {
     } else {
       return (
         <Link href="/dashboard/kp" className="flex items-center">
-          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" />
+          <Logo size="sm" showText={!isCollapsed} textClassName="text-white" disableLink={true} />
         </Link>
       );
     }
