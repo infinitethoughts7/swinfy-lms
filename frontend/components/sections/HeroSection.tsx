@@ -157,7 +157,7 @@ const HeroSection = () => {
                       <div className="flex -space-x-2">
                         {[1, 2, 3, 4].map((i) => (
                           <div key={i} className="w-8 h-8 border-2 border-white rounded-full overflow-hidden bg-gray-200">
-                            <img 
+                            <Image
                               src={`/assets/students/s${i}.jpg`} 
                               alt="Student"
                               className="w-full h-full object-cover"
