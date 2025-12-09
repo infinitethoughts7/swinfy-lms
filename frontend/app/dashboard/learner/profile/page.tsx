@@ -38,6 +38,7 @@ export default function StudentProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -48,6 +49,20 @@ export default function StudentProfilePage() {
   });
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+
+  // Parse field-specific errors from error message
+  const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
+    const errors: {[key: string]: string} = {};
+    const parts = errorMessage.split(';').map(p => p.trim());
+    parts.forEach(part => {
+      const match = part.match(/^(\w+):\s*(.+)$/);
+      if (match) {
+        const [, field, message] = match;
+        errors[field.toLowerCase()] = message;
+      }
+    });
+    return errors;
+  };
 
   useEffect(() => {
     fetchProfileData();
@@ -106,6 +121,10 @@ export default function StudentProfilePage() {
       ...prev,
       [name]: value
     }));
+    // Clear field-specific error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,6 +173,7 @@ export default function StudentProfilePage() {
     try {
       setProfileLoading(true);
       setProfileError('');
+      setFieldErrors({});
 
       // Prepare form data for file upload
       const formDataToSend = new FormData();
@@ -203,7 +223,17 @@ export default function StudentProfilePage() {
       setProfilePicturePreview(null);
     } catch (err) {
       console.error('Error updating profile:', err);
-      setProfileError(err instanceof Error ? err.message : 'Failed to update profile. Please try again.');
+      if (err instanceof Error) {
+        const errors = parseFieldErrors(err.message);
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors);
+          setProfileError('Please fix the content issues highlighted below.');
+        } else {
+          setProfileError(err.message || 'Failed to update profile. Please try again.');
+        }
+      } else {
+        setProfileError('Failed to update profile. Please try again.');
+      }
     } finally {
       setProfileLoading(false);
     }
@@ -400,9 +430,15 @@ export default function StudentProfilePage() {
                   value={formData.interests}
                   onChange={handleInputChange}
                   placeholder="e.g., Programming, Design, Marketing"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    fieldErrors.interests ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
-                <p className="text-xs text-gray-500 mt-1">Separate multiple interests with commas</p>
+                {fieldErrors.interests ? (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrors.interests}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">Separate multiple interests with commas</p>
+                )}
               </div>
             </div>
 
@@ -417,8 +453,13 @@ export default function StudentProfilePage() {
                 onChange={handleInputChange}
                 placeholder="Tell us about yourself..."
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  fieldErrors.bio ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {fieldErrors.bio && (
+                <p className="text-xs text-red-600 mt-1">{fieldErrors.bio}</p>
+              )}
             </div>
 
             {/* Learning Goals Section */}
@@ -432,8 +473,13 @@ export default function StudentProfilePage() {
                 onChange={handleInputChange}
                 placeholder="What do you want to learn? What are your learning objectives?"
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  fieldErrors.learning_goals ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {fieldErrors.learning_goals && (
+                <p className="text-xs text-red-600 mt-1">{fieldErrors.learning_goals}</p>
+              )}
             </div>
 
             {/* Action Buttons */}

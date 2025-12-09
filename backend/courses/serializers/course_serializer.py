@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from ..models import Course
 from users.serializers import KPProfileSerializer, UserProfileSerializer, InstructorProfileSerializer
 
+from core.services.content_moderation_service import get_content_moderation_service
 User = get_user_model()
 
 
@@ -61,16 +62,49 @@ class CourseCreateSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """Custom validation for course creation."""
+        tutor = data.get('tutor')
+        training_partner = data.get('training_partner')
+        
+        # Get instructor's knowledge partner via their profile
+        tutor_kp = None
+        if tutor and hasattr(tutor, 'instructor_profile') and tutor.instructor_profile:
+            tutor_kp = tutor.instructor_profile.knowledge_partner
+        
         # Ensure tutor belongs to the same training partner
-        if data.get('tutor') and data.get('training_partner'):
-            if data['tutor'].training_partner != data['training_partner']:
+        if tutor_kp and training_partner:
+            if tutor_kp != training_partner:
                 raise serializers.ValidationError({
                     'tutor': 'Tutor must belong to the same training partner as the course.'
                 })
         
         # Set training partner from tutor if not provided
-        if data.get('tutor') and not data.get('training_partner'):
-            data['training_partner'] = data['tutor'].training_partner
+        if tutor_kp and not training_partner:
+            data['training_partner'] = tutor_kp
+
+        #===============================================
+        # content moderation
+        #===============================================
+        moderation_service = get_content_moderation_service()
+
+        fields_to_moderate = {
+        'title': data.get('title', ''),
+        'description': data.get('description', ''),
+        'short_description': data.get('short_description', ''),
+        'learning_outcomes': data.get('learning_outcomes', ''),
+        'prerequisites': data.get('prerequisites', ''),
+        }
+
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:  # Only check if field has content
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                
+                if not result.is_clean:
+                    # Content violates community guidelines!
+                    raise serializers.ValidationError({
+                        field_name: result.reason
+                    })
+
+
         
         return data
 
@@ -87,6 +121,26 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
             'is_private', 'requires_admin_enrollment', 'max_enrollments', 'is_active'
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
+    
+    def validate(self, data):
+        """Content moderation for course update fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'title': data.get('title', ''),
+            'description': data.get('description', ''),
+            'short_description': data.get('short_description', ''),
+            'learning_outcomes': data.get('learning_outcomes', ''),
+            'prerequisites': data.get('prerequisites', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
 
 
 class CourseSerializer(serializers.ModelSerializer):

@@ -45,6 +45,20 @@ export default function AddInstructorPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Parse field-specific errors from error message
+  const parseFieldErrors = (errorMessage: string): FormErrors => {
+    const fieldErrors: FormErrors = {};
+    const parts = errorMessage.split(';').map(p => p.trim());
+    parts.forEach(part => {
+      const match = part.match(/^(\w+):\s*(.+)$/);
+      if (match) {
+        const [, field, message] = match;
+        fieldErrors[field.toLowerCase()] = message;
+      }
+    });
+    return fieldErrors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -52,6 +66,7 @@ export default function AddInstructorPage() {
 
     setLoading(true);
     setSubmitError(null);
+    setErrors({});
 
     try {
       const instructorData: InstructorCreateData = {
@@ -65,7 +80,17 @@ export default function AddInstructorPage() {
       alert('✅ Instructor created successfully! An invitation email with login credentials has been sent to their email address.');
       router.push('/dashboard/kp/instructors?success=created');
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create instructor');
+      if (err instanceof Error) {
+        const fieldErrors = parseFieldErrors(err.message);
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+          setSubmitError('Please fix the content issues highlighted below.');
+        } else {
+          setSubmitError(err.message || 'Failed to create instructor');
+        }
+      } else {
+        setSubmitError('Failed to create instructor');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,8 @@
-
 from rest_framework import serializers
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from ..models import KnowledgePartnerApplication, User, KPProfile
+from core.services.content_moderation_service import get_content_moderation_service
 import re
 
 class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
@@ -107,6 +107,24 @@ class KnowledgePartnerApplicationCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Phone number cannot contain more than 15 digits.")
         
         return value.strip()
+    
+    def validate(self, data):
+        """Content moderation for application fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'knowledge_partner_name': data.get('knowledge_partner_name', ''),
+            'courses_interested_in': data.get('courses_interested_in', ''),
+            'partner_message': data.get('partner_message', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
 
 
 class KnowledgePartnerApplicationListSerializer(serializers.ModelSerializer):

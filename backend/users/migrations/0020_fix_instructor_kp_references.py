@@ -7,57 +7,103 @@ def fix_instructor_kp_references(apps, schema_editor):
     """
     Fix KPInstructorProfile records that have invalid knowledge_partner references.
     This handles both NULL values and references to non-existent KPProfile records.
-    Uses raw SQL to avoid constraint violations during the fix.
+    Ensures any created KPProfile has a valid user_id (NOT NULL).
     """
     from django.db import connection
-    
+    from django.contrib.auth.hashers import make_password
+
+    # Use historical models from the migration state
+    User = apps.get_model('users', 'User')
+    KPProfile = apps.get_model('users', 'KPProfile')
+
     with connection.cursor() as cursor:
-        # First, get all valid KP IDs
-        cursor.execute("SELECT id FROM users_kpprofile")
-        valid_kp_ids = {row[0] for row in cursor.fetchall()}
-        
+        # First, get all valid KP IDs using the historical KPProfile model
+        valid_kp_ids = set(KPProfile.objects.values_list('id', flat=True))
+
         if not valid_kp_ids:
-            # No KP exists, create a default one
-            cursor.execute("""
-                INSERT INTO users_kpprofile 
-                (id, name, type, description, location, kp_admin_name, kp_admin_email, 
-                 is_active, is_verified, created_at, updated_at)
-                VALUES 
-                (gen_random_uuid(), 'Default Knowledge Partner', 'other', 
-                 'Default organization for orphaned instructors', 'Unknown', 
-                 'System Admin', 'admin@system.com', true, false, NOW(), NOW())
-            """)
-            
-            # Get the newly created KP ID
-            cursor.execute("SELECT id FROM users_kpprofile WHERE name = 'Default Knowledge Partner'")
-            default_kp_id = cursor.fetchone()[0]
+            # No KP exists, create a default KP *with* a valid user
+            admin_email = 'admin@system.com'
+
+            # Get or create a KP admin user for this default KP using the historical User model
+            existing_user = User.objects.filter(email=admin_email).first()
+            if existing_user:
+                user = existing_user
+                print(f"Using existing user for default KP: {admin_email}")
+            else:
+                # Create user using .create() since historical models don't have create_user
+                user = User.objects.create(
+                    email=admin_email,
+                    password=make_password('ChangeMe123!'),
+                    full_name='System Admin',
+                    first_name='System',
+                    last_name='Admin',
+                    role='knowledge_partner',
+                    is_verified=True,
+                    is_approved=True,
+                    is_active=True,
+                    is_staff=False,
+                    is_superuser=False,
+                )
+                print(f"Created new user for default KP: {admin_email}")
+
+            # Create the default KPProfile using the historical KPProfile model
+            kp_profile = KPProfile.objects.create(
+                user=user,
+                name='Default Knowledge Partner',
+                type='other',
+                description='Default organization for orphaned instructors',
+                location='Unknown',
+                website=None,
+                kp_admin_name='System Admin',
+                kp_admin_email=admin_email,
+                kp_admin_phone=None,
+                logo=None,
+                linkedin_url=None,
+                is_active=True,
+                is_verified=False,
+            )
+
+            default_kp_id = kp_profile.id
+            valid_kp_ids = {default_kp_id}
             print(f"Created default KP with ID: {default_kp_id}")
         else:
             # Use the first available KP
             default_kp_id = list(valid_kp_ids)[0]
             print(f"Using existing KP with ID: {default_kp_id}")
-        
+
         # Find and fix all instructors with invalid knowledge_partner references
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT id, knowledge_partner_id 
             FROM users_kpinstructorprofile 
             WHERE knowledge_partner_id IS NULL 
                OR knowledge_partner_id NOT IN %s
-        """, [tuple(valid_kp_ids)])
-        
+            """,
+            [tuple(valid_kp_ids)],
+        )
+
         invalid_instructors = cursor.fetchall()
-        
+
         if invalid_instructors:
-            print(f"Found {len(invalid_instructors)} instructor profiles with invalid knowledge_partner references")
-            
+            print(
+                f"Found {len(invalid_instructors)} instructor profiles with invalid "
+                "knowledge_partner references"
+            )
+
             # Update all invalid instructors to use the default KP
-            instructor_ids = [instructor[0] for instructor in invalid_instructors]
-            cursor.execute("""
+            instructor_ids = [str(instructor[0]) for instructor in invalid_instructors]
+            
+            # Use raw SQL for the update
+            placeholders = ','.join(['%s'] * len(instructor_ids))
+            cursor.execute(
+                f"""
                 UPDATE users_kpinstructorprofile 
                 SET knowledge_partner_id = %s 
-                WHERE id = ANY(%s)
-            """, [default_kp_id, instructor_ids])
-            
+                WHERE id::text IN ({placeholders})
+                """,
+                [str(default_kp_id)] + instructor_ids,
+            )
+
             print(f"Fixed {len(invalid_instructors)} instructor profiles")
         else:
             print("No invalid instructor profiles found")
@@ -65,19 +111,10 @@ def fix_instructor_kp_references(apps, schema_editor):
 
 def reverse_fix_instructor_kp_references(apps, schema_editor):
     """
-    Reverse operation - set knowledge_partner to null for instructors
-    Note: This will fail if the field is NOT NULL, but it's here for completeness
+    Reverse operation - can't really reverse this safely
     """
-    from django.db import connection
-    
-    with connection.cursor() as cursor:
-        # This will only work if the field allows NULL values
-        try:
-            cursor.execute("UPDATE users_kpinstructorprofile SET knowledge_partner_id = NULL")
-            print("Reversed instructor KP references (set to NULL)")
-        except Exception as e:
-            print(f"Could not reverse migration: {e}")
-            print("This is expected if knowledge_partner_id is NOT NULL")
+    print("Reverse migration: No action taken (data migration is not reversible)")
+    pass
 
 
 class Migration(migrations.Migration):
