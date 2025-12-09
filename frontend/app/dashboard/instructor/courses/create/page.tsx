@@ -29,11 +29,29 @@ interface FormErrors {
   [key: string]: string;
 }
 
+// Form-specific type that allows undefined for numeric fields during editing
+interface CourseFormData {
+  title: string;
+  description: string;
+  short_description: string;
+  price?: number;
+  duration_weeks?: number;
+  category: string;
+  level: string;
+  learning_outcomes: string;
+  prerequisites: string;
+  thumbnail?: File;
+  demo_video?: File;
+  max_enrollments?: number;
+  is_private: boolean;
+  requires_admin_enrollment: boolean;
+}
+
 export default function CreateCoursePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CourseCreateData>({
+  const [formData, setFormData] = useState<CourseFormData>({
     title: '',
     description: '',
     short_description: '',
@@ -44,11 +62,13 @@ export default function CreateCoursePage() {
     learning_outcomes: '',
     prerequisites: '',
     max_enrollments: undefined,
+    is_private: false,
+    requires_admin_enrollment: false,
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
-  const handleChange = (field: keyof CourseCreateData, value: any) => {
+  const handleChange = (field: keyof CourseFormData, value: string | number | boolean | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
       setFormErrors(prev => ({ ...prev, [field]: '' }));
@@ -108,6 +128,20 @@ export default function CreateCoursePage() {
     return Object.keys(errors).length === 0;
   };
 
+  const parseFieldErrors = (errorMessage: string): FormErrors => {
+    const fieldErrors: FormErrors = {};
+    // Parse "field: error; field2: error2" format
+    const parts = errorMessage.split(';').map(p => p.trim());
+    parts.forEach(part => {
+      const match = part.match(/^(\w+):\s*(.+)$/);
+      if (match) {
+        const [, field, message] = match;
+        fieldErrors[field.toLowerCase()] = message;
+      }
+    });
+    return fieldErrors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -117,13 +151,32 @@ export default function CreateCoursePage() {
 
     setLoading(true);
     setError(null);
+    setFormErrors({});
 
     try {
-      const course = await instructorApi.courses.create(formData);
+      // At this point validation has passed, so we know duration_weeks is defined
+      const courseData: CourseCreateData = {
+        ...formData,
+        duration_weeks: formData.duration_weeks!,
+      };
+      const course = await instructorApi.courses.create(courseData);
       router.push(`/dashboard/instructor/courses/${course.slug}`);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error creating course:', err);
-      setError('Failed to create course. Please try again.');
+      
+      if (err instanceof Error) {
+        const errorMessage = err.message;
+        const fieldErrors = parseFieldErrors(errorMessage);
+        
+        if (Object.keys(fieldErrors).length > 0) {
+          setFormErrors(fieldErrors);
+          setError('Please fix the content issues highlighted below.');
+        } else {
+          setError(errorMessage || 'Failed to create course. Please try again.');
+        }
+      } else {
+        setError('Failed to create course. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -325,8 +378,13 @@ export default function CreateCoursePage() {
                 onChange={(e) => handleChange('learning_outcomes', e.target.value)}
                 placeholder="What will students learn?"
                 rows={2}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
+                  formErrors.learning_outcomes ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {formErrors.learning_outcomes && (
+                <p className="text-red-600 text-xs mt-1">{formErrors.learning_outcomes}</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -336,8 +394,13 @@ export default function CreateCoursePage() {
                 onChange={(e) => handleChange('prerequisites', e.target.value)}
                 placeholder="What should students know?"
                 rows={2}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
+                  formErrors.prerequisites ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
+              {formErrors.prerequisites && (
+                <p className="text-red-600 text-xs mt-1">{formErrors.prerequisites}</p>
+              )}
             </div>
           </div>
         </div>

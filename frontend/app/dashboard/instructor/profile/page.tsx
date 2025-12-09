@@ -38,6 +38,7 @@ export default function InstructorProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -54,6 +55,20 @@ export default function InstructorProfilePage() {
     is_available: true,
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Parse field-specific errors from error message
+  const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
+    const errors: {[key: string]: string} = {};
+    const parts = errorMessage.split(';').map(p => p.trim());
+    parts.forEach(part => {
+      const match = part.match(/^(\w+):\s*(.+)$/);
+      if (match) {
+        const [, field, message] = match;
+        errors[field.toLowerCase()] = message;
+      }
+    });
+    return errors;
+  };
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -103,6 +118,7 @@ export default function InstructorProfilePage() {
     try {
       setSaving(true);
       setError(null);
+      setFieldErrors({});
       
       const updateData = {
         profile_data: {
@@ -131,8 +147,18 @@ export default function InstructorProfilePage() {
       if (!response.ok) {
         let errorMessage = 'Failed to update profile';
         try {
-          const errorData = await safeJsonParse(response) as { error?: string; message?: string };
-          errorMessage = errorData.error || errorData.message || errorMessage;
+          const errorData = await response.json();
+          // Check for field-specific validation errors (including content moderation)
+          const fieldErrorsFound = Object.entries(errorData)
+            .filter(([, value]) => Array.isArray(value) && value.length > 0)
+            .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+            .join('; ');
+          
+          if (fieldErrorsFound) {
+            errorMessage = fieldErrorsFound;
+          } else {
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          }
         } catch {
           errorMessage = `Failed to update profile: ${response.status} ${response.statusText}`;
         }
@@ -146,7 +172,17 @@ export default function InstructorProfilePage() {
       
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      if (err instanceof Error) {
+        const errors = parseFieldErrors(err.message);
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors);
+          setError('Please fix the content issues highlighted below.');
+        } else {
+          setError(err.message || 'Failed to save profile');
+        }
+      } else {
+        setError('Failed to save profile');
+      }
     } finally {
       setSaving(false);
     }
@@ -308,13 +344,23 @@ export default function InstructorProfilePage() {
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="e.g., Senior Software Engineer"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, title: e.target.value }));
+                      if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
+                    }}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
+                      fieldErrors.title ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Senior Software Engineer"
+                  />
+                  {fieldErrors.title && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.title}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
               )}
@@ -323,13 +369,23 @@ export default function InstructorProfilePage() {
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">Bio</label>
               {isEditing ? (
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Tell us about yourself..."
-                />
+                <>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, bio: e.target.value }));
+                      if (fieldErrors.bio) setFieldErrors(prev => ({ ...prev, bio: '' }));
+                    }}
+                    rows={3}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
+                      fieldErrors.bio ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Tell us about yourself..."
+                  />
+                  {fieldErrors.bio && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.bio}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
               )}
@@ -388,13 +444,23 @@ export default function InstructorProfilePage() {
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">Specializations</label>
               {isEditing ? (
-                <textarea
-                  value={formData.specializations}
-                  onChange={(e) => setFormData(prev => ({ ...prev, specializations: e.target.value }))}
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="e.g., Web Development, Machine Learning, Data Science"
-                />
+                <>
+                  <textarea
+                    value={formData.specializations}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, specializations: e.target.value }));
+                      if (fieldErrors.specializations) setFieldErrors(prev => ({ ...prev, specializations: '' }));
+                    }}
+                    rows={2}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
+                      fieldErrors.specializations ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Web Development, Machine Learning, Data Science"
+                  />
+                  {fieldErrors.specializations && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.specializations}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
               )}
@@ -403,13 +469,23 @@ export default function InstructorProfilePage() {
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">Technologies</label>
               {isEditing ? (
-                <textarea
-                  value={formData.technologies}
-                  onChange={(e) => setFormData(prev => ({ ...prev, technologies: e.target.value }))}
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="e.g., JavaScript, Python, React, Node.js"
-                />
+                <>
+                  <textarea
+                    value={formData.technologies}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, technologies: e.target.value }));
+                      if (fieldErrors.technologies) setFieldErrors(prev => ({ ...prev, technologies: '' }));
+                    }}
+                    rows={2}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
+                      fieldErrors.technologies ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., JavaScript, Python, React, Node.js"
+                  />
+                  {fieldErrors.technologies && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.technologies}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
               )}
@@ -418,13 +494,23 @@ export default function InstructorProfilePage() {
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">Certifications</label>
               {isEditing ? (
-                <textarea
-                  value={formData.certifications}
-                  onChange={(e) => setFormData(prev => ({ ...prev, certifications: e.target.value }))}
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="List your professional certifications"
-                />
+                <>
+                  <textarea
+                    value={formData.certifications}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, certifications: e.target.value }));
+                      if (fieldErrors.certifications) setFieldErrors(prev => ({ ...prev, certifications: '' }));
+                    }}
+                    rows={2}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
+                      fieldErrors.certifications ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="List your professional certifications"
+                  />
+                  {fieldErrors.certifications && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.certifications}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
               )}

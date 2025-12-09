@@ -176,9 +176,9 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
     
     // Only set Content-Type if body is not FormData
     if (!(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
+      (headers as Record<string, string>)['Content-Type'] = 'application/json';
     }
-    
+
     const config: RequestInit = {
       ...options,
       headers,
@@ -984,6 +984,16 @@ export const userApi = {
         throw new Error(errorText || 'Failed to update profile');
       }
       
+      // Check for field-specific validation errors (including content moderation)
+      const fieldErrors = Object.entries(error)
+        .filter(([key, value]) => Array.isArray(value) && value.length > 0 && key !== 'non_field_errors')
+        .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+        .join('; ');
+      
+      if (fieldErrors) {
+        throw new Error(fieldErrors);
+      }
+      
       // Extract error message from JSON response
       const errorMessage = error.error || error.message || error.detail || JSON.stringify(error);
       throw new Error(errorMessage || 'Failed to update profile');
@@ -1055,7 +1065,13 @@ export const userApi = {
       if (!response.ok) {
         const errorData = await response.json();
         console.log('Error data:', errorData);
-        throw new Error(errorData.detail || errorData.message || 'Failed to create instructor');
+        // Check for field-specific validation errors (including content moderation)
+        const fieldErrors = Object.entries(errorData)
+          .filter(([, value]) => Array.isArray(value) && value.length > 0)
+          .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+          .join('; ');
+        
+        throw new Error(fieldErrors || errorData.detail || errorData.message || 'Failed to create instructor');
       }
       
       const responseData = await response.json();
@@ -1370,7 +1386,14 @@ export const instructorApi = {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create course');
+        const errorData = await response.json().catch(() => ({}));
+        // Check for field-specific validation errors (including content moderation)
+        const fieldErrors = Object.entries(errorData)
+          .filter(([, value]) => Array.isArray(value) && value.length > 0)
+          .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+          .join('; ');
+        
+        throw new Error(fieldErrors || errorData.error || errorData.message || 'Failed to create course');
       }
       
       return response.json();
@@ -1411,7 +1434,14 @@ export const instructorApi = {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update course');
+        const errorData = await response.json().catch(() => ({}));
+        // Check for field-specific validation errors (including content moderation)
+        const fieldErrors = Object.entries(errorData)
+          .filter(([, value]) => Array.isArray(value) && value.length > 0)
+          .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+          .join('; ');
+        
+        throw new Error(fieldErrors || errorData.error || errorData.message || 'Failed to update course');
       }
       
       return response.json();

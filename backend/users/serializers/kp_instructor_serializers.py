@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from ..models import User, KPProfile, KPInstructorProfile
+from core.services.content_moderation_service import get_content_moderation_service
 import secrets
 import string
 
@@ -65,6 +66,14 @@ class KPInstructorCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         print(f"DEBUG SERIALIZER: Received data for validation: {attrs}")
+        
+        # Content moderation for instructor name
+        moderation_service = get_content_moderation_service()
+        full_name = attrs.get('full_name', '')
+        if full_name:
+            result = moderation_service.moderate_text(full_name, skip_ai_check=True)
+            if not result.is_clean:
+                raise serializers.ValidationError({'full_name': result.reason})
         
         # If password is not provided or empty, generate a random one
         if not attrs.get('password') or attrs.get('password').strip() == '':
@@ -195,6 +204,27 @@ class KPInstructorUpdateSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError('Another user with this email already exists.')
         return value.lower()
+
+    def validate(self, data):
+        """Content moderation for instructor update fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'bio': data.get('bio', ''),
+            'title': data.get('title', ''),
+            'specializations': data.get('specializations', ''),
+            'technologies': data.get('technologies', ''),
+            'certifications': data.get('certifications', ''),
+            'user_full_name': data.get('user_full_name', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
 
     def update(self, instance: KPInstructorProfile, validated_data):
         # Update related user fields if provided

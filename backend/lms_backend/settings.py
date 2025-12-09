@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'users',
     'courses',
     'payments',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -293,6 +294,22 @@ RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 BACKEND_URL = config('BACKEND_URL', default='http://localhost:8000')
+
+
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+
+# Moderation thresholds (0.0 to 1.0)
+MODERATION_THRESHOLDS = {
+    'hate': 0.5,           # Hate speech
+    'hate/threatening': 0.5,  # Threatening hate speech
+    'harassment': 0.5,     # Harassment
+    'harassment/threatening': 0.5,  # Threatening harassment
+    'self-harm': 0.5,      # Self-harm content
+    'sexual': 0.5,         # Sexual content
+    'sexual/minors': 0.1,  # ANY sexual content involving minors (very strict!)
+    'violence': 0.7,       # Violence
+    'violence/graphic': 0.7,  # Graphic violence
+}
 
 # Security settings for development with ngrok
 if 'ngrok' in BACKEND_URL:

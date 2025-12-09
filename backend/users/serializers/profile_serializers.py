@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from ..models import User, KPProfile, LearnerProfile, KPInstructorProfile
+from core.services.content_moderation_service import get_content_moderation_service
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -51,6 +52,24 @@ class LearnerProfileSerializer(serializers.ModelSerializer):
             'interests': {'required': False},
         }
     
+    def validate(self, data):
+        """Content moderation for learner profile fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'bio': data.get('bio', ''),
+            'learning_goals': data.get('learning_goals', ''),
+            'interests': data.get('interests', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
+    
     def get_profile_picture_url(self, obj):
         """Get the direct profile picture URL."""
         if not obj.profile_picture:
@@ -90,6 +109,26 @@ class InstructorProfileSerializer(serializers.ModelSerializer):
             'linkedin_url': {'required': False},
             'is_available': {'required': False},
         }
+    
+    def validate(self, data):
+        """Content moderation for instructor profile fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'bio': data.get('bio', ''),
+            'title': data.get('title', ''),
+            'specializations': data.get('specializations', ''),
+            'technologies': data.get('technologies', ''),
+            'certifications': data.get('certifications', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
     
     def get_profile_picture_url(self, obj):
         """Get the direct profile picture URL."""
@@ -236,6 +275,23 @@ class KPProfileSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError("This email is already registered as a KP admin.")
         return value
+    
+    def validate(self, data):
+        """Content moderation for KP profile fields."""
+        moderation_service = get_content_moderation_service()
+        
+        fields_to_moderate = {
+            'name': data.get('name', ''),
+            'description': data.get('description', ''),
+        }
+        
+        for field_name, text_content in fields_to_moderate.items():
+            if text_content:
+                result = moderation_service.moderate_text(text_content, skip_ai_check=True)
+                if not result.is_clean:
+                    raise serializers.ValidationError({field_name: result.reason})
+        
+        return data
     
     def update(self, instance, validated_data):
         """Update KP profile and related user information."""

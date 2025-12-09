@@ -82,6 +82,7 @@ export default function KPProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [isEditing, setIsEditing] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
 
@@ -97,6 +98,20 @@ export default function KPProfilePage() {
     linkedin_url: '',
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Parse field-specific errors from error message
+  const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
+    const errors: {[key: string]: string} = {};
+    const parts = errorMessage.split(';').map(p => p.trim());
+    parts.forEach(part => {
+      const match = part.match(/^(\w+):\s*(.+)$/);
+      if (match) {
+        const [, field, message] = match;
+        errors[field.toLowerCase()] = message;
+      }
+    });
+    return errors;
+  };
 
   useEffect(() => {
     // Check if user is authenticated before making API calls
@@ -170,6 +185,7 @@ export default function KPProfilePage() {
     try {
       setSaving(true);
       setError(null);
+      setFieldErrors({});
       
       // Only send fields that have values or have been changed
       const updateData: KPProfileUpdateData = {};
@@ -194,6 +210,15 @@ export default function KPProfilePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // Check for field-specific validation errors (including content moderation)
+        const fieldErrorsFound = Object.entries(errorData)
+          .filter(([, value]) => Array.isArray(value) && value.length > 0)
+          .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
+          .join('; ');
+        
+        if (fieldErrorsFound) {
+          throw new Error(fieldErrorsFound);
+        }
         throw new Error(errorData.error || errorData.detail || 'Failed to update profile');
       }
 
@@ -203,7 +228,17 @@ export default function KPProfilePage() {
       alert('Profile updated successfully!');
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save profile');
+      if (err instanceof Error) {
+        const errors = parseFieldErrors(err.message);
+        if (Object.keys(errors).length > 0) {
+          setFieldErrors(errors);
+          setError('Please fix the content issues highlighted below.');
+        } else {
+          setError(err.message || 'Failed to save profile');
+        }
+      } else {
+        setError('Failed to save profile');
+      }
     } finally {
       setSaving(false);
     }
@@ -440,13 +475,23 @@ export default function KPProfilePage() {
                     Knowledge Partner Name
                   </label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter Knowledge Pantername"
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, name: e.target.value }));
+                          if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: '' }));
+                        }}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors.name ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter Knowledge Partner name"
+                      />
+                      {fieldErrors.name && (
+                        <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-gray-900 font-medium">{profile?.name || 'Not provided'}</p>
                   )}
@@ -481,13 +526,23 @@ export default function KPProfilePage() {
                   Description
                 </label>
                 {isEditing ? (
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Describe your knowledge partner..."
-                  />
+                  <>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, description: e.target.value }));
+                        if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
+                      }}
+                      rows={4}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                        fieldErrors.description ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Describe your knowledge partner..."
+                    />
+                    {fieldErrors.description && (
+                      <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-gray-900">{profile?.description || 'No description provided'}</p>
                 )}
