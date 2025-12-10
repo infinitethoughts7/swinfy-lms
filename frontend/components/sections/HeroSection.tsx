@@ -8,18 +8,6 @@ const HeroSection = () => {
   return (
     <>
       <section className="relative overflow-hidden pt-10 pb-16 bg-white">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-15 pointer-events-none">
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: 'url(/assets/images/pattern/01.png)',
-              backgroundRepeat: 'repeat',
-              backgroundSize: '200px 200px'
-            }}
-          ></div>
-        </div>
-
         {/* Background Decorative Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
