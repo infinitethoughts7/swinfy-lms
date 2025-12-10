@@ -212,6 +212,35 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = Csv()(config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001'))
 CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
 
+# Allow all methods and headers for file uploads
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# Expose headers to frontend
+CORS_EXPOSE_HEADERS = [
+    "Content-Type",
+    "Content-Length",
+    "Content-Disposition",
+]
+
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
 
