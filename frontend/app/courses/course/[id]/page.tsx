@@ -126,7 +126,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
-  const [, setEnrollmentStatus] = useState<'not_enrolled' | 'active' | 'payment_verification'>('not_enrolled');
+  const [enrollmentStatus, setEnrollmentStatus] = useState<string>('not_enrolled');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'verified' | 'failed' | 'refunded' | 'partial'>('pending');
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -216,21 +216,21 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         if (isLoggedIn) {
           try {
             const enrollmentData = await paymentsApi.checkEnrollment(courseData.slug);
-            setEnrollmentStatus(enrollmentData.status);
+            setEnrollmentStatus(enrollmentData.status || 'not_enrolled');
             setPaymentStatus(enrollmentData.payment_status || 'pending');
             
-            if (enrollmentData.payment_status === 'paid' || enrollmentData.payment_status === 'verified') {
-              setEnrollmentStatus('active');
+            // Only consider as enrolled if enrollment status is 'active'
+            // pending_approval means payment is done but waiting for KP approval
+            if (enrollmentData.status === 'active') {
               setIsEnrolled(true);
             } else {
-              setEnrollmentStatus('not_enrolled');
               setIsEnrolled(false);
             }
-        } catch (err) {
-          console.error('Error checking enrollment status:', err);
-          setEnrollmentStatus('not_enrolled');
-          setIsEnrolled(false);
-        }
+          } catch (err) {
+            console.error('Error checking enrollment status:', err);
+            setEnrollmentStatus('not_enrolled');
+            setIsEnrolled(false);
+          }
         } else {
           setEnrollmentStatus('not_enrolled');
           setIsEnrolled(false);
@@ -249,10 +249,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
   const handlePaymentSuccess = (paymentData: unknown) => {
     console.log('Payment successful:', paymentData);
-    setEnrollmentStatus('payment_verification');
+    // Payment successful - now pending KP approval
+    setEnrollmentStatus('pending_approval');
+    setPaymentStatus('paid');
     setIsEnrolled(false);
     setShowSuccessMessage(true);
-    setTimeout(() => setShowSuccessMessage(false), 5000);
+    setTimeout(() => setShowSuccessMessage(false), 8000);
   };
 
   const handlePaymentModalClose = () => {
@@ -267,7 +269,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       return;
     }
     
-    if (paymentStatus === 'paid' || paymentStatus === 'verified') {
+    // Don't show payment modal if already paid or pending approval
+    if (enrollmentStatus === 'active' || enrollmentStatus === 'pending_approval') {
       return;
     }
 
@@ -349,21 +352,24 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
       {/* Payment Success Notification */}
       {showSuccessMessage && (
-        <div className="bg-green-50 border border-green-200 p-4 mx-4 sm:mx-6 lg:mx-8 -mt-20 mb-4 rounded-lg relative z-10">
+        <div className="bg-yellow-50 border border-yellow-200 p-4 mx-4 sm:mx-6 lg:mx-8 -mt-20 mb-4 rounded-lg relative z-10">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <svg className="h-5 w-5 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-green-800">
+              <p className="text-sm font-medium text-yellow-800">
                 Payment successful! Your enrollment is pending approval.
+              </p>
+              <p className="text-xs text-yellow-700 mt-1">
+                The course provider will review and approve your enrollment shortly. You will be notified once approved.
               </p>
             </div>
               <button
                 onClick={() => setShowSuccessMessage(false)}
-              className="ml-auto text-green-600 hover:text-green-800"
+              className="ml-auto text-yellow-600 hover:text-yellow-800"
               >
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -459,6 +465,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                    level={course.level}
                    isEnrolled={isEnrolled}
                    paymentStatus={paymentStatus}
+                   enrollmentStatus={enrollmentStatus}
                    onEnrollClick={handleEnrollClick}
                    onDemoVideoClick={() => setShowDemoModal(true)}
                  />

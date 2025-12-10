@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Search, Plus, Edit, Trash2, Eye, Star, X, Save } from 'lucide-react';
+import { Users, Search, Plus, Edit, Trash2, Eye, X, Save } from 'lucide-react';
 import { userApi, InstructorListItem } from '@/lib/api';
 import Link from 'next/link';
 
@@ -271,7 +271,7 @@ export default function InstructorsPage() {
         </div>
       )}
 
-      {/* Instructors Grid */}
+      {/* Instructors Table */}
       {filteredInstructors.length === 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
           <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -291,109 +291,92 @@ export default function InstructorsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredInstructors.map((instructor) => (
-            <div key={instructor.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 group">
-              {/* Profile Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                    {(instructor.full_name || 'U').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">{instructor.full_name || 'Unknown'}</h3>
-                    <p className="text-xs text-gray-600 truncate">{instructor.title || 'No title specified'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                  <span className="text-sm font-medium text-gray-900">4.3</span>
-                </div>
-              </div>
-
-              {/* Skills */}
-              <div className="mb-3">
-                <div className="text-xs text-gray-600 mb-1">Expertise</div>
-                <div className="flex flex-wrap gap-1">
-                  {instructor.specializations ? instructor.specializations.split(',').slice(0, 2).map((skill, index) => (
-                    <span key={index} className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">
-                      {skill.trim()}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  Title
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                  Experience
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredInstructors.map((instructor) => (
+                <tr key={instructor.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {(instructor.full_name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <div className="ml-3">
+                        <div className="text-sm font-medium text-gray-900">{instructor.full_name || 'Unknown'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-600">{instructor.email}</div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                    <div className="text-sm text-gray-600">{instructor.title || '-'}</div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+                    <div className="text-sm text-gray-600">
+                      {instructor.years_of_experience ? `${instructor.years_of_experience} years` : '-'}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      instructor.is_active 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {instructor.is_active ? 'Active' : 'Inactive'}
                     </span>
-                  )) : (
-                    <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                      No skills listed
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="mb-3">
-                <p className="text-xs text-gray-600 line-clamp-2">
-                  {instructor.technologies || 'Experienced professional with strong technical skills and industry knowledge.'}
-                </p>
-              </div>
-
-              {/* Social Links */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-                    <span className="text-blue-600 text-xs font-bold">f</span>
-                  </div>
-                  <div className="w-6 h-6 bg-pink-100 rounded flex items-center justify-center">
-                    <span className="text-pink-600 text-xs font-bold">i</span>
-                  </div>
-                  <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-                    <span className="text-blue-600 text-xs font-bold">t</span>
-                  </div>
-                  <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-                    <span className="text-blue-600 text-xs font-bold">in</span>
-                  </div>
-                </div>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  instructor.is_active 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {instructor.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center space-x-1">
-                  <Link
-                    href={`/dashboard/kp/instructors/${instructor.id}`}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title="View details"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={() => openEditModal(instructor)}
-                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-                    title="Edit instructor"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(instructor.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="Delete instructor"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  instructor.is_available 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {instructor.is_available ? 'Available' : 'Busy'}
-                </span>
-              </div>
-            </div>
-          ))}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end space-x-1">
+                      <Link
+                        href={`/dashboard/kp/instructors/${instructor.id}`}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="View details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                      <button
+                        onClick={() => openEditModal(instructor)}
+                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                        title="Edit instructor"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(instructor.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete instructor"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

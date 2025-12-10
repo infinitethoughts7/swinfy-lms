@@ -11,6 +11,7 @@ interface CourseSidebarProps {
   level: string;
   isEnrolled: boolean;
   paymentStatus: string;
+  enrollmentStatus?: string;
   onEnrollClick: () => void;
   onDemoVideoClick: () => void;
 }
@@ -24,11 +25,16 @@ export default function CourseSidebar({
   level,
   isEnrolled,
   paymentStatus,
+  enrollmentStatus,
   onEnrollClick,
   onDemoVideoClick
 }: CourseSidebarProps) {
   
   const estimatedHours = Math.round(duration * 2.5);
+
+  // Check if payment is made but enrollment is pending approval
+  const isPendingApproval = (paymentStatus === 'paid' && enrollmentStatus === 'pending_approval') || 
+                            enrollmentStatus === 'pending_approval';
 
   const courseIncludes = [
     {
@@ -65,7 +71,9 @@ export default function CourseSidebar({
     },
   ];
 
-  const isPaid = paymentStatus === 'paid' || paymentStatus === 'verified';
+  // Only consider as fully paid if payment is verified AND enrollment is active
+  const isPaid = (paymentStatus === 'paid' || paymentStatus === 'verified') && 
+                 enrollmentStatus === 'active';
 
   return (
     <div className="space-y-4">
@@ -108,19 +116,31 @@ export default function CourseSidebar({
         {/* Pricing & CTA Section */}
         <div className="p-5 space-y-4">
           {/* Price */}
-          {!isPaid && (
+          {!isPaid && !isPendingApproval && (
             <div>
               <div className="text-3xl font-bold text-gray-900 mb-1">
                 ₹{parseFloat(price).toLocaleString()}
               </div>
               <p className="text-sm text-gray-600">
-                One-time payment • Lifetime access
+                One-time payment - Lifetime access
+              </p>
+            </div>
+          )}
+
+          {/* Payment Received - Pending Approval */}
+          {isPendingApproval && (
+            <div className="py-1">
+              <div className="text-xl font-bold text-yellow-700 mb-1">
+                Payment Received
+              </div>
+              <p className="text-sm text-gray-600">
+                Waiting for course provider to approve your enrollment
               </p>
             </div>
           )}
 
           {/* Course Owned Message */}
-          {isPaid && (
+          {isPaid && !isPendingApproval && (
             <div className="py-1">
               <div className="text-xl font-bold text-gray-900 mb-1">
                 Course Owned
@@ -131,8 +151,23 @@ export default function CourseSidebar({
             </div>
           )}
 
+          {/* Pending Approval Message */}
+          {isPendingApproval && (
+            <div className="w-full bg-yellow-50 border border-yellow-300 text-yellow-800 font-medium text-sm py-3 px-6 rounded-lg text-center">
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Pending Approval
+              </div>
+              <p className="text-xs mt-1 text-yellow-700">
+                Payment received. Awaiting course provider approval.
+              </p>
+            </div>
+          )}
+
           {/* Enroll Button - Clean & Minimal */}
-          {!isPaid && (
+          {!isPaid && !isPendingApproval && (
             <button
               onClick={onEnrollClick}
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold text-base py-3.5 px-6 rounded-lg transition-colors shadow-sm"
@@ -142,14 +177,14 @@ export default function CourseSidebar({
           )}
 
           {/* Course Owned Badge */}
-          {isPaid && (
+          {isPaid && !isPendingApproval && (
             <div className="w-full bg-gray-100 border border-gray-300 text-gray-900 font-semibold text-sm py-3 px-6 rounded-lg text-center">
-              ✓ Enrolled - Full Access
+              Enrolled - Full Access
             </div>
           )}
 
           {/* Money Back Guarantee */}
-          {!isPaid && (
+          {!isPaid && !isPendingApproval && (
             <p className="text-xs text-center text-gray-500">
               30-day money-back guarantee
             </p>
