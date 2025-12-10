@@ -121,7 +121,7 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Swinfy LMS',
+        name: 'OLLA LMS',
         description: orderData.description,
         order_id: orderData.order_id,
         prefill: orderData.prefill,
