@@ -25,6 +25,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
@@ -42,6 +43,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     setPassword('');
     setIsLoading(false);
     setError('');
+    setSuccessMessage('');
     setShowPassword(false);
     setForgotPasswordStep(null); // This ensures we start from the login form, not forgot password
     setOtpCode(['', '', '', '', '', '']);
@@ -62,6 +64,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       // Call backend API for authentication
@@ -202,7 +205,8 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       setConfirmPassword('');
       setOtpSent(false);
       setTimeLeft(0);
-      setError('Your password has been updated. Please login with your new password.');
+      setError('');
+      setSuccessMessage('Your password has been updated. Please login with your new password.');
       
       // Keep modal open and show login form
       // Focus email input for convenience
@@ -509,6 +513,13 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
                 Forgot password?
               </button>
             </div>
+
+            {/* Success message */}
+            {successMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-600">{successMessage}</p>
+              </div>
+            )}
 
             {/* Error message */}
             {error && (

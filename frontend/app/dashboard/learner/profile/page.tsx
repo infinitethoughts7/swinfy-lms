@@ -355,11 +355,6 @@ export default function StudentProfilePage() {
                     <User className="w-16 h-16 text-gray-400" />
                   )}
                 </div>
-                {profilePicture && (
-                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-3 py-1 rounded-full shadow-lg">
-                    Ready to upload
-                  </div>
-                )}
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Profile Picture</h3>
@@ -373,7 +368,7 @@ export default function StudentProfilePage() {
                 <div className="flex items-center space-x-3">
                   <label className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     <Upload className="w-4 h-4 mr-2" />
-                    {profilePicture ? 'Change Photo' : 'Upload Photo'}
+                    Upload Image
                     <input
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"

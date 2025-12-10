@@ -77,10 +77,10 @@ const Footer = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
+          {/* <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
             <Link href="/courses" className="text-gray-300 hover:text-white transition-colors text-sm">
               Courses
-            </Link>
+            </Link> */}
             {/* <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
               Team
             </Link> */}
