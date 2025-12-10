@@ -219,13 +219,11 @@ AUTH_USER_MODEL = 'users.User'
 CSRF_TRUSTED_ORIGINS = Csv()(config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001'))
 
 # Email Configuration
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = config('EMAIL_HOST', default='localhost')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@swinfylms.com') 
+EMAIL_PROVIDER = config('EMAIL_PROVIDER', default='resend')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='no-reply@olla.co.in')
+
+# Resend Email Provider (HTTP-based alternative when SMTP ports are blocked)
+RESEND_API_KEY = config('RESEND_API_KEY', default='') 
 
 # Logging Configuration
 LOGGING = {

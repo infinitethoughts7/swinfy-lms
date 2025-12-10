@@ -4,6 +4,7 @@ import logging
 from typing import Tuple
 from django.conf import settings
 from users.adapters.email.base import EmailProviderInterface
+import resend
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class ResendAdapter(EmailProviderInterface):
     def __init__(self):
         """Initialize with Resend API key from settings."""
         try:
-            import resend
+
             self.resend = resend
             self.resend.api_key = getattr(settings, 'RESEND_API_KEY', '')
             self.from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@olla.co.in')

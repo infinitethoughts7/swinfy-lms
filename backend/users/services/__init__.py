@@ -5,7 +5,7 @@ All business logic, workflows, and orchestration go here.
 NO direct database queries, NO HTTP handling.
 """
 
-import os
+from decouple import config
 from .otp_service import OTPService
 from .email_service import EmailService
 from .user_service import UserService
@@ -20,7 +20,7 @@ from users.adapters.email.resend_adapter import ResendAdapter
 
 def get_email_provider():
     """Select email provider based on EMAIL_PROVIDER environment variable."""
-    provider = os.getenv('EMAIL_PROVIDER', 'gmail').lower()
+    provider = config('EMAIL_PROVIDER', default='gmail').lower()
     if provider == 'resend':
         return ResendAdapter()
     return GmailAdapter()
