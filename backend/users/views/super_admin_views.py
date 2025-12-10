@@ -235,7 +235,8 @@ def approve_kp_application(request, application_id):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsSuperAdmin])
 def reject_kp_application(request, application_id):
-    """Reject a KP application."""
+    """Reject a KP application and send notification email."""
+    from .application_views import send_rejection_email
     
     try:
         application = KnowledgePartnerApplication.objects.get(id=application_id)
@@ -260,9 +261,67 @@ def reject_kp_application(request, application_id):
         application.admin_notes = rejection_reason
         application.save()
         
+        # Send rejection email notification
+        try:
+            send_rejection_email(application)
+        except Exception as e:
+            # Log error but don't fail the rejection
+            print(f"Failed to send rejection email: {e}")
+        
         return Response({
             'message': 'Application rejected successfully',
             'reason': rejection_reason
+        })
+        
+    except KnowledgePartnerApplication.DoesNotExist:
+        return Response(
+            {'error': 'Application not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated, IsSuperAdmin])
+def delete_kp_application(request, application_id):
+    """
+    Delete a KP application permanently.
+    
+    This also deletes associated KP Profile and Admin User if the application was approved.
+    Use with caution - this action cannot be undone.
+    """
+    from django.db import transaction
+    
+    try:
+        application = KnowledgePartnerApplication.objects.get(id=application_id)
+        
+        kp_name = application.knowledge_partner_name
+        kp_email = application.knowledge_partner_email
+        was_approved = application.status == 'approved'
+        
+        with transaction.atomic():
+            # If application was approved, we need to delete the created KP and user
+            if was_approved:
+                # Delete KP Profile if exists
+                if application.created_knowledge_partner:
+                    kp_profile = application.created_knowledge_partner
+                    # First delete the user associated with this KP
+                    if application.created_admin_user:
+                        application.created_admin_user.delete()
+                    kp_profile.delete()
+            
+            # Delete the application
+            application.delete()
+        
+        return Response({
+            'success': True,
+            'message': f'Application for "{kp_name}" ({kp_email}) has been permanently deleted.',
+            'was_approved': was_approved,
+            'note': 'Associated KP Profile and Admin User were also deleted.' if was_approved else None
         })
         
     except KnowledgePartnerApplication.DoesNotExist:

@@ -14,7 +14,9 @@ import {
   Calendar,
   User,
   Filter,
-  Search
+  Search,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 
@@ -53,6 +55,9 @@ export default function KPApplicationsPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState<KPApplication | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const safeApplications = Array.isArray(applications) ? applications : [];
 
@@ -166,6 +171,53 @@ export default function KPApplicationsPage() {
     setShowModal(false);
     setSelectedApplication(null);
     setRejectionReason('');
+  };
+
+  const openDeleteModal = (application: KPApplication) => {
+    setApplicationToDelete(application);
+    setShowDeleteModal(true);
+    setDeleteConfirmText('');
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setApplicationToDelete(null);
+    setDeleteConfirmText('');
+  };
+
+  const handleDelete = async () => {
+    if (!applicationToDelete) return;
+    
+    if (deleteConfirmText !== 'DELETE') {
+      alert('Please type DELETE to confirm');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      
+      const response = await authenticatedFetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/super-admin/applications/${applicationToDelete.id}/delete/`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete application');
+      }
+
+      const result = await response.json();
+      
+      alert(`${result.message}${result.note ? '\n\n' + result.note : ''}`);
+      
+      closeDeleteModal();
+      fetchApplications();
+    } catch (err) {
+      console.error('Error deleting application:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete application');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Filter applications based on search term
@@ -329,13 +381,20 @@ export default function KPApplicationsPage() {
                   )}
                 </div>
                 
-                <div className="ml-4">
+                <div className="ml-4 flex flex-col space-y-2">
                   <button
                     onClick={() => openModal(application)}
                     className="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     {application.status === 'pending' ? 'Review' : 'View'}
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(application)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -448,6 +507,74 @@ export default function KPApplicationsPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && applicationToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Delete Application</h2>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800 mb-2">
+                <strong>Warning:</strong> You are about to permanently delete the application for:
+              </p>
+              <p className="font-semibold text-red-900">{applicationToDelete.knowledge_partner_name}</p>
+              <p className="text-sm text-red-700">{applicationToDelete.knowledge_partner_email}</p>
+              
+              {applicationToDelete.status === 'approved' && (
+                <div className="mt-3 p-2 bg-red-100 rounded border border-red-300">
+                  <p className="text-xs text-red-800 font-medium">
+                    This application was APPROVED. Deleting it will also remove:
+                  </p>
+                  <ul className="text-xs text-red-700 mt-1 list-disc list-inside">
+                    <li>The Knowledge Partner profile</li>
+                    <li>The KP Admin user account</li>
+                    <li>All associated data</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="font-bold text-red-600">DELETE</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE here"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={closeDeleteModal}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={actionLoading || deleteConfirmText !== 'DELETE'}
+                className="flex-1 px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? 'Deleting...' : 'Delete Permanently'}
+              </button>
             </div>
           </div>
         </div>

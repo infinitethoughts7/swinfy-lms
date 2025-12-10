@@ -70,6 +70,7 @@ from .views.super_admin_views import (
     UserListView,
     approve_kp_application,
     reject_kp_application,
+    delete_kp_application,
 )
 
 app_name = 'users'
@@ -159,5 +160,6 @@ urlpatterns = [
     path('super-admin/applications/', SuperAdminKPApplicationListView.as_view(), name='super_admin_applications'),
     path('super-admin/applications/<uuid:application_id>/approve/', approve_kp_application, name='super_admin_approve_application'),
     path('super-admin/applications/<uuid:application_id>/reject/', reject_kp_application, name='super_admin_reject_application'),
+    path('super-admin/applications/<uuid:application_id>/delete/', delete_kp_application, name='super_admin_delete_application'),
     path('super-admin/users/', UserListView.as_view(), name='super_admin_users'),
 ]

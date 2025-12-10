@@ -76,6 +76,7 @@ from .super_admin_views import (
     UserListView,
     approve_kp_application,
     reject_kp_application,
+    delete_kp_application,
 )
 
 __all__ = [
@@ -128,4 +129,5 @@ __all__ = [
     'UserListView',
     'approve_kp_application',
     'reject_kp_application',
+    'delete_kp_application',
 ]
