@@ -24,6 +24,6 @@ class KnowledgePartnerDetailView(generics.RetrieveAPIView):
 @permission_classes([permissions.AllowAny])
 def knowledge_partner_list(request):
     """Legacy knowledge partner list endpoint."""
-    knowledge_partners = KnowledgePartner.objects.filter(is_active=True)
+    knowledge_partners = KPProfile.objects.filter(is_active=True)
     serializer = KnowledgePartnerListSerializer(knowledge_partners, many=True)
     return Response(serializer.data)
