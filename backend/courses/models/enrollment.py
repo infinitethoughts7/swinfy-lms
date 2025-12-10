@@ -195,14 +195,17 @@ class Enrollment(models.Model):
         if self.amount_paid > self.course.price:
             raise ValidationError('Amount paid cannot exceed course price.')
         
-        # Validate admin approval logic
-        if self.status == 'approved' and not self.approved_by:
-            raise ValidationError('Approved enrollments must have an approver.')
+        # Validate admin approval logic - only for admin-created enrollments
+        # Payment-based enrollments can be approved without an approver
+        if self.status == 'approved' and not self.approved_by and self.enrollment_type == 'admin_created':
+            raise ValidationError('Admin-created enrollments must have an approver.')
         
-        # Validate organization matching
-        if self.approved_by and hasattr(self.learner, 'knowledge_partner') and self.learner.knowledge_partner:
-            if self.approved_by.knowledge_partner != self.course.training_partner:
-                raise ValidationError('Approver must be from the same training partner as the course.')
+        # Validate organization matching - skip for payment-based enrollments
+        if self.approved_by and self.enrollment_type == 'admin_created':
+            # Check if approver's KP matches course's training partner
+            if hasattr(self.approved_by, 'kp_profile'):
+                if self.approved_by.kp_profile != self.course.training_partner:
+                    raise ValidationError('Approver must be from the same training partner as the course.')
         
         # For private courses, learner must be from same organization
         if self.course.is_private and hasattr(self.learner, 'knowledge_partner') and self.learner.knowledge_partner != self.course.training_partner:

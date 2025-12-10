@@ -259,26 +259,25 @@ def verify_payment(request):
         payment.status = 'paid'
         payment.save()
         
-        # Simplified: Auto-approve enrollment when payment is successful
-        payment.enrollment.status = 'approved'
-        payment.enrollment.approved_by = payment.enrollment.course.training_partner.user
-        payment.enrollment.approval_date = timezone.now()
-        payment.enrollment.start_date = timezone.now()
-        payment.enrollment.save()
+        # Set enrollment to pending_approval - KP must approve before learner can access
+        payment.enrollment.status = 'pending_approval'
+        payment.enrollment.payment_status = 'paid'
+        payment.enrollment.amount_paid = payment.amount
+        payment.enrollment.save(update_fields=['status', 'payment_status', 'amount_paid'])
         
-        # Create notification for admin about successful payment
+        # Create notification for KP admin about successful payment - requires approval
         admin_user = payment.enrollment.course.training_partner.user
         if admin_user and admin_user.role == 'knowledge_partner':
             create_payment_notification(
                 payment=payment,
                 notification_type='payment_received',
                 recipient=admin_user,
-                title='Payment Received',
-                message=f'{payment.user.full_name} has paid ₹{payment.amount} for {payment.enrollment.course.title}. Enrollment has been automatically approved.'
+                title='New Payment - Approval Required',
+                message=f'{payment.user.full_name} has paid ₹{payment.amount} for {payment.enrollment.course.title}. Please approve their enrollment to grant course access.'
             )
         
-        # Create notification for user - enrollment approved
-        message = f'Your payment of ₹{payment.amount} for {payment.enrollment.course.title} has been received. You can now start learning!'
+        # Create notification for user - payment received, awaiting approval
+        message = f'Your payment of ₹{payment.amount} for {payment.enrollment.course.title} has been received. Your enrollment is pending approval from the course provider.'
         
         create_payment_notification(
             payment=payment,
@@ -293,19 +292,20 @@ def verify_payment(request):
             payment=payment,
             level='info',
             event_type='payment_verified',
-            message='Payment verified successfully',
+            message='Payment verified successfully - pending KP approval',
             data=request.data,
             request=request
         )
         
-        # Simplified: All payments are auto-approved
-        response_message = 'Payment verified successfully. You can now access the course!'
+        # Payment successful, awaiting KP approval
+        response_message = 'Payment successful! Your enrollment is pending approval from the course provider. You will be notified once approved.'
         
         return Response({
             'message': response_message,
             'status': 'paid',
             'payment_id': str(payment.id),
-            'enrollment_status': payment.enrollment.status
+            'enrollment_status': payment.enrollment.status,
+            'requires_approval': True
         }, status=status.HTTP_200_OK)
         
     except Payment.DoesNotExist:

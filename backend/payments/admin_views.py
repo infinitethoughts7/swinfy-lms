@@ -76,10 +76,12 @@ def verify_payment(request, payment_id):
             payment.verified_at = timezone.now()
             payment.save()
             
-            # Activate enrollment
-            payment.enrollment.status = 'approved'
+            # Activate enrollment - set to 'active' so learner can access the course
+            payment.enrollment.status = 'active'
             payment.enrollment.approved_by = request.user
-            payment.enrollment.save()
+            payment.enrollment.approval_date = timezone.now()
+            payment.enrollment.start_date = timezone.now()
+            payment.enrollment.save(update_fields=['status', 'approved_by', 'approval_date', 'start_date'])
             
             # Create notification for user
             PaymentNotification.objects.create(
