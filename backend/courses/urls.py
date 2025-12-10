@@ -17,12 +17,22 @@ from .views.instructor_views import (
     submit_course_for_approval,
     course_analytics
 )
+from .views.analytics_views import (
+    instructor_analytics,
+    kp_analytics,
+    learner_analytics
+)
 
 
 # Create router for API views
 router = DefaultRouter()
 
 urlpatterns = [
+    # Dashboard Analytics Endpoints
+    path('analytics/instructor/', instructor_analytics, name='instructor-analytics'),
+    path('analytics/kp/', kp_analytics, name='kp-analytics'),
+    path('analytics/learner/', learner_analytics, name='learner-analytics'),
+    
     # KP Instructor Management
     path('instructor/dashboard/stats/', instructor_dashboard_stats, name='instructor-dashboard-stats'),
     path('instructor/dashboard/learner-progress/', instructor_learner_progress, name='instructor-learner-progress'),

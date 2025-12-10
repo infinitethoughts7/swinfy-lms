@@ -45,6 +45,11 @@ from .attendance_views import (
     instructor_courses_with_learners,
     attendance_stats
 )
+from .analytics_views import (
+    instructor_analytics,
+    kp_analytics,
+    learner_analytics
+)
 
 __all__ = [
     'CourseListView',
@@ -91,5 +96,8 @@ __all__ = [
     'AttendanceListView',
     'AttendanceMarkView',
     'instructor_courses_with_learners',
-    'attendance_stats'
+    'attendance_stats',
+    'instructor_analytics',
+    'kp_analytics',
+    'learner_analytics'
 ]

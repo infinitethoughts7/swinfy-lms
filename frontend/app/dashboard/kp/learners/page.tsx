@@ -86,7 +86,9 @@ export default function KPLearnersPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setLearners(data);
+        // Handle both array response and object with results/learners key
+        const learnersList = Array.isArray(data) ? data : (data.results || data.learners || []);
+        setLearners(learnersList);
       } else {
         throw new Error('Failed to fetch learners');
       }
@@ -98,12 +100,12 @@ export default function KPLearnersPage() {
     }
   };
 
-  const filteredLearners = learners.filter(learner =>
-    learner.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    learner.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (learner.profile.phone_number && learner.profile.phone_number.includes(searchTerm)) ||
-    learner.enrollments.some(enrollment => 
-      enrollment.course_title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLearners = (Array.isArray(learners) ? learners : []).filter(learner =>
+    learner.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    learner.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (learner.profile?.phone_number && learner.profile.phone_number.includes(searchTerm)) ||
+    (learner.enrollments || []).some(enrollment => 
+      enrollment.course_title?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 

@@ -16,7 +16,6 @@ import {
   Line,
   ComposedChart
 } from 'recharts';
-import mockData from '@/lib/mockAnalyticsData.json';
 
 interface Instructor {
   id: string;
@@ -30,6 +29,47 @@ interface Instructor {
   is_available: boolean;
   created_at: string;
   updated_at: string;
+}
+
+interface KPAnalytics {
+  instructors: Array<{
+    id: string;
+    name: string;
+    specialization: string;
+    courses_count: number;
+    total_students: number;
+  }>;
+  courses: Array<{
+    id: string;
+    title: string;
+    instructor: string;
+    instructor_id: string | null;
+    category: string;
+    price: number;
+    enrollments: number;
+    revenue: number;
+    created_month: string;
+  }>;
+  monthly_enrollment_trends: Record<string, Record<string, number>>;
+  course_popularity: Array<{
+    course: string;
+    students: number;
+    category: string;
+  }>;
+  enrollment_vs_revenue: Array<{
+    course: string;
+    enrollments: number;
+    revenue: number;
+  }>;
+  summary: {
+    total_students: number;
+    total_courses: number;
+    total_instructors: number;
+    total_revenue: number;
+    most_popular_course: string | null;
+    highest_revenue_course: string | null;
+    average_course_price: number;
+  };
 }
 
 interface DashboardStats {
@@ -52,6 +92,7 @@ interface DashboardStats {
 
 export default function KPDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [analytics, setAnalytics] = useState<KPAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addModal, setAddModal] = useState(false);
@@ -75,8 +116,8 @@ export default function KPDashboard() {
       setLoading(true);
       setError(null);
       
-      // Fetch instructor list and approved courses in parallel
-      const [instructorsResponse, coursesResponse, pendingPaymentsResponse] = await Promise.all([
+      // Fetch instructor list, approved courses, pending payments, and analytics in parallel
+      const [instructorsResponse, coursesResponse, pendingPaymentsResponse, analyticsResponse] = await Promise.all([
         authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
           method: 'GET',
         }),
@@ -84,6 +125,9 @@ export default function KPDashboard() {
           method: 'GET',
         }),
         authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/payments/admin/pending/`, {
+          method: 'GET',
+        }),
+        authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/analytics/kp/`, {
           method: 'GET',
         })
       ]);
@@ -119,6 +163,13 @@ export default function KPDashboard() {
         pending_payments_count = payments.length;
         pending_payments_amount = payments.reduce((sum: number, p: { amount: number }) => sum + (Number(p.amount) || 0), 0);
       }
+
+      // Handle analytics data
+      let analyticsData: KPAnalytics | null = null;
+      if (analyticsResponse.ok) {
+        analyticsData = await analyticsResponse.json();
+        setAnalytics(analyticsData);
+      }
       
       const data = {
         total_instructors,
@@ -128,12 +179,8 @@ export default function KPDashboard() {
         active_courses,
         pending_payments_count,
         pending_payments_amount,
-        total_learners: 156, // Mock data - will need learner API later
-        recent_activity: [
-          { id: '1', type: 'instructor', message: 'New instructor joined', timestamp: '2 hours ago' },
-          { id: '2', type: 'course', message: 'Course "React Basics" published', timestamp: '4 hours ago' },
-          { id: '3', type: 'learner', message: '5 new learner enrollments', timestamp: '6 hours ago' },
-        ],
+        total_learners: analyticsData?.summary?.total_students || 0,
+        recent_activity: [], // Will be populated when activity API is available
         instructors // Store instructor list for display
       };
       setStats(data);
@@ -141,7 +188,7 @@ export default function KPDashboard() {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
       
-      // Fallback to mock data
+      // Fallback to empty data
       setStats({
         total_instructors: 0,
         active_instructors: 0,
@@ -154,6 +201,7 @@ export default function KPDashboard() {
         recent_activity: [],
         instructors: []
       });
+      setAnalytics(null);
     } finally {
       setLoading(false);
     }
@@ -374,12 +422,12 @@ export default function KPDashboard() {
           <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Learners</h3>
           <div className="space-y-1">
             <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">Enrolled</span>
+              <span className="text-gray-600">Total Enrolled</span>
               <span className="font-semibold">{stats?.total_learners || 0}</span>
             </div>
             <div className="flex justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">This month</span>
-              <span className="font-semibold text-purple-600">+24</span>
+              <span className="text-gray-600">Revenue</span>
+              <span className="font-semibold text-purple-600">₹{analytics?.summary?.total_revenue?.toLocaleString('en-IN') || 0}</span>
             </div>
           </div>
         </div>
@@ -395,61 +443,48 @@ export default function KPDashboard() {
           <LineChartIcon className="h-4 w-4 text-blue-600" />
         </div>
         <div style={{ width: '100%', height: 300 }}>
-          <ResponsiveContainer>
-            <LineChart data={Object.entries(mockData.monthly_enrollment_trends).map(([month, courses]) => ({
-              month,
-              'Python Programming': courses['Complete Python Programming'],
-              'ML with Python': courses['Machine Learning with Python'],
-              'Data Science': courses['Data Science Fundamentals'],
-              'Deep Learning': courses['Deep Learning & Neural Networks'],
-              'React.js Dev': courses['React.js Development']
-            }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip contentStyle={{ fontSize: '11px' }} />
-              <Legend 
-                align="right" 
-                verticalAlign="top" 
-                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="Python Programming" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                dot={{ fill: '#3B82F6', r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="ML with Python" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                dot={{ fill: '#10B981', r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="Data Science" 
-                stroke="#F59E0B" 
-                strokeWidth={2}
-                dot={{ fill: '#F59E0B', r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="Deep Learning" 
-                stroke="#8B5CF6" 
-                strokeWidth={2}
-                dot={{ fill: '#8B5CF6', r: 3 }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="React.js Dev" 
-                stroke="#EF4444" 
-                strokeWidth={2}
-                dot={{ fill: '#EF4444', r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {analytics?.monthly_enrollment_trends && Object.keys(analytics.monthly_enrollment_trends).length > 0 ? (
+            <ResponsiveContainer>
+              <LineChart data={Object.entries(analytics.monthly_enrollment_trends).map(([month, courses]) => {
+                const courseNames = Object.keys(courses);
+                const dataPoint: Record<string, string | number> = { month };
+                courseNames.forEach((courseName) => {
+                  // Shorten course names for chart
+                  const shortName = courseName.length > 15 ? courseName.substring(0, 15) + '...' : courseName;
+                  dataPoint[shortName] = courses[courseName];
+                });
+                return dataPoint;
+              })}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ fontSize: '11px' }} />
+                <Legend 
+                  align="right" 
+                  verticalAlign="top" 
+                  wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+                />
+                {analytics.courses.slice(0, 5).map((course, index) => {
+                  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
+                  const shortName = course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title;
+                  return (
+                    <Line 
+                      key={course.id}
+                      type="monotone" 
+                      dataKey={shortName}
+                      stroke={colors[index % colors.length]} 
+                      strokeWidth={2}
+                      dot={{ fill: colors[index % colors.length], r: 3 }}
+                    />
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              <p>No enrollment trend data available yet</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -463,57 +498,63 @@ export default function KPDashboard() {
           <TrendingUp className="h-4 w-4 text-purple-600" />
         </div>
         <div style={{ width: '100%', height: 400 }}>
-          <ResponsiveContainer>
-            <ComposedChart 
-              data={mockData.enrollment_vs_revenue.map(item => ({
-                course: item.course.length > 18 ? item.course.substring(0, 18) + '...' : item.course,
-                enrollments: item.enrollments,
-                revenue: item.revenue / 1000 // Convert to thousands
-              }))}
-              margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="course" 
-                angle={-40}
-                textAnchor="end"
-                height={100}
-                tick={{ fontSize: 9 }}
-              />
-              <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-              <Tooltip 
-                formatter={(value, name) => {
-                  if (name === 'Revenue (₹K)') {
-                    return [`₹${(value as number * 1000).toLocaleString('en-IN')}`, name];
-                  }
-                  return [value, name];
-                }}
-                contentStyle={{ fontSize: '11px' }}
-              />
-              <Legend 
-                align="right" 
-                verticalAlign="top" 
-                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
-              />
-              <Bar 
-                yAxisId="left" 
-                dataKey="enrollments" 
-                fill="#3B82F6" 
-                name="Enrollments"
-                radius={[3, 3, 0, 0]}
-              />
-              <Line 
-                yAxisId="right" 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="#EF4444" 
-                strokeWidth={3}
-                name="Revenue (₹K)"
-                dot={{ fill: '#EF4444', r: 5 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+          {analytics?.enrollment_vs_revenue && analytics.enrollment_vs_revenue.length > 0 ? (
+            <ResponsiveContainer>
+              <ComposedChart 
+                data={analytics.enrollment_vs_revenue.map(item => ({
+                  course: item.course.length > 18 ? item.course.substring(0, 18) + '...' : item.course,
+                  enrollments: item.enrollments,
+                  revenue: item.revenue / 1000 // Convert to thousands
+                }))}
+                margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="course" 
+                  angle={-40}
+                  textAnchor="end"
+                  height={100}
+                  tick={{ fontSize: 9 }}
+                />
+                <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'Revenue (₹K)') {
+                      return [`₹${(value as number * 1000).toLocaleString('en-IN')}`, name];
+                    }
+                    return [value, name];
+                  }}
+                  contentStyle={{ fontSize: '11px' }}
+                />
+                <Legend 
+                  align="right" 
+                  verticalAlign="top" 
+                  wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+                />
+                <Bar 
+                  yAxisId="left" 
+                  dataKey="enrollments" 
+                  fill="#3B82F6" 
+                  name="Enrollments"
+                  radius={[3, 3, 0, 0]}
+                />
+                <Line 
+                  yAxisId="right" 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="#EF4444" 
+                  strokeWidth={3}
+                  name="Revenue (₹K)"
+                  dot={{ fill: '#EF4444', r: 5 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              <p>No enrollment and revenue data available yet</p>
+            </div>
+          )}
         </div>
       </div>
 

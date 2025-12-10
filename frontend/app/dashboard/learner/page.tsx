@@ -5,8 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { userApi, learnerDashboardApi, paymentsApi, liveSessionApi, type LiveSession } from '@/lib/api';
 import { getCourseThumbnailUrl } from '@/lib/image-utils';
-import { WeeklyActivityChart } from '@/components/dashboard/ProgressChart';
-import { BookOpen, Clock, Award, TrendingUp, Users, Video, Calendar } from 'lucide-react';
+import { BookOpen, Clock, Award, TrendingUp, Video, Calendar, Flame, Target } from 'lucide-react';
 
 interface DashboardStats {
   total_enrollments?: number;
@@ -45,7 +44,8 @@ interface Enrollment {
 
 interface WeeklyActivity {
   day: string;
-  hours: number;
+  activity_count?: number;
+  hours?: number;
 }
 
 interface LearnerDistribution {
@@ -250,21 +250,108 @@ export default function LearnerHomePage() {
               </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Weekly Activity Chart - Compact */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Weekly Activity - Modern Design */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">Weekly Activity</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-orange-400 to-orange-500 rounded-lg">
+                  <Flame className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="text-base font-semibold text-gray-900">Weekly Activity</h2>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <Target className="w-3 h-3" />
+                <span>Last 7 days</span>
+              </div>
             </div>
-            <WeeklyActivityChart 
-              activities={weeklyActivity}
-            />
+            
+            {/* Activity Stats Summary */}
+            <div className="mb-5 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Total Activities</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {weeklyActivity.reduce((sum, day) => sum + (day.activity_count || day.hours || 0), 0)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-600 mb-1">Avg per day</p>
+                  <p className="text-lg font-semibold text-blue-600">
+                    {weeklyActivity.length > 0 
+                      ? Math.round(weeklyActivity.reduce((sum, day) => sum + (day.activity_count || day.hours || 0), 0) / 7)
+                      : 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Activity Bars */}
+            <div className="space-y-3">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                const dayData = weeklyActivity.find(d => d.day === day);
+                const count = dayData?.activity_count || dayData?.hours || 0;
+                const maxCount = Math.max(...weeklyActivity.map(d => d.activity_count || d.hours || 0), 1);
+                const percentage = (count / maxCount) * 100;
+                const isToday = new Date().toLocaleDateString('en-US', { weekday: 'short' }) === day;
+                
+                return (
+                  <div key={day} className="flex items-center gap-3">
+                    <span className={`w-8 text-xs font-medium ${isToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                      {day}
+                    </span>
+                    <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden relative">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isToday 
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600' 
+                            : count > 0 
+                              ? 'bg-gradient-to-r from-blue-400 to-blue-500' 
+                              : 'bg-gray-200'
+                        }`}
+                        style={{ width: `${Math.max(percentage, count > 0 ? 8 : 0)}%` }}
+                      />
+                      {isToday && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <span className="text-[10px] font-medium text-gray-500 bg-white/80 px-1.5 py-0.5 rounded">Today</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className={`w-6 text-xs font-semibold text-right ${count > 0 ? 'text-gray-700' : 'text-gray-400'}`}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Streak/Motivation Footer */}
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-center gap-2 text-sm">
+                {weeklyActivity.filter(d => (d.activity_count || d.hours || 0) > 0).length >= 5 ? (
+                  <>
+                    <span className="text-orange-500">🔥</span>
+                    <span className="text-gray-600">Great week! Keep it up!</span>
+                  </>
+                ) : weeklyActivity.filter(d => (d.activity_count || d.hours || 0) > 0).length >= 3 ? (
+                  <>
+                    <span>💪</span>
+                    <span className="text-gray-600">Good progress this week!</span>
+                  </>
+                ) : (
+                  <>
+                    <span>📚</span>
+                    <span className="text-gray-600">Start learning today!</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Recent Courses - Expanded */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">

@@ -2,15 +2,62 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, authenticatedFetch } from '@/lib/auth';
 import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
 import { BookOpen, Users, TrendingUp, Plus, Award } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import instructorAnalyticsData from '@/lib/instructorAnalyticsData.json';
+
+interface InstructorAnalytics {
+  instructor_courses: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    total_enrollments: number;
+    total_lessons: number;
+    duration_weeks: number;
+    students_not_started: number;
+    students_in_progress: number;
+    students_completed: number;
+    avg_progress_percentage: number;
+    completion_rate: number;
+    created_at: string;
+  }>;
+  student_progress_by_course: Array<{
+    course: string;
+    not_started: number;
+    in_progress: number;
+    completed: number;
+    total: number;
+  }>;
+  course_performance_metrics: Array<{
+    course: string;
+    enrollments: number;
+    avg_progress: number;
+    completion_rate: number;
+  }>;
+  recent_student_activity: Array<{
+    student_name: string;
+    course: string;
+    lesson_completed: string;
+    progress_percentage: number;
+    completed_at: string | null;
+  }>;
+  summary: {
+    total_courses: number;
+    total_enrollments: number;
+    total_students_active: number;
+    total_students_completed: number;
+    overall_completion_rate: number;
+    overall_avg_progress: number;
+    most_popular_course: string | null;
+    best_performing_course: string | null;
+  };
+}
 
 export default function InstructorDashboard() {
   const [user, setUser] = useState(getCurrentUser());
   const [stats, setStats] = useState<InstructorStats | null>(null);
+  const [analytics, setAnalytics] = useState<InstructorAnalytics | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +71,19 @@ export default function InstructorDashboard() {
       setLoading(true);
       setError(null);
       
-      const [statsData, coursesData] = await Promise.all([
+      const [statsData, coursesData, analyticsResponse] = await Promise.all([
         instructorApi.getDashboardStats(),
-        instructorApi.courses.list()
+        instructorApi.courses.list(),
+        authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/analytics/instructor/`)
       ]);
       
       setStats(statsData);
       setCourses(coursesData);
+      
+      if (analyticsResponse.ok) {
+        const analyticsData = await analyticsResponse.json();
+        setAnalytics(analyticsData);
+      }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -49,6 +102,7 @@ export default function InstructorDashboard() {
         recent_courses: []
       });
       setCourses([]);
+      setAnalytics(null);
     } finally {
       setLoading(false);
     }
@@ -70,9 +124,9 @@ export default function InstructorDashboard() {
     }
   };
 
-  // Chart Data
-  const studentProgressData = instructorAnalyticsData.student_progress_by_course;
-  const coursePerformanceData = instructorAnalyticsData.course_performance_metrics;
+  // Chart Data - use API data or empty arrays as fallback
+  const studentProgressData = analytics?.student_progress_by_course || [];
+  const coursePerformanceData = analytics?.course_performance_metrics || [];
 
   // Colors for charts
   const progressColors = {
@@ -157,7 +211,7 @@ export default function InstructorDashboard() {
               <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-600" />
             </div>
             <span className="text-xl sm:text-2xl font-bold text-gray-900">
-              {instructorAnalyticsData.summary.overall_completion_rate}%
+              {analytics?.summary?.overall_completion_rate || 0}%
             </span>
           </div>
           <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Completion Rate</h3>
@@ -189,37 +243,43 @@ export default function InstructorDashboard() {
           </div>
         </div>
         
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart 
-            data={studentProgressData}
-            margin={{ top: 10, right: 30, left: 20, bottom: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="course" 
-              angle={0}
-              textAnchor="middle"
-              height={100}
-              tick={{ fontSize: 12 }}
-              interval={0}
-              style={{ wordWrap: 'break-word' }}
-            />
-            <YAxis tick={{ fontSize: 10 }} label={{ value: 'Number of Students', angle: -90, position: 'insideMiddle' }} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: '12px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-              }}
-              cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
-            />
-            <Bar dataKey="completed" stackId="a" fill={progressColors.completed} name="Completed" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="in_progress" stackId="a" fill={progressColors.in_progress} name="In Progress" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="not_started" stackId="a" fill={progressColors.not_started} name="Not Started" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {studentProgressData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart 
+              data={studentProgressData}
+              margin={{ top: 10, right: 30, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="course" 
+                angle={0}
+                textAnchor="middle"
+                height={100}
+                tick={{ fontSize: 12 }}
+                interval={0}
+                style={{ wordWrap: 'break-word' }}
+              />
+              <YAxis tick={{ fontSize: 10 }} label={{ value: 'Number of Students', angle: -90, position: 'insideMiddle' }} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                }}
+                cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+              />
+              <Bar dataKey="completed" stackId="a" fill={progressColors.completed} name="Completed" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="in_progress" stackId="a" fill={progressColors.in_progress} name="In Progress" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="not_started" stackId="a" fill={progressColors.not_started} name="Not Started" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[400px] text-gray-500">
+            <p>No student progress data available yet. Create courses and get enrollments to see progress.</p>
+          </div>
+        )}
 
       </div>
 
@@ -247,51 +307,57 @@ export default function InstructorDashboard() {
           </div>
         </div>
         
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart 
-            data={coursePerformanceData}
-            margin={{ top: 10, right: 50, left: 20, bottom: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="course" 
-              angle={0}
-              textAnchor="middle"
-              height={100}
-              tick={{ fontSize: 12 }}
-              interval={0}
-              style={{ wordWrap: 'break-word' }}
-            />
-            <YAxis 
-              yAxisId="left"
-              tick={{ fontSize: 12 }}
-              label={{ value: 'Enrollments', angle: -90, position: 'insideLeft' }}
-            />
-            <YAxis 
-              yAxisId="right" 
-              orientation="right"
-              tick={{ fontSize: 12 }}
-              label={{ value: 'Percentage (%)', angle: 90, position: 'insideRight' }}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                padding: '12px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-              }}
-              formatter={(value: number, name: string) => {
-                if (name === 'Enrollments') return [value, name];
-                return [`${value}%`, name];
-              }}
-              cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
-            />
-            <Bar yAxisId="left" dataKey="enrollments" fill="#3B82F6" name="Enrollments" radius={[8, 8, 0, 0]} barSize={60} />
-            <Bar yAxisId="right" dataKey="avg_progress" fill="#8B5CF6" name="Avg Progress" radius={[8, 8, 0, 0]} barSize={60} />
-            <Bar yAxisId="right" dataKey="completion_rate" fill="#10B981" name="Completion Rate" radius={[8, 8, 0, 0]} barSize={60} />
-          </BarChart>
-        </ResponsiveContainer>
+        {coursePerformanceData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart 
+              data={coursePerformanceData}
+              margin={{ top: 10, right: 50, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="course" 
+                angle={0}
+                textAnchor="middle"
+                height={100}
+                tick={{ fontSize: 12 }}
+                interval={0}
+                style={{ wordWrap: 'break-word' }}
+              />
+              <YAxis 
+                yAxisId="left"
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Enrollments', angle: -90, position: 'insideLeft' }}
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right"
+                tick={{ fontSize: 12 }}
+                label={{ value: 'Percentage (%)', angle: 90, position: 'insideRight' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                }}
+                formatter={(value: number, name: string) => {
+                  if (name === 'Enrollments') return [value, name];
+                  return [`${value}%`, name];
+                }}
+                cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+              />
+              <Bar yAxisId="left" dataKey="enrollments" fill="#3B82F6" name="Enrollments" radius={[8, 8, 0, 0]} barSize={60} />
+              <Bar yAxisId="right" dataKey="avg_progress" fill="#8B5CF6" name="Avg Progress" radius={[8, 8, 0, 0]} barSize={60} />
+              <Bar yAxisId="right" dataKey="completion_rate" fill="#10B981" name="Completion Rate" radius={[8, 8, 0, 0]} barSize={60} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[400px] text-gray-500">
+            <p>No course performance data available yet. Create courses and get enrollments to see metrics.</p>
+          </div>
+        )}
 
       </div>
     </div>
