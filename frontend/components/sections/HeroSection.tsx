@@ -63,11 +63,11 @@ const HeroSection = () => {
             </div>
 
             {/* Inline Stats */}
-            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-100">
-              <StatItem icon={<BookOpen className="w-4 h-4 text-amber-600" />} value="21+" label="Courses" />
-              <StatItem icon={<GraduationCap className="w-4 h-4 text-blue-600" />} value="19+" label="Tutors" />
-              <StatItem icon={<Users className="w-4 h-4 text-purple-600" />} value="10K+" label="Students" />
-              <StatItem icon={<Award className="w-4 h-4 text-teal-600" />} value="15 Yrs" label="Avg. Exp." />
+            <div className="flex flex-wrap items-center gap-8 pt-5 border-t border-gray-100">
+              <StatItem icon={<BookOpen className="w-5 h-5 text-amber-600" />} value="21+" label="Courses" />
+              <StatItem icon={<GraduationCap className="w-5 h-5 text-blue-600" />} value="19+" label="Tutors" />
+              <StatItem icon={<Users className="w-5 h-5 text-purple-600" />} value="10K+" label="Students" />
+              <StatItem icon={<Award className="w-5 h-5 text-teal-600" />} value="15 Yrs" label="Avg. Exp." />
             </div>
           </div>
 
@@ -139,13 +139,13 @@ interface StatItemProps {
 }
 
 const StatItem = ({ icon, value, label }: StatItemProps) => (
-  <div className="flex items-center gap-2">
-    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center">
+  <div className="flex items-center gap-3">
+    <div className="w-11 h-11 bg-gray-100 rounded-xl flex items-center justify-center">
       {icon}
     </div>
     <div>
-      <div className="text-sm font-bold text-gray-900 leading-none">{value}</div>
-      <div className="text-[10px] text-gray-500">{label}</div>
+      <div className="text-lg font-bold text-gray-900 leading-tight">{value}</div>
+      <div className="text-xs text-gray-500">{label}</div>
     </div>
   </div>
 );
