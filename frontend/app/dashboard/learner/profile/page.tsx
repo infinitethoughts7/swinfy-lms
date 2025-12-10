@@ -5,6 +5,7 @@ import { userApi } from '@/lib/api';
 import { getBaseApiUrl } from '@/lib/api-config';
 import { useContentModeration } from '@/lib/useContentModeration';
 import { Edit3, Save, X, User, Phone, Target, Heart, Upload, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 
 interface LearnerProfile {
   id: string;
@@ -320,13 +321,15 @@ export default function StudentProfilePage() {
               <div className="relative">
                 <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
                   {profilePicturePreview ? (
-                    <img
+                    <Image
                       src={profilePicturePreview}
                       alt="Profile Preview"
+                      width={128}
+                      height={128}
                       className="w-full h-full object-cover"
                     />
                   ) : profileData.profile?.profile_picture ? (
-                    <img
+                    <Image
                       src={profileData.profile.profile_picture.startsWith('http') 
                         ? profileData.profile.profile_picture 
                         : `${getBaseApiUrl()}${profileData.profile.profile_picture}`
@@ -537,7 +540,7 @@ export default function StudentProfilePage() {
             <div className="flex items-center space-x-6">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                 {profileData.profile?.profile_picture ? (
-                  <img
+                  <Image
                     src={profileData.profile.profile_picture.startsWith('http') 
                       ? profileData.profile.profile_picture 
                       : `${getBaseApiUrl()}${profileData.profile.profile_picture}`

@@ -1,5 +1,36 @@
 // Razorpay utility functions
 
+// Razorpay instance interface
+interface RazorpayInstance {
+  open: () => void;
+  close: () => void;
+  on: (event: string, handler: (response: RazorpayErrorResponse) => void) => void;
+}
+
+// Razorpay error response interface
+interface RazorpayErrorResponse {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+    metadata: Record<string, string>;
+  };
+}
+
+// Razorpay constructor interface
+interface RazorpayConstructor {
+  new (options: RazorpayOptions): RazorpayInstance;
+}
+
+// Extend the Window interface to include Razorpay
+declare global {
+  interface Window {
+    Razorpay?: RazorpayConstructor;
+  }
+}
+
 export interface RazorpayOptions {
   key: string;
   amount: number;
@@ -14,7 +45,12 @@ export interface RazorpayOptions {
   theme: {
     color: string;
   };
-  handler: (response: any) => void;
+  handler: (response: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+    [key: string]: string;
+  }) => void;
   modal?: {
     ondismiss: () => void;
   };
@@ -46,7 +82,7 @@ export const loadRazorpay = (): Promise<boolean> => {
     }
 
     // Check if already loaded
-    if ((window as any).Razorpay) {
+    if (window.Razorpay) {
       resolve(true);
       return;
     }
@@ -80,16 +116,16 @@ export const loadRazorpay = (): Promise<boolean> => {
   });
 };
 
-export const createRazorpayInstance = (options: RazorpayOptions) => {
-  if (typeof window === 'undefined' || !(window as any).Razorpay) {
+export const createRazorpayInstance = (options: RazorpayOptions): RazorpayInstance => {
+  if (typeof window === 'undefined' || !window.Razorpay) {
     throw new Error('Razorpay is not available');
   }
 
   try {
-    const rzp = new (window as any).Razorpay(options);
+    const rzp = new window.Razorpay(options);
     
     // Add error handlers
-    rzp.on('payment.failed', function (response: any) {
+    rzp.on('payment.failed', function (response: RazorpayErrorResponse) {
       console.error('Payment failed:', response.error);
     });
 
