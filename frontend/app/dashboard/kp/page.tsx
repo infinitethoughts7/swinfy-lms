@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, BookOpen, TrendingUp, Plus, ArrowRight, X, Save, LineChart as LineChartIcon } from 'lucide-react';
+import { Users, UserPlus, BookOpen, TrendingUp, ArrowRight, X, Save, LineChart as LineChartIcon } from 'lucide-react';
 import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 import { 
@@ -343,13 +343,6 @@ export default function KPDashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 text-xs sm:text-sm">Manage your knowledge partner organization</p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium w-fit"
-        >
-          <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-          Add Instructor
-        </button>
       </div>
 
       {/* Stats Grid */}

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { getCurrentUser, authenticatedFetch } from '@/lib/auth';
 import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
-import { BookOpen, Users, TrendingUp, Plus, Award } from 'lucide-react';
+import { BookOpen, Users, TrendingUp, Award } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface InstructorAnalytics {
@@ -150,19 +149,12 @@ export default function InstructorDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">
-              Welcome back, {user?.full_name || 'Instructor'}! 👋
+              Welcome back, {user?.full_name || 'Instructor'}!
             </h1>
             <p className="text-blue-100 text-sm sm:text-base">
               Track your student progress and manage your courses effectively
             </p>
           </div>
-          <Link
-            href="/dashboard/instructor/courses/create"
-            className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/20 text-white rounded-lg sm:rounded-xl hover:bg-white/30 transition-all duration-200 backdrop-blur-sm border border-white/20 text-sm sm:text-base w-fit"
-          >
-            <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-            Create Course
-          </Link>
         </div>
       </div>
 
