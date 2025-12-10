@@ -40,6 +40,8 @@ jobs:
       DEBUG: "False"
       SECRET_KEY: "test-secret-key-for-ci-only"
       ALLOWED_HOSTS: "localhost,127.0.0.1"
+      # OpenAI API Key for content moderation 
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
       # Database settings
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/test_db"
