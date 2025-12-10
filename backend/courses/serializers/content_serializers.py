@@ -67,19 +67,23 @@ class LessonSerializer(serializers.ModelSerializer):
     duration_formatted = serializers.CharField(read_only=True)
     has_video_content = serializers.BooleanField(read_only=True)
     video_url = serializers.SerializerMethodField()
+    document_url = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Lesson
         fields = [
             'id', 'title', 'slug', 'module', 'course',
             'lesson_type', 'lesson_type_display', 'order', 'duration_minutes', 'duration_formatted',
-            'is_preview', 'is_mandatory', 'content', 'video_file', 'video_url',
+            'is_preview', 'is_mandatory', 'content', 
+            'video_file', 'video_url', 'document_file', 'document_url', 'image_file', 'image_url',
             'materials_count', 'is_completed', 'has_video_content',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
             'id', 'slug', 'course', 'materials_count', 'is_completed',
-            'duration_formatted', 'has_video_content', 'video_url', 'created_at', 'updated_at'
+            'duration_formatted', 'has_video_content', 'video_url', 'document_url', 'image_url',
+            'created_at', 'updated_at'
         ]
     
     def get_course(self, obj):
@@ -109,7 +113,10 @@ class LessonSerializer(serializers.ModelSerializer):
         """Get human-readable lesson type."""
         lesson_type_map = {
             'video': 'Video',
+            'pdf': 'PDF Document',
+            'document': 'Document',
             'text': 'Text',
+            'image': 'Image',
             'quiz': 'Quiz',
             'assignment': 'Assignment',
             'live': 'Live Session'
@@ -121,12 +128,29 @@ class LessonSerializer(serializers.ModelSerializer):
         if not obj.video_file:
             return None
         
-        # If we have the file, return its URL
-        # Django's FileField.url property handles both local and S3 URLs
         try:
             return obj.video_file.url
         except ValueError:
-            # In case the file doesn't exist or URL can't be generated
+            return None
+
+    def get_document_url(self, obj):
+        """Get the direct document URL."""
+        if not obj.document_file:
+            return None
+        
+        try:
+            return obj.document_file.url
+        except ValueError:
+            return None
+
+    def get_image_url(self, obj):
+        """Get the direct image URL."""
+        if not obj.image_file:
+            return None
+        
+        try:
+            return obj.image_file.url
+        except ValueError:
             return None
 
 
@@ -138,7 +162,7 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'module', 'lesson_type', 'order',
             'duration_minutes', 'is_preview', 'is_mandatory',
-            'content', 'video_file'
+            'content', 'video_file', 'document_file', 'image_file'
         ]
     
     def validate(self, data):
@@ -150,13 +174,7 @@ class LessonCreateSerializer(serializers.ModelSerializer):
         if Lesson.objects.filter(module=module, order=order).exists():
             raise serializers.ValidationError('A lesson with this order already exists in this module.')
         
-        # Validate lesson type specific fields
-        lesson_type = data.get('lesson_type', 'video')
-        if lesson_type == 'video' and not data.get('video_file'):
-            raise serializers.ValidationError('Video lessons must have a video file.')
-        
-        if lesson_type == 'text' and not data.get('content'):
-            raise serializers.ValidationError('Text lessons must have content.')
+        # Note: Files are optional during creation - instructors can add them later
         
         return data
 

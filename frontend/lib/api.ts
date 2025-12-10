@@ -1217,6 +1217,10 @@ export interface Lesson {
   content?: string;
   video_file?: string;
   video_url?: string;
+  document_file?: string;
+  document_url?: string;
+  image_file?: string;
+  image_url?: string;
   duration_minutes: number;
   duration_formatted: string;
   has_video_content: boolean;
@@ -1235,6 +1239,8 @@ export interface LessonCreateData {
   order: number;
   content?: string;
   video_file?: File;
+  document_file?: File;
+  image_file?: File;
   duration_minutes?: number;
   is_preview: boolean;
   is_mandatory: boolean;

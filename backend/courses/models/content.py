@@ -199,7 +199,10 @@ class Lesson(models.Model):
     
     LESSON_TYPE_CHOICES = [
         ('video', 'Video Lesson'),
+        ('pdf', 'PDF Document'),
+        ('document', 'Document'),
         ('text', 'Text Lesson'),
+        ('image', 'Image'),
         ('assignment', 'Assignment'),
         ('image_gallery', 'Image Gallery'),
         ('mixed', 'Mixed Content'),
@@ -255,6 +258,18 @@ class Lesson(models.Model):
         blank=True,
         null=True,
         help_text="Video file upload (duration will be auto-detected)"
+    )
+    document_file = models.FileField(
+        upload_to='courses/lessons/documents/',
+        blank=True,
+        null=True,
+        help_text="PDF or document file upload"
+    )
+    image_file = models.ImageField(
+        upload_to='courses/lessons/images/',
+        blank=True,
+        null=True,
+        help_text="Image file upload"
     )
     
     # Timestamps

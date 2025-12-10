@@ -185,8 +185,8 @@ class InstructorLessonCreateSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'title', 'lesson_type', 'order', 'content',
-            'video_file', 'duration_minutes', 'is_preview',
-            'is_mandatory'
+            'video_file', 'document_file', 'image_file',
+            'duration_minutes', 'is_preview', 'is_mandatory'
         ]
     
     def create(self, validated_data):
@@ -240,7 +240,8 @@ class InstructorLessonDetailSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'id', 'title', 'slug', 'lesson_type', 'lesson_type_display',
-            'order', 'content', 'video_file', 'duration_minutes', 'duration_formatted',
+            'order', 'content', 'video_file', 'document_file', 'image_file',
+            'duration_minutes', 'duration_formatted',
             'has_video_content', 'is_preview', 'is_mandatory',
             'total_materials_count', 'module_title', 'course_title',
             'created_at', 'updated_at'
