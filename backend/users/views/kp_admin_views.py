@@ -170,9 +170,14 @@ class KPLearnerListView(APIView):
         """
         Get learners enrolled in KP courses.
         
-        NOTE: This view depends on the courses app.
-        Implementation deferred until courses models are refactored.
+        Returns detailed learner information including:
+        - Basic user info (name, email, verification status)
+        - Profile info (bio, phone, learning goals, interests)
+        - Enrollment details for each course
         """
+        from courses.models import Course, Enrollment
+        from users.models import LearnerProfile
+        
         # Get KP profile
         kp_profile = profile_service.get_kp_profile(request.user)
         if not kp_profile:
@@ -180,15 +185,93 @@ class KPLearnerListView(APIView):
                 'detail': 'Knowledge Partner profile not found'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # TODO: Implement learner listing using courses app
-        # This requires accessing Course and Enrollment models
-        # which should also follow clean architecture
+        # Get all courses belonging to this KP
+        kp_courses = Course.objects.filter(training_partner=kp_profile)
         
-        return Response({
-            'message': 'Learner listing will be implemented after courses app refactoring',
-            'kp_name': kp_profile.name,
-            'learners': []
-        })
+        # Get all enrollments for these courses
+        enrollments = Enrollment.objects.filter(course__in=kp_courses).select_related(
+            'learner', 'course'
+        ).order_by('-created_at')
+        
+        # Build learner data (group by learner)
+        learners_dict = {}
+        
+        for enrollment in enrollments:
+            user = enrollment.learner
+            user_id = str(user.id)
+            
+            if user_id not in learners_dict:
+                # Get learner profile if exists
+                try:
+                    learner_profile = LearnerProfile.objects.get(user=user)
+                    profile_data = {
+                        'bio': learner_profile.bio,
+                        'profile_picture': learner_profile.profile_picture.url if learner_profile.profile_picture else None,
+                        'phone_number': learner_profile.phone_number,
+                        'learning_goals': learner_profile.learning_goals,
+                        'interests': learner_profile.interests,
+                        'created_at': learner_profile.created_at.isoformat() if learner_profile.created_at else None,
+                        'updated_at': learner_profile.updated_at.isoformat() if learner_profile.updated_at else None,
+                    }
+                except LearnerProfile.DoesNotExist:
+                    profile_data = {
+                        'bio': None,
+                        'profile_picture': None,
+                        'phone_number': None,
+                        'learning_goals': None,
+                        'interests': None,
+                        'created_at': None,
+                        'updated_at': None,
+                    }
+                
+                learners_dict[user_id] = {
+                    'id': user_id,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'is_verified': user.is_verified,
+                    'is_approved': user.is_approved,
+                    'created_at': user.created_at.isoformat(),
+                    'updated_at': user.updated_at.isoformat(),
+                    'profile': profile_data,
+                    'enrollments': [],
+                    'total_enrollments': 0,
+                    'active_enrollments': 0,
+                    'completed_enrollments': 0,
+                }
+            
+            # Add enrollment details
+            enrollment_data = {
+                'id': str(enrollment.id),
+                'course_title': enrollment.course.title,
+                'course_slug': enrollment.course.slug,
+                'status': enrollment.status,
+                'enrollment_date': enrollment.created_at.isoformat(),
+                'progress_percentage': enrollment.progress_percentage,
+                'payment_status': enrollment.payment_status,
+                'amount_paid': str(enrollment.amount_paid) if enrollment.amount_paid else '0',
+            }
+            
+            # Add lesson progress if available
+            if hasattr(enrollment, 'overall_progress'):
+                enrollment_data['overall_progress'] = enrollment.overall_progress
+            if hasattr(enrollment, 'lessons_completed'):
+                enrollment_data['lessons_completed'] = enrollment.lessons_completed
+            if hasattr(enrollment, 'total_lessons'):
+                enrollment_data['total_lessons'] = enrollment.total_lessons
+            
+            learners_dict[user_id]['enrollments'].append(enrollment_data)
+            learners_dict[user_id]['total_enrollments'] += 1
+            
+            if enrollment.status == 'active':
+                learners_dict[user_id]['active_enrollments'] += 1
+            elif enrollment.status == 'completed':
+                learners_dict[user_id]['completed_enrollments'] += 1
+        
+        # Convert to list and sort by created_at (newest first)
+        learners_list = list(learners_dict.values())
+        learners_list.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return Response(learners_list)
 
 
 class KPDashboardView(APIView):
