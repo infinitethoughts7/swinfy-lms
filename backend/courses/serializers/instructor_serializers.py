@@ -329,15 +329,37 @@ class InstructorCourseStatsSerializer(serializers.Serializer):
 class LearnerProgressSummarySerializer(serializers.ModelSerializer):
     """Serializer for learner progress summary in instructor dashboard."""
     
+    # Learner info
+    learner_id = serializers.CharField(source='enrollment.learner.id', read_only=True)
     learner_name = serializers.CharField(source='enrollment.learner.full_name', read_only=True)
+    full_name = serializers.CharField(source='enrollment.learner.full_name', read_only=True)
     learner_email = serializers.CharField(source='enrollment.learner.email', read_only=True)
+    email = serializers.CharField(source='enrollment.learner.email', read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+    
+    # Course info
     course_title = serializers.CharField(source='enrollment.course.title', read_only=True)
-    enrollment_date = serializers.DateTimeField(source='enrollment.enrolled_at', read_only=True)
+    course_slug = serializers.CharField(source='enrollment.course.slug', read_only=True)
+    enrollment_date = serializers.DateTimeField(source='enrollment.created_at', read_only=True)
+    
+    # Progress as percentage (0-100)
+    progress_percentage = serializers.FloatField(source='overall_progress', read_only=True)
     
     class Meta:
         model = CourseProgress
         fields = [
-            'id', 'learner_name', 'learner_email', 'course_title',
-            'overall_progress', 'lessons_completed', 'total_lessons',
+            'id', 'learner_id', 'learner_name', 'full_name', 'learner_email', 'email',
+            'profile_picture', 'course_title', 'course_slug',
+            'overall_progress', 'progress_percentage', 'lessons_completed', 'total_lessons',
             'enrollment_date', 'started_at', 'completed_at', 'last_activity'
         ]
+    
+    def get_profile_picture(self, obj):
+        """Get learner's profile picture URL if available."""
+        try:
+            learner = obj.enrollment.learner
+            if hasattr(learner, 'learner_profile') and learner.learner_profile.profile_picture:
+                return learner.learner_profile.profile_picture.url
+        except Exception:
+            pass
+        return None

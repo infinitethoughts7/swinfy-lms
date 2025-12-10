@@ -9,7 +9,6 @@ import {
   BookOpen,
   Target,
   User,
-  Eye,
   X,
   CheckCircle,
   AlertCircle
@@ -19,20 +18,20 @@ import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
 
 interface Learner {
   id: string;
+  learner_id: string;
   full_name: string;
   email: string;
   profile_picture: string | null;
   enrollment_date: string;
   progress_percentage: number;
-  course_title?: string;
-  course_slug?: string;
-}
-
-interface CourseWithLearners {
-  id: string;
-  title: string;
-  slug: string;
-  enrolled_learners: Learner[];
+  overall_progress: number;
+  lessons_completed: number;
+  total_lessons: number;
+  course_title: string;
+  course_slug: string;
+  started_at: string | null;
+  completed_at: string | null;
+  last_activity: string | null;
 }
 
 export default function InstructorLearnersPage() {
@@ -56,76 +55,22 @@ export default function InstructorLearnersPage() {
       setLoading(true);
       setError(null);
       
-      // For now, use mock data since the backend endpoints require specific permissions
-      // In a real implementation, you would need to create an endpoint for regular instructors
-      const mockLearners: Learner[] = [
-        {
-          id: '1',
-          full_name: 'John Doe',
-          email: 'john.doe@example.com',
-          profile_picture: null,
-          enrollment_date: '2024-01-15T10:30:00Z',
-          progress_percentage: 75,
-          course_title: 'Complete Python Programming',
-          course_slug: 'complete-python-programming'
-        },
-        {
-          id: '2',
-          full_name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          profile_picture: null,
-          enrollment_date: '2024-01-20T14:15:00Z',
-          progress_percentage: 45,
-          course_title: 'Machine Learning with Python',
-          course_slug: 'machine-learning-python'
-        },
-        {
-          id: '3',
-          full_name: 'Mike Johnson',
-          email: 'mike.johnson@example.com',
-          profile_picture: null,
-          enrollment_date: '2024-02-01T09:00:00Z',
-          progress_percentage: 90,
-          course_title: 'Complete Python Programming',
-          course_slug: 'complete-python-programming'
-        },
-        {
-          id: '4',
-          full_name: 'Sarah Wilson',
-          email: 'sarah.wilson@example.com',
-          profile_picture: null,
-          enrollment_date: '2024-02-05T16:45:00Z',
-          progress_percentage: 30,
-          course_title: 'Data Science Fundamentals',
-          course_slug: 'data-science-fundamentals'
-        },
-        {
-          id: '5',
-          full_name: 'David Brown',
-          email: 'david.brown@example.com',
-          profile_picture: null,
-          enrollment_date: '2024-02-10T11:20:00Z',
-          progress_percentage: 100,
-          course_title: 'React.js Development',
-          course_slug: 'react-js-development'
-        }
-      ];
+      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/dashboard/learner-progress/`, {
+        method: 'GET',
+      });
       
-      setAllLearners(mockLearners);
-      
-      // TODO: Replace with actual API call when backend endpoint is available
-      // const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/learners/`, {
-      //   method: 'GET',
-      // });
-      // if (response.ok) {
-      //   const data = await response.json();
-      //   setAllLearners(data);
-      // } else {
-      //   throw new Error('Failed to fetch learners');
-      // }
+      if (response.ok) {
+        const data = await response.json();
+        // Handle paginated response or direct array
+        const learners = data.results || data || [];
+        setAllLearners(learners);
+      } else {
+        throw new Error('Failed to fetch learners');
+      }
     } catch (err) {
       console.error('Error fetching learners:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch learners');
+      setAllLearners([]);
     } finally {
       setLoading(false);
     }
@@ -276,26 +221,15 @@ export default function InstructorLearnersPage() {
                     {/* Progress Info */}
                     <div className="mt-2">
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>Progress</span>
-                        <span>{formatProgress(learner.progress_percentage)}%</span>
+                        <span>Progress ({learner.lessons_completed || 0}/{learner.total_lessons || 0} lessons)</span>
+                        <span>{formatProgress(learner.progress_percentage || learner.overall_progress)}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${formatProgress(learner.progress_percentage)}%` }}
+                          style={{ width: `${formatProgress(learner.progress_percentage || learner.overall_progress)}%` }}
                         ></div>
                       </div>
-                    </div>
-
-                    {/* View Details Button */}
-                    <div className="mt-3">
-                      <button
-                        onClick={() => openModal(learner)}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View Details
-                      </button>
                     </div>
                   </div>
                 </div>

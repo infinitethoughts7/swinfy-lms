@@ -437,7 +437,7 @@ export default function KPDashboard() {
         </div>
         <div style={{ width: '100%', height: 300 }}>
           {analytics?.monthly_enrollment_trends && Object.keys(analytics.monthly_enrollment_trends).length > 0 ? (
-            <ResponsiveContainer>
+          <ResponsiveContainer>
               <LineChart data={Object.entries(analytics.monthly_enrollment_trends).map(([month, courses]) => {
                 const courseNames = Object.keys(courses);
                 const dataPoint: Record<string, string | number> = { month };
@@ -448,31 +448,31 @@ export default function KPDashboard() {
                 });
                 return dataPoint;
               })}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ fontSize: '11px' }} />
-                <Legend 
-                  align="right" 
-                  verticalAlign="top" 
-                  wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
-                />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip contentStyle={{ fontSize: '11px' }} />
+              <Legend 
+                align="right" 
+                verticalAlign="top" 
+                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+              />
                 {analytics.courses.slice(0, 5).map((course, index) => {
                   const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
                   const shortName = course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title;
                   return (
-                    <Line 
+              <Line 
                       key={course.id}
-                      type="monotone" 
+                type="monotone" 
                       dataKey={shortName}
                       stroke={colors[index % colors.length]} 
-                      strokeWidth={2}
+                strokeWidth={2}
                       dot={{ fill: colors[index % colors.length], r: 3 }}
-                    />
+              />
                   );
                 })}
-              </LineChart>
-            </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
               <p>No enrollment trend data available yet</p>
@@ -492,57 +492,57 @@ export default function KPDashboard() {
         </div>
         <div style={{ width: '100%', height: 400 }}>
           {analytics?.enrollment_vs_revenue && analytics.enrollment_vs_revenue.length > 0 ? (
-            <ResponsiveContainer>
-              <ComposedChart 
+          <ResponsiveContainer>
+            <ComposedChart 
                 data={analytics.enrollment_vs_revenue.map(item => ({
-                  course: item.course.length > 18 ? item.course.substring(0, 18) + '...' : item.course,
-                  enrollments: item.enrollments,
-                  revenue: item.revenue / 1000 // Convert to thousands
-                }))}
-                margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="course" 
-                  angle={-40}
-                  textAnchor="end"
-                  height={100}
-                  tick={{ fontSize: 9 }}
-                />
-                <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'Revenue (₹K)') {
-                      return [`₹${(value as number * 1000).toLocaleString('en-IN')}`, name];
-                    }
-                    return [value, name];
-                  }}
-                  contentStyle={{ fontSize: '11px' }}
-                />
-                <Legend 
-                  align="right" 
-                  verticalAlign="top" 
-                  wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
-                />
-                <Bar 
-                  yAxisId="left" 
-                  dataKey="enrollments" 
-                  fill="#3B82F6" 
-                  name="Enrollments"
-                  radius={[3, 3, 0, 0]}
-                />
-                <Line 
-                  yAxisId="right" 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#EF4444" 
-                  strokeWidth={3}
-                  name="Revenue (₹K)"
-                  dot={{ fill: '#EF4444', r: 5 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+                course: item.course.length > 18 ? item.course.substring(0, 18) + '...' : item.course,
+                enrollments: item.enrollments,
+                revenue: item.revenue / 1000 // Convert to thousands
+              }))}
+              margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey="course" 
+                angle={-40}
+                textAnchor="end"
+                height={100}
+                tick={{ fontSize: 9 }}
+              />
+              <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
+              <Tooltip 
+                formatter={(value, name) => {
+                  if (name === 'Revenue (₹K)') {
+                    return [`₹${(value as number * 1000).toLocaleString('en-IN')}`, name];
+                  }
+                  return [value, name];
+                }}
+                contentStyle={{ fontSize: '11px' }}
+              />
+              <Legend 
+                align="right" 
+                verticalAlign="top" 
+                wrapperStyle={{ fontSize: '10px', paddingBottom: '8px' }}
+              />
+              <Bar 
+                yAxisId="left" 
+                dataKey="enrollments" 
+                fill="#3B82F6" 
+                name="Enrollments"
+                radius={[3, 3, 0, 0]}
+              />
+              <Line 
+                yAxisId="right" 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#EF4444" 
+                strokeWidth={3}
+                name="Revenue (₹K)"
+                dot={{ fill: '#EF4444', r: 5 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
               <p>No enrollment and revenue data available yet</p>

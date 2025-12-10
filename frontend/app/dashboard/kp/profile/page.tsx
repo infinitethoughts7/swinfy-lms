@@ -581,9 +581,9 @@ export default function KPProfilePage() {
                   </label>
                   {isEditing ? (
                     <>
-                      <input
-                        type="text"
-                        value={formData.location}
+                    <input
+                      type="text"
+                      value={formData.location}
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, location: e.target.value }));
                           if (fieldErrors.location) setFieldErrors(prev => ({ ...prev, location: '' }));
@@ -592,8 +592,8 @@ export default function KPProfilePage() {
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                           fieldErrors.location || getFieldError('location') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                         }`}
-                        placeholder="City, State, Country"
-                      />
+                      placeholder="City, State, Country"
+                    />
                       {(fieldErrors.location || getFieldError('location')) && (
                         <p className="text-xs text-red-600 mt-1 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
@@ -649,9 +649,9 @@ export default function KPProfilePage() {
                   </label>
                   {isEditing ? (
                     <>
-                      <input
-                        type="text"
-                        value={formData.kp_admin_name}
+                    <input
+                      type="text"
+                      value={formData.kp_admin_name}
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, kp_admin_name: e.target.value }));
                           if (fieldErrors.kp_admin_name) setFieldErrors(prev => ({ ...prev, kp_admin_name: '' }));
@@ -660,8 +660,8 @@ export default function KPProfilePage() {
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                           fieldErrors.kp_admin_name || getFieldError('kp_admin_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                         }`}
-                        placeholder="Enter admin name"
-                      />
+                      placeholder="Enter admin name"
+                    />
                       {(fieldErrors.kp_admin_name || getFieldError('kp_admin_name')) && (
                         <p className="text-xs text-red-600 mt-1 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
