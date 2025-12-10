@@ -25,8 +25,7 @@ export const getTokens = (): AuthTokens | null => {
       return { access, refresh };
     }
     return null;
-  } catch (error) {
-    console.error('Error getting tokens:', error);
+  } catch {
     return null;
   }
 };
@@ -36,8 +35,8 @@ export const saveTokens = (tokens: AuthTokens): void => {
   try {
     localStorage.setItem('access_token', tokens.access);
     localStorage.setItem('refresh_token', tokens.refresh);
-  } catch (error) {
-    console.error('Error saving tokens:', error);
+  } catch {
+    // Silent fail
   }
 };
 
@@ -47,8 +46,8 @@ export const clearTokens = (): void => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
-  } catch (error) {
-    console.error('Error clearing tokens:', error);
+  } catch {
+    // Silent fail
   }
 };
 
@@ -58,8 +57,7 @@ export const isTokenExpired = (token: string): boolean => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
-  } catch (error) {
-    console.error('Error checking token expiration:', error);
+  } catch {
     return true;
   }
 };
@@ -69,7 +67,6 @@ export const refreshAccessToken = async (): Promise<string | null> => {
   try {
     const tokens = getTokens();
     if (!tokens) {
-      console.log('No refresh token available');
       return null;
     }
 
@@ -83,7 +80,6 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     });
 
     if (!response.ok) {
-      console.log('Failed to refresh token - refresh token expired');
       clearTokens();
       return null;
     }
@@ -93,8 +89,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     saveTokens(newTokens);
     
     return data.access;
-  } catch (error) {
-    console.error('Error refreshing token:', error);
+  } catch {
     clearTokens();
     return null;
   }
@@ -105,24 +100,20 @@ export const getValidAccessToken = async (): Promise<string | null> => {
   try {
     const tokens = getTokens();
     if (!tokens) {
-      console.log('No tokens available');
       return null;
     }
 
     // Check if access token is expired
     if (isTokenExpired(tokens.access)) {
-      console.log('Access token expired, refreshing...');
       const newAccessToken = await refreshAccessToken();
       if (!newAccessToken) {
-        console.log('Failed to refresh token - user needs to login again');
         return null;
       }
       return newAccessToken;
     }
 
     return tokens.access;
-  } catch (error) {
-    console.error('Error getting valid access token:', error);
+  } catch {
     return null;
   }
 };
@@ -133,7 +124,6 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     const accessToken = await getValidAccessToken();
     
     if (!accessToken) {
-      console.log('No valid access token available, redirecting to login');
       // Don't logout immediately, let the component handle the error
       throw new Error('No valid access token available');
     }
@@ -162,7 +152,6 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
 
     // If still unauthorized after refresh, throw error but don't logout immediately
     if (response.status === 401) {
-      console.log('401 Unauthorized - user needs to login again');
       throw new Error('Authentication failed - please log in again');
     }
 
@@ -190,8 +179,7 @@ export const getCurrentUser = (): User | null => {
       return JSON.parse(userStr);
     }
     return null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
+  } catch {
     return null;
   }
 };
@@ -200,8 +188,8 @@ export const getCurrentUser = (): User | null => {
 export const saveUser = (user: User): void => {
   try {
     localStorage.setItem('user', JSON.stringify(user));
-  } catch (error) {
-    console.error('Error saving user:', error);
+  } catch {
+    // Silent fail
   }
 };
 

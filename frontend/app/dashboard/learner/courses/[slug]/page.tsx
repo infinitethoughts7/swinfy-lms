@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { learnerDashboardApi } from '@/lib/api';
-import { authenticatedFetch, isAuthenticated, getCurrentUser, getTokens } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated } from '@/lib/auth';
 import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
 import { 
   Play, 
@@ -155,14 +155,6 @@ export default function CourseLearningPage() {
   const courseSlug = params.slug as string;
   
   // Debug logging (client side only)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('Course Learning Page - Params:', params);
-      console.log('Course Learning Page - Course Slug:', courseSlug);
-      console.log('Course Learning Page - Is Authenticated:', isAuthenticated());
-      console.log('Course Learning Page - User:', getCurrentUser());
-    }
-  }, [courseSlug, params]);
   
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
@@ -266,21 +258,12 @@ export default function CourseLearningPage() {
     // Check authentication on client side only
     if (typeof window !== 'undefined') {
       const authStatus = isAuthenticated();
-      const tokens = getTokens();
-      const user = getCurrentUser();
-      
-      console.log('Authentication check:', authStatus);
-      console.log('Tokens available:', !!tokens);
-      console.log('User data:', user);
       
       if (!authStatus) {
-        console.log('User not authenticated, setting error');
         setError('Please log in to access this course');
         setLoading(false);
         return;
       }
-      
-      console.log('User is authenticated, proceeding with course data fetch');
       
       if (courseSlug) {
         fetchCourseData();

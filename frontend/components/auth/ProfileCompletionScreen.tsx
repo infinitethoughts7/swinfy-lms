@@ -99,8 +99,6 @@ export default function ProfileCompletionScreen({
       // TODO: Remove this when actual login/registration stores real tokens
       if (!token) {
         // Try to login with the user's email and a default password to get token
-        console.log('No token found, attempting to get authentication token...');
-        
         try {
           const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
           const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login/`, {

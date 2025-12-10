@@ -5,9 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import ProductionDebugPanel from '@/components/debug/ProductionDebugPanel';
 import { getCurrentUser, isAuthenticated } from '@/lib/auth';
-import { productionDebug } from '@/lib/production-debug';
 
 export default function DashboardLayout({
   children,
@@ -24,18 +22,12 @@ export default function DashboardLayout({
   // Check authentication and redirect if needed
   useEffect(() => {
     const checkAuth = () => {
-      // Debug authentication state
-      console.log('=== DASHBOARD AUTH CHECK ===');
-      productionDebug.debugAll();
-      
       if (!isAuthenticated()) {
-        console.log('User not authenticated, redirecting to home');
         router.push('/');
         return;
       }
 
       const currentUser = getCurrentUser();
-      console.log('Current user from auth:', currentUser);
       if (currentUser) {
         // Check if user is accessing the correct dashboard
         const pathSegment = pathname.split('/')[2]; // Extract role from /dashboard/role/...
@@ -147,9 +139,6 @@ export default function DashboardLayout({
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
-        
-        {/* Production Debug Panel */}
-        <ProductionDebugPanel />
       </div>
     </ErrorBoundary>
   );
