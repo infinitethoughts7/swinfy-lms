@@ -103,7 +103,7 @@ export default function KPProfilePage() {
   // Content moderation hook
   const { 
     checkField, 
-    getFieldError: getModerationError, 
+    getFieldError, 
     hasErrors: hasModerationErrors,
     clearAllErrors: clearModerationErrors
   } = useContentModeration();
@@ -446,11 +446,13 @@ export default function KPProfilePage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+                disabled={saving || hasModerationErrors}
+                className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center ${
+                  hasModerationErrors ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? 'Saving...' : hasModerationErrors ? 'Fix Content Issues' : 'Save Changes'}
               </button>
             </div>
           )}
@@ -501,14 +503,14 @@ export default function KPProfilePage() {
                           checkField('name', e.target.value);
                         }}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors.name || getModerationError('name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                          fieldErrors.name || getFieldError('name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                         }`}
                         placeholder="Enter Knowledge Partner name"
                       />
-                      {(fieldErrors.name || getModerationError('name')) && (
+                      {(fieldErrors.name || getFieldError('name')) && (
                         <p className="text-xs text-red-600 mt-1 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
-                          {fieldErrors.name || getModerationError('name')}
+                          {fieldErrors.name || getFieldError('name')}
                         </p>
                       )}
                     </>
@@ -556,14 +558,14 @@ export default function KPProfilePage() {
                       }}
                       rows={4}
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        fieldErrors.description || getModerationError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        fieldErrors.description || getFieldError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                       }`}
                       placeholder="Describe your knowledge partner..."
                     />
-                    {(fieldErrors.description || getModerationError('description')) && (
+                    {(fieldErrors.description || getFieldError('description')) && (
                       <p className="text-xs text-red-600 mt-1 flex items-center">
                         <AlertCircle className="h-3 w-3 mr-1" />
-                        {fieldErrors.description || getModerationError('description')}
+                        {fieldErrors.description || getFieldError('description')}
                       </p>
                     )}
                   </>
@@ -578,13 +580,27 @@ export default function KPProfilePage() {
                     Location
                   </label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="City, State, Country"
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, location: e.target.value }));
+                          if (fieldErrors.location) setFieldErrors(prev => ({ ...prev, location: '' }));
+                          checkField('location', e.target.value);
+                        }}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors.location || getFieldError('location') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        }`}
+                        placeholder="City, State, Country"
+                      />
+                      {(fieldErrors.location || getFieldError('location')) && (
+                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          {fieldErrors.location || getFieldError('location')}
+                        </p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-gray-900 font-medium">{profile?.location || 'Not provided'}</p>
                   )}
@@ -632,13 +648,27 @@ export default function KPProfilePage() {
                     Admin Name
                   </label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      value={formData.kp_admin_name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, kp_admin_name: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter admin name"
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={formData.kp_admin_name}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, kp_admin_name: e.target.value }));
+                          if (fieldErrors.kp_admin_name) setFieldErrors(prev => ({ ...prev, kp_admin_name: '' }));
+                          checkField('kp_admin_name', e.target.value);
+                        }}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          fieldErrors.kp_admin_name || getFieldError('kp_admin_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter admin name"
+                      />
+                      {(fieldErrors.kp_admin_name || getFieldError('kp_admin_name')) && (
+                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          {fieldErrors.kp_admin_name || getFieldError('kp_admin_name')}
+                        </p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-gray-900 font-medium">{profile?.kp_admin_name || 'Not provided'}</p>
                   )}

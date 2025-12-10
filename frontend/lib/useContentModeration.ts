@@ -74,20 +74,19 @@ export function useContentModeration(options: UseContentModerationOptions = {}) 
       setIsChecking(prev => ({ ...prev, [fieldName]: true }));
 
       try {
-        const response = await authenticatedFetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/core/moderation/check/`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              text,
-              field_name: fieldName,
-            }),
-          }
-        );
-
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/core/moderation/check/`;
+        
+        const response = await authenticatedFetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            field_name: fieldName,
+          }),
+        });
+        
         if (response.ok) {
           const result = await response.json();
           

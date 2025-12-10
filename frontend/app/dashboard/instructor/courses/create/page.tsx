@@ -72,8 +72,8 @@ export default function CreateCoursePage() {
   // Content moderation hook
   const { 
     checkField, 
-    getFieldError: getModerationError, 
-    hasErrors: hasModerationErrors 
+    getFieldError, 
+    hasErrors: hasModerationErrors
   } = useContentModeration();
 
   const handleChange = (field: keyof CourseFormData, value: string | number | boolean | undefined) => {
@@ -240,13 +240,13 @@ export default function CreateCoursePage() {
                 onChange={(e) => handleChange('title', e.target.value)}
                 placeholder="e.g., Complete React Development Course"
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
-                  formErrors.title || getModerationError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  formErrors.title || getFieldError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(formErrors.title || getModerationError('title')) && (
+              {(formErrors.title || getFieldError('title')) && (
                 <p className="text-red-600 text-xs mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {formErrors.title || getModerationError('title')}
+                  {formErrors.title || getFieldError('title')}
                 </p>
               )}
             </div>
@@ -298,14 +298,14 @@ export default function CreateCoursePage() {
                 rows={2}
                 maxLength={300}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.short_description || getModerationError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  formErrors.short_description || getFieldError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
               <div className="flex justify-between mt-1">
-                {(formErrors.short_description || getModerationError('short_description')) && (
+                {(formErrors.short_description || getFieldError('short_description')) && (
                   <p className="text-red-600 text-xs flex items-center">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    {formErrors.short_description || getModerationError('short_description')}
+                    {formErrors.short_description || getFieldError('short_description')}
                   </p>
                 )}
                 <p className="text-gray-500 text-xs ml-auto">{formData.short_description.length}/300</p>
@@ -322,13 +322,13 @@ export default function CreateCoursePage() {
                 placeholder="Detailed course description..."
                 rows={3}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.description || getModerationError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  formErrors.description || getFieldError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(formErrors.description || getModerationError('description')) && (
+              {(formErrors.description || getFieldError('description')) && (
                 <p className="text-red-600 text-xs mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {formErrors.description || getModerationError('description')}
+                  {formErrors.description || getFieldError('description')}
                 </p>
               )}
             </div>
@@ -408,13 +408,13 @@ export default function CreateCoursePage() {
                 placeholder="What will students learn?"
                 rows={2}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.learning_outcomes || getModerationError('learning_outcomes') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  formErrors.learning_outcomes || getFieldError('learning_outcomes') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(formErrors.learning_outcomes || getModerationError('learning_outcomes')) && (
+              {(formErrors.learning_outcomes || getFieldError('learning_outcomes')) && (
                 <p className="text-red-600 text-xs mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {formErrors.learning_outcomes || getModerationError('learning_outcomes')}
+                  {formErrors.learning_outcomes || getFieldError('learning_outcomes')}
                 </p>
               )}
             </div>
@@ -427,13 +427,13 @@ export default function CreateCoursePage() {
                 placeholder="What should students know?"
                 rows={2}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.prerequisites || getModerationError('prerequisites') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  formErrors.prerequisites || getFieldError('prerequisites') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(formErrors.prerequisites || getModerationError('prerequisites')) && (
+              {(formErrors.prerequisites || getFieldError('prerequisites')) && (
                 <p className="text-red-600 text-xs mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {formErrors.prerequisites || getModerationError('prerequisites')}
+                  {formErrors.prerequisites || getFieldError('prerequisites')}
                 </p>
               )}
             </div>

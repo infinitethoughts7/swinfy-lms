@@ -54,7 +54,7 @@ export default function StudentProfilePage() {
   // Content moderation hook
   const { 
     checkField, 
-    getFieldError: getModerationError, 
+    getFieldError, 
     hasErrors: hasModerationErrors,
     clearAllErrors: clearModerationErrors
   } = useContentModeration();
@@ -410,14 +410,14 @@ export default function StudentProfilePage() {
                   value={formData.full_name}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    getModerationError('full_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    getFieldError('full_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
                   required
                 />
-                {getModerationError('full_name') && (
+                {getFieldError('full_name') && (
                   <p className="text-xs text-red-600 mt-1 flex items-center">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    {getModerationError('full_name')}
+                    {getFieldError('full_name')}
                   </p>
                 )}
               </div>
@@ -461,13 +461,13 @@ export default function StudentProfilePage() {
                   onChange={handleInputChange}
                   placeholder="e.g., Programming, Design, Marketing"
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    fieldErrors.interests || getModerationError('interests') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    fieldErrors.interests || getFieldError('interests') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
                 />
-                {(fieldErrors.interests || getModerationError('interests')) ? (
+                {(fieldErrors.interests || getFieldError('interests')) ? (
                   <p className="text-xs text-red-600 mt-1 flex items-center">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    {fieldErrors.interests || getModerationError('interests')}
+                    {fieldErrors.interests || getFieldError('interests')}
                   </p>
                 ) : (
                   <p className="text-xs text-gray-500 mt-1">Separate multiple interests with commas</p>
@@ -487,13 +487,13 @@ export default function StudentProfilePage() {
                 placeholder="Tell us about yourself..."
                 rows={4}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  fieldErrors.bio || getModerationError('bio') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  fieldErrors.bio || getFieldError('bio') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(fieldErrors.bio || getModerationError('bio')) && (
+              {(fieldErrors.bio || getFieldError('bio')) && (
                 <p className="text-xs text-red-600 mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {fieldErrors.bio || getModerationError('bio')}
+                  {fieldErrors.bio || getFieldError('bio')}
                 </p>
               )}
             </div>
@@ -510,13 +510,13 @@ export default function StudentProfilePage() {
                 placeholder="What do you want to learn? What are your learning objectives?"
                 rows={4}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  fieldErrors.learning_goals || getModerationError('learning_goals') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  fieldErrors.learning_goals || getFieldError('learning_goals') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {(fieldErrors.learning_goals || getModerationError('learning_goals')) && (
+              {(fieldErrors.learning_goals || getFieldError('learning_goals')) && (
                 <p className="text-xs text-red-600 mt-1 flex items-center">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  {fieldErrors.learning_goals || getModerationError('learning_goals')}
+                  {fieldErrors.learning_goals || getFieldError('learning_goals')}
                 </p>
               )}
             </div>

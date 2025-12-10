@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
 import { authenticatedFetch } from '@/lib/auth';
-import { User, Mail, Calendar, Award, Lock, X } from 'lucide-react';
+import { useContentModeration } from '@/lib/useContentModeration';
+import { User, Mail, Calendar, Award, Lock, X, AlertCircle } from 'lucide-react';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 
 interface UserProfile {
@@ -55,6 +56,14 @@ export default function InstructorProfilePage() {
     is_available: true,
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Content moderation hook
+  const { 
+    checkField, 
+    getFieldError, 
+    hasErrors: hasModerationErrors,
+    clearAllErrors: clearModerationErrors
+  } = useContentModeration();
 
   // Parse field-specific errors from error message
   const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
@@ -115,6 +124,12 @@ export default function InstructorProfilePage() {
   };
 
   const handleSave = async () => {
+    // Check for content moderation errors
+    if (hasModerationErrors) {
+      setError('Please fix the content issues highlighted in red before saving.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
@@ -205,7 +220,23 @@ export default function InstructorProfilePage() {
         is_available: profileData.is_available !== undefined ? profileData.is_available : true,
       });
     }
+    setFieldErrors({});
+    clearModerationErrors();
     setIsEditing(false);
+  };
+
+  // Handle input change with content moderation
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear field-specific error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    // Check content moderation for text fields
+    const textFields = ['bio', 'title', 'specializations', 'technologies', 'certifications'];
+    if (textFields.includes(field)) {
+      checkField(field, value);
+    }
   };
 
   if (loading) {
@@ -269,15 +300,47 @@ export default function InstructorProfilePage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
+                disabled={saving || hasModerationErrors}
+                className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 flex items-center ${
+                  hasModerationErrors ? 'bg-red-500' : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : hasModerationErrors ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Fix Content Issues
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Error Banner for Editing */}
+      {isEditing && (error || hasModerationErrors) && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-red-800">
+              {hasModerationErrors ? 'Content Issues Detected' : 'Error'}
+            </h3>
+            <p className="text-sm text-red-700 mt-1">
+              {hasModerationErrors 
+                ? 'Please fix the content issues highlighted in red below before saving.'
+                : error
+              }
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Profile Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -348,17 +411,17 @@ export default function InstructorProfilePage() {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, title: e.target.value }));
-                      if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
-                    }}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.title ? 'border-red-500' : 'border-gray-300'
+                      fieldErrors.title || getFieldError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="e.g., Senior Software Engineer"
                   />
-                  {fieldErrors.title && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.title}</p>
+                  {(fieldErrors.title || getFieldError('title')) && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {fieldErrors.title || getFieldError('title')}
+                    </p>
                   )}
                 </>
               ) : (
@@ -372,18 +435,18 @@ export default function InstructorProfilePage() {
                 <>
                   <textarea
                     value={formData.bio}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, bio: e.target.value }));
-                      if (fieldErrors.bio) setFieldErrors(prev => ({ ...prev, bio: '' }));
-                    }}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
                     rows={3}
                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.bio ? 'border-red-500' : 'border-gray-300'
+                      fieldErrors.bio || getFieldError('bio') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="Tell us about yourself..."
                   />
-                  {fieldErrors.bio && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.bio}</p>
+                  {(fieldErrors.bio || getFieldError('bio')) && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {fieldErrors.bio || getFieldError('bio')}
+                    </p>
                   )}
                 </>
               ) : (
@@ -447,18 +510,18 @@ export default function InstructorProfilePage() {
                 <>
                   <textarea
                     value={formData.specializations}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, specializations: e.target.value }));
-                      if (fieldErrors.specializations) setFieldErrors(prev => ({ ...prev, specializations: '' }));
-                    }}
+                    onChange={(e) => handleInputChange('specializations', e.target.value)}
                     rows={2}
                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.specializations ? 'border-red-500' : 'border-gray-300'
+                      fieldErrors.specializations || getFieldError('specializations') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="e.g., Web Development, Machine Learning, Data Science"
                   />
-                  {fieldErrors.specializations && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.specializations}</p>
+                  {(fieldErrors.specializations || getFieldError('specializations')) && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {fieldErrors.specializations || getFieldError('specializations')}
+                    </p>
                   )}
                 </>
               ) : (
@@ -472,18 +535,18 @@ export default function InstructorProfilePage() {
                 <>
                   <textarea
                     value={formData.technologies}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, technologies: e.target.value }));
-                      if (fieldErrors.technologies) setFieldErrors(prev => ({ ...prev, technologies: '' }));
-                    }}
+                    onChange={(e) => handleInputChange('technologies', e.target.value)}
                     rows={2}
                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.technologies ? 'border-red-500' : 'border-gray-300'
+                      fieldErrors.technologies || getFieldError('technologies') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="e.g., JavaScript, Python, React, Node.js"
                   />
-                  {fieldErrors.technologies && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.technologies}</p>
+                  {(fieldErrors.technologies || getFieldError('technologies')) && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {fieldErrors.technologies || getFieldError('technologies')}
+                    </p>
                   )}
                 </>
               ) : (
@@ -497,18 +560,18 @@ export default function InstructorProfilePage() {
                 <>
                   <textarea
                     value={formData.certifications}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, certifications: e.target.value }));
-                      if (fieldErrors.certifications) setFieldErrors(prev => ({ ...prev, certifications: '' }));
-                    }}
+                    onChange={(e) => handleInputChange('certifications', e.target.value)}
                     rows={2}
                     className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.certifications ? 'border-red-500' : 'border-gray-300'
+                      fieldErrors.certifications || getFieldError('certifications') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                     placeholder="List your professional certifications"
                   />
-                  {fieldErrors.certifications && (
-                    <p className="text-xs text-red-600 mt-1">{fieldErrors.certifications}</p>
+                  {(fieldErrors.certifications || getFieldError('certifications')) && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {fieldErrors.certifications || getFieldError('certifications')}
+                    </p>
                   )}
                 </>
               ) : (
