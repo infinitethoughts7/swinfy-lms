@@ -5,6 +5,7 @@ All business logic, workflows, and orchestration go here.
 NO direct database queries, NO HTTP handling.
 """
 
+import os
 from .otp_service import OTPService
 from .email_service import EmailService
 from .user_service import UserService
@@ -12,12 +13,22 @@ from .auth_service import AuthService
 from .profile_service import ProfileService
 from .kp_service import KPService
 
-# Import email adapter
+# Import email adapters
 from users.adapters.email.gmail_adapter import GmailAdapter
+from users.adapters.email.resend_adapter import ResendAdapter
+
+
+def get_email_provider():
+    """Select email provider based on EMAIL_PROVIDER environment variable."""
+    provider = os.getenv('EMAIL_PROVIDER', 'gmail').lower()
+    if provider == 'resend':
+        return ResendAdapter()
+    return GmailAdapter()
+
 
 # Create singleton instances
 otp_service = OTPService()
-email_service = EmailService(provider=GmailAdapter())
+email_service = EmailService(provider=get_email_provider())
 user_service = UserService()
 auth_service = AuthService()
 profile_service = ProfileService()
