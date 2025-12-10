@@ -76,21 +76,22 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
-          {/* <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
+          {/* Quick Links - Commented out
+          <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
             <Link href="/courses" className="text-gray-300 hover:text-white transition-colors text-sm">
               Courses
-            </Link> */}
-            {/* <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
+            </Link>
+            <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
               Team
-            </Link> */}
-            {/* <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors text-sm">
+            </Link>
+            <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors text-sm">
               Pricing
-            </Link> */}
-            {/* <Link href="/contact" className="text-gray-300 hover:text-white transition-colors text-sm">
+            </Link>
+            <Link href="/contact" className="text-gray-300 hover:text-white transition-colors text-sm">
               Contact
-            </Link> */}
+            </Link>
           </div>
+          */}
 
           {/* Social Links */}
           <div className="flex space-x-3">
