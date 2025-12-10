@@ -81,15 +81,15 @@ const Footer = () => {
             <Link href="/courses" className="text-gray-300 hover:text-white transition-colors text-sm">
               Courses
             </Link>
-            <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
+            {/* <Link href="/team" className="text-gray-300 hover:text-white transition-colors text-sm">
               Team
-            </Link>
-            <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors text-sm">
+            </Link> */}
+            {/* <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors text-sm">
               Pricing
-            </Link>
-            <Link href="/contact" className="text-gray-300 hover:text-white transition-colors text-sm">
+            </Link> */}
+            {/* <Link href="/contact" className="text-gray-300 hover:text-white transition-colors text-sm">
               Contact
-            </Link>
+            </Link> */}
           </div>
 
           {/* Social Links */}
@@ -116,12 +116,12 @@ const Footer = () => {
               © {currentYear} OLLA. All rights reserved.
             </div>
             <div className="flex space-x-6 mt-2 md:mt-0">
-              <span className="hover:text-white transition-colors cursor-pointer">
+              <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy Policy
-              </span>
-              <span className="hover:text-white transition-colors cursor-pointer">
+              </Link>
+              <Link href="/terms" className="hover:text-white transition-colors">
                 Terms of Service
-              </span>
+              </Link>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
@@ -23,65 +23,11 @@ interface HeaderProps {
 
 const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{
-    id: string;
-    title: string;
-    message: string;
-    is_read: boolean;
-    created_at: string;
-  }>>([]);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const notificationsFetchedRef = useRef(false);
   const router = useRouter();
   
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  const fetchNotifications = useCallback(async () => {
-    // Check if user is authenticated before making API call
-    const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token');
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping notifications fetch');
-      return;
-    }
-    
-    // Prevent multiple simultaneous requests
-    if (loadingNotifications || notificationsFetchedRef.current) return;
-    
-    try {
-      notificationsFetchedRef.current = true;
-      setLoadingNotifications(true);
-      console.log('🔔 Fetching notifications...');
-      const { learnerDashboardApi } = await import('@/lib/api');
-      const response = await learnerDashboardApi.getNotifications();
-      setNotifications(response.results?.slice(0, 5) || []);
-      console.log('✅ Notifications fetched successfully');
-    } catch (error) {
-      console.error('❌ Error fetching notifications:', error);
-      // Fallback to empty array
-      setNotifications([]);
-    } finally {
-      setLoadingNotifications(false);
-      // Reset the ref after a delay to allow future fetches if needed
-      setTimeout(() => {
-        notificationsFetchedRef.current = false;
-      }, 1000);
-    }
-  }, []); // Remove loadingNotifications from dependencies to prevent infinite loop
-
-  // Fetch notifications when component mounts or when notifications dropdown is opened
-  useEffect(() => {
-    // Only fetch notifications if user is authenticated (has token) and is a learner
-    const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('access_token');
-    if (user.role === 'learner' && isAuthenticated) {
-      fetchNotifications();
-    }
-  }, [user.role, fetchNotifications]);
-
-  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,12 +63,9 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
     router.push('/');
   };
 
-  // Close dropdowns when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
       }
@@ -157,85 +100,6 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">
-         
-
-          {/* Notifications */}
-          <div className="relative" ref={notificationsRef}>
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              aria-label="Notifications"
-            >
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications Dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  {loadingNotifications ? (
-                    <div className="p-4 text-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div className="p-4 text-center">
-                      <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                      </svg>
-                      <p className="text-sm text-gray-500 mt-2">No new notifications</p>
-                    </div>
-                  ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                          !notification.is_read ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-start">
-                          <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
-                            !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
-                          }`}></div>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              {new Date(notification.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="p-4 border-t border-gray-200">
-                  <a 
-                    href={`/dashboard/${user.role}/notifications`}
-                    className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium block"
-                  >
-                    View all notifications
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
             <button
