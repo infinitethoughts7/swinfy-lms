@@ -7,11 +7,9 @@ import {
   Mail, 
   Phone, 
   Calendar,
-  MapPin,
   BookOpen,
   Target,
   User,
-  Eye,
   X,
   CheckCircle,
   AlertCircle
@@ -271,17 +269,6 @@ export default function KPLearnersPage() {
                         </p>
                       </div>
                     )}
-
-                    {/* View Details Button */}
-                    <div className="mt-3">
-                      <button
-                        onClick={() => openModal(learner)}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View Details
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
