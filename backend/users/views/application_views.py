@@ -2,8 +2,6 @@ from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.core.mail import send_mail
-from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
@@ -87,11 +85,15 @@ class KnowledgePartnerApplicationCreateView(generics.CreateAPIView):
     
     def send_application_confirmation_email(self, application):
         """Send confirmation email to applicant."""
+        from users.services import email_service
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
         subject = f"Knowledge Partner Application Received - {application.knowledge_partner_name}"
-        message = f"""
-Dear {application.knowledge_partner_name} Team,
+        message = f"""Dear {application.knowledge_partner_name} Team,
 
-Thank you for applying to become a Knowledge Partner with our platform!
+Thank you for applying to become a Knowledge Partner with OLLA LMS!
 
 We have received your application with the following details:
 - Knowledge Partner: {application.knowledge_partner_name}
@@ -105,26 +107,28 @@ Next Steps:
 3. If approved, you'll receive login credentials to access your dashboard
 
 If you have any questions, please contact us at:
-📧 rockyg.swinfy@gmail.com
-📞 +91 7981313783
+Email: rockyg.swinfy@gmail.com
+Phone: +91 7981313783
 
 Best regards,
-Knowledge Partnership Team
-        """
+OLLA LMS Team
+"""
         
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[application.knowledge_partner_email],
-            fail_silently=False,
-        )
+        success = email_service.send_email(application.knowledge_partner_email, subject, message)
+        if success:
+            logger.info(f"KP application confirmation email sent to {application.knowledge_partner_email}")
+        else:
+            logger.error(f"Failed to send KP application confirmation email to {application.knowledge_partner_email}")
     
     def send_admin_notification_email(self, application):
         """Send notification email to admin."""
+        from users.services import email_service
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
         subject = f"New Knowledge Partner Application: {application.knowledge_partner_name}"
-        message = f"""
-New Knowledge Partner Application Received!
+        message = f"""New Knowledge Partner Application Received!
 
 Organization Details:
 - Name: {application.knowledge_partner_name}
@@ -144,15 +148,13 @@ Review this application in the admin dashboard:
 Application ID: {application.id}
 
 Created: {application.created_at.strftime('%Y-%m-%d %H:%M:%S')}
-        """
+"""
         
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=['rockyg.swinfy@gmail.com'],  # Your admin email
-            fail_silently=False,
-        )
+        success = email_service.send_email('rockyg.swinfy@gmail.com', subject, message)
+        if success:
+            logger.info(f"Admin notification email sent for KP application {application.id}")
+        else:
+            logger.error(f"Failed to send admin notification email for KP application {application.id}")
 
 
 class KnowledgePartnerApplicationListView(generics.ListAPIView):
@@ -320,29 +322,31 @@ def reject_application(request, application_id):
 
 def send_congratulations_email(application, admin_user, knowledge_partner, password):
     """Send congratulatory email with login credentials to approved Knowledge Partner."""
-    subject = f"🎉 Congratulations! Welcome to Swinfy Learning Platform - {knowledge_partner.name}"
-    message = f"""
-🎉 CONGRATULATIONS! YOUR APPLICATION HAS BEEN APPROVED! 🎉
+    from users.services import email_service
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    subject = f"Congratulations! Welcome to OLLA LMS - {knowledge_partner.name}"
+    message = f"""CONGRATULATIONS! YOUR APPLICATION HAS BEEN APPROVED!
 
 Dear {knowledge_partner.name} Team,
 
-We are thrilled to welcome you to the Swinfy Learning Platform family! 
+We are thrilled to welcome you to OLLA LMS! 
 
 Your Knowledge Partner application has been successfully approved, and we're excited to have you join our mission of transforming education and empowering learners worldwide.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔐 YOUR LOGIN CREDENTIALS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOUR LOGIN CREDENTIALS
+----------------------
+Email: {admin_user.email}
+Temporary Password: {password}
+Login URL: https://olla.co.in/
 
-📧 Email: {admin_user.email}
-🔑 Temporary Password: {password}
-🌐 Login URL: https://olla.co.in/
-
-⚠️ IMPORTANT SECURITY NOTICE:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IMPORTANT SECURITY NOTICE:
+--------------------------
 This is a TEMPORARY password that has been randomly generated for your security.
 
-🔒 YOU MUST CHANGE THIS PASSWORD immediately after your first login!
+YOU MUST CHANGE THIS PASSWORD immediately after your first login!
 
 To change your password:
 1. Login with the credentials above
@@ -352,75 +356,67 @@ To change your password:
 
 Never share your password with anyone, including our support team.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 NEXT STEPS TO GET STARTED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT STEPS TO GET STARTED
+-------------------------
+1. Login to your Knowledge Partner Dashboard
+2. Complete your organization profile (add logo, description, etc.)
+3. Update your personal admin profile
+4. Create your first course and start making an impact!
+5. Create instructors to join your organization
 
-1️⃣ Login to your Knowledge Partner Dashboard
-2️⃣ Complete your organization profile (add logo, description, etc.)
-3️⃣ Update your personal admin profile
-4️⃣ Create your first course and start making an impact!
-5️⃣ Create instructors to join your organization
+WHAT YOU CAN DO NOW
+-------------------
+- Create and manage unlimited courses
+- Add instructors to your organization  
+- Track learner enrollments and progress
+- Access detailed performance analytics
+- Create both public and private courses
+- Manage your organization's learning ecosystem
+- Build your reputation as a quality education provider
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ WHAT YOU CAN DO NOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOUR ORGANIZATION DETAILS
+-------------------------
+Organization: {knowledge_partner.name}
+Website: {knowledge_partner.website or 'Not provided'}
+Contact Email: {knowledge_partner.kp_admin_email}
+Phone: {knowledge_partner.kp_admin_phone}
+Focus Area: {application.courses_interested_in or 'Not specified'}
+Experience: {application.get_experience_years_display()}
 
-🎓 Create and manage unlimited courses
-👨‍🏫 Add instructors to your organization  
-📊 Track learner enrollments and progress
-📈 Access detailed performance analytics
-🌟 Create both public and private courses
-💼 Manage your organization's learning ecosystem
-🏆 Build your reputation as a quality education provider
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 YOUR ORGANIZATION DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🏢 Organization: {knowledge_partner.name}
-🔗 Website: {knowledge_partner.website or 'Not provided'}
-📧 Contact Email: {knowledge_partner.kp_admin_email}
-📱 Phone: {knowledge_partner.kp_admin_phone}
-🎯 Focus Area: {application.courses_interested_in or 'Not specified'}
-⭐ Experience: {application.get_experience_years_display()}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤝 NEED HELP? WE'RE HERE FOR YOU!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📧 Email Support: rockyg.swinfy@gmail.com
-📞 Phone Support: +91 7981313783
-💬 We're here to help you succeed!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEED HELP? WE'RE HERE FOR YOU!
+------------------------------
+Email Support: rockyg.swinfy@gmail.com
+Phone Support: +91 7981313783
+We're here to help you succeed!
 
 Welcome to the future of learning! Together, we'll create amazing educational experiences that will impact thousands of learners.
 
-Let's make learning accessible, engaging, and transformative! 🌟
-
-With warm regards and excitement,
-The Swinfy Learning Platform Team
-
-P.S. We can't wait to see the incredible courses you'll create! 🚀
-    """
+With warm regards,
+The OLLA LMS Team
+"""
     
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[admin_user.email],
-        fail_silently=False,
-    )
+    # Use the email service which supports Resend
+    success = email_service.send_email(admin_user.email, subject, message)
+    
+    if success:
+        logger.info(f"KP approval email sent successfully to {admin_user.email}")
+    else:
+        logger.error(f"Failed to send KP approval email to {admin_user.email}")
+    
+    return success
 
 
 def send_rejection_email(application):
     """Send rejection email to applicant."""
+    from users.services import email_service
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
     subject = f"Knowledge Partner Application Update - {application.knowledge_partner_name}"
-    message = f"""
-Dear {application.knowledge_partner_name} Team,
+    message = f"""Dear {application.knowledge_partner_name} Team,
 
-Thank you for your interest in becoming a Knowledge Partner with our platform.
+Thank you for your interest in becoming a Knowledge Partner with OLLA LMS.
 
 After careful review, we regret to inform you that we cannot approve your application at this time.
 
@@ -433,19 +429,21 @@ We encourage you to:
 - Contact us if you have any questions
 
 For questions or clarification, please contact us:
-📧 rockyg.swinfy@gmail.com
-📞 +91 7981313783
+Email: rockyg.swinfy@gmail.com
+Phone: +91 7981313783
 
 Thank you for your understanding.
 
 Best regards,
-Knowledge Partnership Team
-    """
+OLLA LMS Team
+"""
     
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[application.knowledge_partner_email],
-        fail_silently=False,
-    )
+    # Use the email service which supports Resend
+    success = email_service.send_email(application.knowledge_partner_email, subject, message)
+    
+    if success:
+        logger.info(f"KP rejection email sent successfully to {application.knowledge_partner_email}")
+    else:
+        logger.error(f"Failed to send KP rejection email to {application.knowledge_partner_email}")
+    
+    return success
