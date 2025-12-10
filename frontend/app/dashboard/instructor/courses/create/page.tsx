@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { instructorApi, type CourseCreateData } from '@/lib/api';
-import { ArrowLeft, Upload, Save, Clock, BookOpen } from 'lucide-react';
+import { useContentModeration } from '@/lib/useContentModeration';
+import { ArrowLeft, Upload, Save, Clock, BookOpen, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = [
   { value: '', label: 'Select Category' },
@@ -68,10 +69,23 @@ export default function CreateCoursePage() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
+  // Content moderation hook
+  const { 
+    checkField, 
+    getFieldError: getModerationError, 
+    hasErrors: hasModerationErrors 
+  } = useContentModeration();
+
   const handleChange = (field: keyof CourseFormData, value: string | number | boolean | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
       setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Check content moderation for text fields
+    const textFields = ['title', 'description', 'short_description', 'learning_outcomes', 'prerequisites'];
+    if (textFields.includes(field) && typeof value === 'string') {
+      checkField(field, value);
     }
   };
 
@@ -149,6 +163,12 @@ export default function CreateCoursePage() {
       return;
     }
 
+    // Check for content moderation errors
+    if (hasModerationErrors) {
+      setError('Please fix the content issues highlighted in red before saving.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setFormErrors({});
@@ -220,11 +240,14 @@ export default function CreateCoursePage() {
                 onChange={(e) => handleChange('title', e.target.value)}
                 placeholder="e.g., Complete React Development Course"
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors ${
-                  formErrors.title ? 'border-red-500' : 'border-gray-300'
+                  formErrors.title || getModerationError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {formErrors.title && (
-                <p className="text-red-600 text-xs mt-1">{formErrors.title}</p>
+              {(formErrors.title || getModerationError('title')) && (
+                <p className="text-red-600 text-xs mt-1 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {formErrors.title || getModerationError('title')}
+                </p>
               )}
             </div>
 
@@ -275,12 +298,15 @@ export default function CreateCoursePage() {
                 rows={2}
                 maxLength={300}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.short_description ? 'border-red-500' : 'border-gray-300'
+                  formErrors.short_description || getModerationError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
               <div className="flex justify-between mt-1">
-                {formErrors.short_description && (
-                  <p className="text-red-600 text-xs">{formErrors.short_description}</p>
+                {(formErrors.short_description || getModerationError('short_description')) && (
+                  <p className="text-red-600 text-xs flex items-center">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    {formErrors.short_description || getModerationError('short_description')}
+                  </p>
                 )}
                 <p className="text-gray-500 text-xs ml-auto">{formData.short_description.length}/300</p>
               </div>
@@ -296,11 +322,14 @@ export default function CreateCoursePage() {
                 placeholder="Detailed course description..."
                 rows={3}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.description ? 'border-red-500' : 'border-gray-300'
+                  formErrors.description || getModerationError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {formErrors.description && (
-                <p className="text-red-600 text-xs mt-1">{formErrors.description}</p>
+              {(formErrors.description || getModerationError('description')) && (
+                <p className="text-red-600 text-xs mt-1 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {formErrors.description || getModerationError('description')}
+                </p>
               )}
             </div>
           </div>
@@ -379,11 +408,14 @@ export default function CreateCoursePage() {
                 placeholder="What will students learn?"
                 rows={2}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.learning_outcomes ? 'border-red-500' : 'border-gray-300'
+                  formErrors.learning_outcomes || getModerationError('learning_outcomes') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {formErrors.learning_outcomes && (
-                <p className="text-red-600 text-xs mt-1">{formErrors.learning_outcomes}</p>
+              {(formErrors.learning_outcomes || getModerationError('learning_outcomes')) && (
+                <p className="text-red-600 text-xs mt-1 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {formErrors.learning_outcomes || getModerationError('learning_outcomes')}
+                </p>
               )}
             </div>
 
@@ -395,11 +427,14 @@ export default function CreateCoursePage() {
                 placeholder="What should students know?"
                 rows={2}
                 className={`w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none ${
-                  formErrors.prerequisites ? 'border-red-500' : 'border-gray-300'
+                  formErrors.prerequisites || getModerationError('prerequisites') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
               />
-              {formErrors.prerequisites && (
-                <p className="text-red-600 text-xs mt-1">{formErrors.prerequisites}</p>
+              {(formErrors.prerequisites || getModerationError('prerequisites')) && (
+                <p className="text-red-600 text-xs mt-1 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {formErrors.prerequisites || getModerationError('prerequisites')}
+                </p>
               )}
             </div>
           </div>
@@ -465,25 +500,37 @@ export default function CreateCoursePage() {
             Cancel
           </Link>
           
-          <button
-            type="submit"
-            disabled={loading}
-            className={`inline-flex items-center px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                Creating...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Add Modules and Lessons
-              </>
+          <div className="flex flex-col items-end">
+            <button
+              type="submit"
+              disabled={loading || hasModerationErrors}
+              className={`inline-flex items-center px-5 py-2 text-white rounded-lg transition-all text-sm ${
+                loading || hasModerationErrors ? 'opacity-50 cursor-not-allowed' : ''
+              } ${hasModerationErrors ? 'bg-red-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  Creating...
+                </>
+              ) : hasModerationErrors ? (
+                <>
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  Fix Content Issues
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Add Modules and Lessons
+                </>
+              )}
+            </button>
+            {hasModerationErrors && (
+              <p className="text-xs text-red-600 mt-1">
+                Please remove inappropriate content before creating
+              </p>
             )}
-          </button>
+          </div>
         </div>
       </form>
     </div>

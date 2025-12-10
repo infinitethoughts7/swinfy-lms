@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -26,10 +26,19 @@ interface RegistrationModalProps {
 
 
 export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin, onRegistrationComplete }: RegistrationModalProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<'registration' | 'otp-verification' | 'success' | 'pending-approval'>('registration');
   const [registrationEmail, setRegistrationEmail] = useState('');
   const [hasOrganization, setHasOrganization] = useState(false);
   const [organizationName, setOrganizationName] = useState<string | undefined>();
+
+  // Handle navigation to Terms/Privacy - close modal first, then navigate
+  const handleNavigateToPage = (path: string) => {
+    onOpenChange(false); // Close the modal
+    setTimeout(() => {
+      router.push(path);
+    }, 100); // Small delay to ensure modal closes smoothly
+  };
 
   // Reset function to clear all modal data and return to initial step
   const resetModal = () => {
@@ -225,13 +234,21 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin,
               <div className="mt-4 text-center">
                 <p className="text-xs text-gray-500">
                   By creating an account, you agree to our{' '}
-                  <Link href="/terms" className="text-blue-500 hover:text-blue-400">
+                  <button 
+                    type="button"
+                    onClick={() => handleNavigateToPage('/terms')} 
+                    className="text-blue-500 hover:text-blue-400 hover:underline"
+                  >
                     Terms of Service
-                  </Link>{' '}
+                  </button>{' '}
                   and{' '}
-                  <Link href="/privacy" className="text-blue-500 hover:text-blue-400">
+                  <button 
+                    type="button"
+                    onClick={() => handleNavigateToPage('/privacy')} 
+                    className="text-blue-500 hover:text-blue-400 hover:underline"
+                  >
                     Privacy Policy
-                  </Link>
+                  </button>
                 </p>
               </div>
             </>

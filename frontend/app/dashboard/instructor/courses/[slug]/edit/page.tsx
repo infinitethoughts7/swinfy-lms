@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { instructorApi, type Course, type CourseCreateData } from '@/lib/api';
+import { useContentModeration } from '@/lib/useContentModeration';
 import { 
   ChevronRight, Save, X, Upload, AlertCircle,
   Image as ImageIcon, Video
@@ -54,6 +55,14 @@ export default function EditCoursePage() {
     demo_video?: File;
   }>({});
 
+  // Content moderation hook
+  const { 
+    checkField, 
+    getFieldError, 
+    hasErrors: hasModerationErrors,
+    isChecking 
+  } = useContentModeration();
+
   const fetchCourse = useCallback(async () => {
     try {
       setLoading(true);
@@ -90,6 +99,12 @@ export default function EditCoursePage() {
     e.preventDefault();
     if (!course) return;
 
+    // Check if there are any moderation errors
+    if (hasModerationErrors) {
+      setError('Please fix the content issues highlighted in red before saving.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
@@ -101,8 +116,20 @@ export default function EditCoursePage() {
 
       await instructorApi.courses.update(course.slug, updateData);
       router.push(`/dashboard/instructor/courses/${course.slug}`);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error updating course:', err);
+      // Handle backend validation errors (content moderation)
+      if (err && typeof err === 'object' && 'response' in err) {
+        const errorObj = err as { response?: { data?: Record<string, string[]> } };
+        const errorData = errorObj.response?.data;
+        if (errorData) {
+          const errorMessages = Object.entries(errorData)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('\n');
+          setError(errorMessages || 'Failed to update course. Please try again.');
+          return;
+        }
+      }
       setError('Failed to update course. Please try again.');
     } finally {
       setSaving(false);
@@ -111,6 +138,12 @@ export default function EditCoursePage() {
 
   const handleInputChange = (field: keyof CourseCreateData, value: string | number | boolean | File) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Check content moderation for text fields
+    const textFields = ['title', 'description', 'short_description', 'learning_outcomes', 'prerequisites'];
+    if (textFields.includes(field) && typeof value === 'string') {
+      checkField(field, value);
+    }
   };
 
   const handleFileChange = (field: 'thumbnail' | 'demo_video', file: File | null) => {
@@ -203,10 +236,18 @@ export default function EditCoursePage() {
                     type="text"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      getFieldError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="Enter course title..."
                     required
                   />
+                  {getFieldError('title') && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {getFieldError('title')}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -216,11 +257,21 @@ export default function EditCoursePage() {
                     onChange={(e) => handleInputChange('short_description', e.target.value)}
                     rows={2}
                     maxLength={300}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      getFieldError('short_description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="Brief description for course listings..."
                     required
                   />
-                  <p className="text-gray-500 text-xs mt-1">{formData.short_description?.length || 0}/300</p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-gray-500 text-xs">{formData.short_description?.length || 0}/300</p>
+                    {getFieldError('short_description') && (
+                      <p className="text-sm text-red-600 flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {getFieldError('short_description')}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -229,10 +280,18 @@ export default function EditCoursePage() {
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      getFieldError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="Detailed course description..."
                     required
                   />
+                  {getFieldError('description') && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {getFieldError('description')}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -316,9 +375,17 @@ export default function EditCoursePage() {
                     value={formData.learning_outcomes}
                     onChange={(e) => handleInputChange('learning_outcomes', e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      getFieldError('learning_outcomes') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="What learners will learn from this course..."
                   />
+                  {getFieldError('learning_outcomes') && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {getFieldError('learning_outcomes')}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -327,9 +394,17 @@ export default function EditCoursePage() {
                     value={formData.prerequisites}
                     onChange={(e) => handleInputChange('prerequisites', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      getFieldError('prerequisites') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                     placeholder="What students should know before taking this course..."
                   />
+                  {getFieldError('prerequisites') && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {getFieldError('prerequisites')}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -487,12 +562,19 @@ export default function EditCoursePage() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={saving}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50"
+                  disabled={saving || hasModerationErrors}
+                  className={`w-full px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center disabled:opacity-50 ${
+                    hasModerationErrors ? 'bg-red-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Updating...' : 'Update Course'}
+                  {saving ? 'Updating...' : hasModerationErrors ? 'Fix Content Issues' : 'Update Course'}
                 </button>
+                {hasModerationErrors && (
+                  <p className="text-xs text-red-600 text-center mt-2">
+                    Please remove inappropriate content before saving
+                  </p>
+                )}
 
   
                 

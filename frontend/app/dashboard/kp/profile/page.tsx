@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
+import { useContentModeration } from '@/lib/useContentModeration';
 
 interface KPProfile {
   id: string;
@@ -98,6 +99,14 @@ export default function KPProfilePage() {
     linkedin_url: '',
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Content moderation hook
+  const { 
+    checkField, 
+    getFieldError: getModerationError, 
+    hasErrors: hasModerationErrors,
+    clearAllErrors: clearModerationErrors
+  } = useContentModeration();
 
   // Parse field-specific errors from error message
   const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
@@ -182,6 +191,12 @@ export default function KPProfilePage() {
   };
 
   const handleSave = async () => {
+    // Check for content moderation errors first
+    if (hasModerationErrors) {
+      setError('Please fix the content issues highlighted in red before saving.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
@@ -259,6 +274,7 @@ export default function KPProfilePage() {
       });
     }
     setIsEditing(false);
+    clearModerationErrors();
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,14 +498,18 @@ export default function KPProfilePage() {
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, name: e.target.value }));
                           if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: '' }));
+                          checkField('name', e.target.value);
                         }}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors.name ? 'border-red-500' : 'border-gray-300'
+                          fieldErrors.name || getModerationError('name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                         }`}
                         placeholder="Enter Knowledge Partner name"
                       />
-                      {fieldErrors.name && (
-                        <p className="text-xs text-red-600 mt-1">{fieldErrors.name}</p>
+                      {(fieldErrors.name || getModerationError('name')) && (
+                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          {fieldErrors.name || getModerationError('name')}
+                        </p>
                       )}
                     </>
                   ) : (
@@ -532,15 +552,19 @@ export default function KPProfilePage() {
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, description: e.target.value }));
                         if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
+                        checkField('description', e.target.value);
                       }}
                       rows={4}
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        fieldErrors.description ? 'border-red-500' : 'border-gray-300'
+                        fieldErrors.description || getModerationError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
                       }`}
                       placeholder="Describe your knowledge partner..."
                     />
-                    {fieldErrors.description && (
-                      <p className="text-xs text-red-600 mt-1">{fieldErrors.description}</p>
+                    {(fieldErrors.description || getModerationError('description')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.description || getModerationError('description')}
+                      </p>
                     )}
                   </>
                 ) : (
