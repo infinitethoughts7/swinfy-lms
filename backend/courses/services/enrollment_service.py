@@ -183,8 +183,11 @@ class EnrollmentService:
             if not enrollment:
                 return False, "Not enrolled in this course."
             
+            if enrollment.status == 'pending_approval':
+                return False, "Your enrollment is pending approval from the course provider."
+            
             if not enrollment.can_access_content:
-                return False, "Enrollment not approved or payment pending."
+                return False, "Enrollment not approved. Please wait for course provider approval."
             
             return True, "Enrolled learner"
         

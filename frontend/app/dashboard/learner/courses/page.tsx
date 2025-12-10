@@ -65,34 +65,96 @@ export default function LearnerMyCoursesPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-gray-600">You have not enrolled in any courses yet.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {enrollments.map((en) => (
-            <div key={en.id} className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="flex items-start space-x-3 mb-3">
-                {(en.course?.thumbnail_url || en.course?.thumbnail) ? (
-                  <Image src={en.course.thumbnail_url || en.course.thumbnail || ''} alt={en.course.title} width={60} height={60} className="rounded-lg object-cover" />
-                ) : (
-                  <div className="w-[60px] h-[60px] rounded-lg bg-gray-200" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{en.course?.title}</h3>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{en.course?.level_display || 'Beginner'}</span>
-                    <span>{en.course?.duration_weeks || 0} weeks</span>
+          {enrollments.map((en) => {
+            const isPendingApproval = en.status === 'pending_approval' || en.status === 'pending';
+            const isActive = en.status === 'active';
+            const isRejected = en.status === 'rejected';
+            
+            return (
+              <div key={en.id} className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="flex items-start space-x-3 mb-3">
+                  {(en.course?.thumbnail_url || en.course?.thumbnail) ? (
+                    <Image src={en.course.thumbnail_url || en.course.thumbnail || ''} alt={en.course.title} width={60} height={60} className="rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-[60px] h-[60px] rounded-lg bg-gray-200" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">{en.course?.title}</h3>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{en.course?.level_display || 'Beginner'}</span>
+                      <span>{en.course?.duration_weeks || 0} weeks</span>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Progress bar - only show for active enrollments */}
+                {isActive && (
+                  <>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${en.progress_percentage || 0}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>{en.progress_percentage || 0}% complete</span>
+                      <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active</span>
+                    </div>
+                  </>
+                )}
+                
+                {/* Pending approval status */}
+                {isPendingApproval && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs font-medium">Pending Approval</span>
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-1">Waiting for course provider approval</p>
+                  </div>
+                )}
+                
+                {/* Rejected status */}
+                {isRejected && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+                    <div className="flex items-center gap-2 text-red-800">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-xs font-medium">Enrollment Rejected</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="pt-3 border-t border-gray-100 mt-3">
+                  {isActive ? (
+                    <Link 
+                      href={`/dashboard/learner/courses/${en.course?.slug || en.course?.id || en.id}`} 
+                      className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                    >
+                      {(en.progress_percentage || 0) > 0 ? 'Continue Learning' : 'Start Learning'}
+                    </Link>
+                  ) : isPendingApproval ? (
+                    <button 
+                      disabled
+                      className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-yellow-700 bg-yellow-100 rounded-lg cursor-not-allowed"
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Awaiting Approval
+                    </button>
+                  ) : (
+                    <Link 
+                      href={`/courses/course/${en.course?.slug}`} 
+                      className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      View Course
+                    </Link>
+                  )}
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${en.progress_percentage || 0}%` }} />
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>{en.progress_percentage || 0}% complete</span>
-                <span className={`px-2 py-0.5 rounded-full ${en.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{en.status}</span>
-              </div>
-              <div className="pt-3 border-t border-gray-100 mt-3">
-                <Link href={`/dashboard/learner/courses/${en.course?.slug || en.course?.id || en.id}`} className="w-full inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">{(en.progress_percentage || 0) > 0 ? 'Continue' : 'Start'}</Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

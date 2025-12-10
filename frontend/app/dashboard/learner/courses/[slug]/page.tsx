@@ -545,28 +545,50 @@ export default function CourseLearningPage() {
 
 
   if (!enrollment || !enrollment.can_access_content) {
+    const isPendingApproval = enrollment?.status === 'pending_approval' || enrollment?.status === 'pending';
+    
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-yellow-600 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+            <div className={`mb-4 ${isPendingApproval ? 'text-yellow-600' : 'text-red-600'}`}>
+              {isPendingApproval ? (
+                <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              )}
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Access Restricted</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {isPendingApproval ? 'Pending Approval' : 'Access Restricted'}
+            </h3>
             <p className="text-gray-600 mb-4">
               {!enrollment 
                 ? 'You need to enroll in this course to access its content.'
+                : enrollment?.status === 'pending_approval'
+                ? 'Your payment has been received. Please wait for the course provider to approve your enrollment.'
                 : enrollment?.status === 'pending' 
                 ? 'Your enrollment is pending approval. You will be notified once approved.'
                 : enrollment?.status === 'rejected'
                 ? 'Your enrollment has been rejected. Please contact support for more information.'
                 : !enrollment.can_access_content
-                ? 'Your enrollment is not active or you do not have access to course content.'
+                ? 'Your enrollment is not active. Please wait for course provider approval.'
                 : 'You need to enroll in this course to access its content.'
               }
             </p>
+            {isPendingApproval && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-2 text-yellow-800">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">You will be notified once your enrollment is approved.</span>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link 
                 href="/dashboard/learner/courses"

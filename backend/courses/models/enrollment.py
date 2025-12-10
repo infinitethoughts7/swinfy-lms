@@ -263,16 +263,17 @@ class Enrollment(models.Model):
     @property
     def can_access_content(self):
         """Check if learner can access course content."""
-        # If payment is successful, give access (even after completion for review)
-        if hasattr(self, 'payment') and self.payment and self.payment.status == 'paid':
+        # Only allow access if enrollment is active (approved by KP)
+        # Payment alone is not enough - KP must approve first
+        if self.status == 'active':
             return True
         
-        # For completed courses, give lifetime access regardless of payment status
+        # For completed courses, give lifetime access
         if self.status == 'completed':
             return True
         
-        # For non-paid enrollments, check if active
-        return self.is_active
+        # pending_approval, pending, rejected, etc. - no access
+        return False
     
     @property
     def days_since_enrollment(self):
