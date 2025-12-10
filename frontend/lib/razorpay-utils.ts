@@ -66,7 +66,6 @@ export const loadRazorpay = (): Promise<boolean> => {
     script.async = true;
     
     script.onload = () => {
-      console.log('Razorpay script loaded successfully');
       // Suppress console errors when Razorpay loads
       suppressConsoleErrors();
       resolve(true);
@@ -112,7 +111,6 @@ export const validateRazorpayAccount = async (keyId: string): Promise<boolean> =
     // For test keys, we'll assume they're valid if they follow the format
     // Razorpay's own validation API sometimes has issues with test keys
     if (keyId.includes('test')) {
-      console.log('Using test key, skipping external validation');
       return true;
     }
     

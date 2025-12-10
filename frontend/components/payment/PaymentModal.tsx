@@ -206,7 +206,6 @@ export default function PaymentModal({ isOpen, onClose, course, onPaymentSuccess
   const handlePayment = async () => {
     // Prevent multiple simultaneous payment attempts
     if (paymentInProgress || loading) {
-      console.log('Payment already in progress, ignoring click');
       return;
     }
 

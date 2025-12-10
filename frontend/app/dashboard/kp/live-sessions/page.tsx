@@ -48,8 +48,6 @@ export default function KnowledgePartnerLiveSessionsPage() {
         approval_notes: notes
       });
       
-      console.log('Updated session:', updatedSession);
-      
       // Update the sessions list with the updated session
       setSessions(prev => prev.map(session => 
         session.id === sessionId ? updatedSession : session

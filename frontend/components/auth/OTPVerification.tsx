@@ -65,17 +65,14 @@ const OTPVerification = ({
 
   const handleSendOTP = async () => {
     if (!email || disabled) {
-      console.log('Cannot send OTP:', { email, disabled });
       return;
     }
     
-    console.log('Sending OTP to:', email);
     setIsSending(true);
     setError('');
     
     try {
       await onSendOTP(email);
-      console.log('OTP sent successfully to:', email);
       setResendCooldown(120); // 2 minutes cooldown
       const interval = setInterval(() => {
         setResendCooldown(prev => {

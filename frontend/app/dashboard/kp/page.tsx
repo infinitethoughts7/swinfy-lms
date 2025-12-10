@@ -250,13 +250,6 @@ export default function KPDashboard() {
         confirm_password: ''
       };
       
-      console.log('=== FRONTEND DEBUG: Instructor Creation Request ===');
-      console.log('Form data:', addForm);
-      console.log('Request payload:', requestData);
-      console.log('Request URL:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`);
-      console.log('Expected backend fields: email, full_name, password, confirm_password');
-      console.log('===============================================');
-      
       // Use authenticatedFetch instead of plain fetch for proper token handling
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/kp/instructors/`, {
         method: 'POST',
@@ -291,8 +284,7 @@ export default function KPDashboard() {
         throw new Error(errorData.detail || errorData.error || `HTTP ${response.status}: Failed to create instructor`);
       }
 
-      const newInstructor = await response.json();
-      console.log('Instructor created successfully:', newInstructor);
+      await response.json();
       
       alert('✅ Instructor added successfully! An invitation email with login credentials has been sent to their email address. They will be prompted to change their password upon first login.');
       closeAddModal();

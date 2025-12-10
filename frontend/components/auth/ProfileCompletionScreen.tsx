@@ -149,7 +149,6 @@ export default function ProfileCompletionScreen({
       const result = await response.json();
       
       if (result.success) {
-        console.log('Profile saved successfully:', result.message);
         onComplete();
       } else {
         throw new Error('Profile save failed');

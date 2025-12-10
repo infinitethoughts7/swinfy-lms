@@ -32,7 +32,6 @@ const HirePage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission here
-    console.log('Form submitted:', formData);
     alert('Thank you for your interest! We will contact you within 24 hours.');
   };
 

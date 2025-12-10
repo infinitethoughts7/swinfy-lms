@@ -202,8 +202,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps = 
       // Make API call
       const response = await authApi.register(registrationData);
       
-      console.log('Registration successful:', response);
-      
       // Find the selected organization name
       const selectedOrganization = formData.knowledge_partner_id 
         ? knowledgePartners.find(kp => kp.id === formData.knowledge_partner_id)

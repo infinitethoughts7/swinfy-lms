@@ -80,8 +80,6 @@ export default function LearnerHomePage() {
       try {
         setLoading(true);
         setError('');
-
-        console.log('Fetching learner dashboard data...');
         
         const [
           dashboardStatsData,
@@ -99,12 +97,6 @@ export default function LearnerHomePage() {
           liveSessionApi.upcoming()
         ]);
         
-        console.log('Dashboard stats:', dashboardStatsData);
-        console.log('Enrolled courses:', enrolledCoursesData);
-        console.log('Weekly activity:', weeklyActivityData);
-        console.log('Learner distribution:', learnerDistributionData);
-        console.log('Recent payments:', recentPaymentsData);
-
         setData({
           dashboardStats: dashboardStatsData.status === 'fulfilled' ? dashboardStatsData.value : null,
           enrolledCourses: enrolledCoursesData.status === 'fulfilled' ? (enrolledCoursesData.value.results || enrolledCoursesData.value || []) : [],
@@ -378,15 +370,7 @@ export default function LearnerHomePage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {recentCourses.slice(0, 6).map((enrollment) => {
-                  // Debug logging
-                  console.log('Enrollment data:', enrollment);
-                  console.log('Course data:', enrollment.course);
-                  console.log('Course slug:', enrollment.course?.slug);
-                  console.log('Course ID:', enrollment.course?.id);
-                  console.log('Enrollment ID:', enrollment.id);
-                  
                   const courseUrl = `/dashboard/learner/courses/${enrollment.course?.slug || enrollment.course?.id || enrollment.id}`;
-                  console.log('Generated URL:', courseUrl);
                   
                   return (
                     <div key={enrollment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200">

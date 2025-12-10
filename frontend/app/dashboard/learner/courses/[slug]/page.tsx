@@ -205,11 +205,8 @@ export default function CourseLearningPage() {
       setLoading(true);
       setError('');
       
-      console.log('Fetching course data for slug:', courseSlug);
-      
       // Fetch course details
       const courseResponse = await learnerDashboardApi.getCourseDetail(courseSlug);
-      console.log('Course response:', courseResponse);
       setCourse(courseResponse);
       
       // Fetch enrollment status
@@ -715,7 +712,6 @@ export default function CourseLearningPage() {
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               // Handle payment logic here
-                                              console.log('Pay for lesson:', lesson.title);
                                             }}
                                             className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
                                           >

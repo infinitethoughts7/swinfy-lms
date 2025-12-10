@@ -76,9 +76,6 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin,
   const sendOTPForRegistration = async (email: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     
-    console.log('Attempting to resend OTP to:', email);
-    console.log('API URL:', `${API_BASE_URL}/api/auth/resend-otp/`);
-    
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/resend-otp/`, {
         method: 'POST',
@@ -91,26 +88,20 @@ export default function RegistrationModal({ open, onOpenChange, onSwitchToLogin,
         }),
       });
 
-      console.log('Response status:', response.status);
-
       let data;
       try {
         data = await response.json();
-      } catch (jsonError) {
-        console.error('Failed to parse JSON response:', jsonError);
+      } catch {
         throw new Error('Server returned invalid response. Please check if backend is running.');
       }
       
       if (!response.ok) {
         const errorMessage = data.message || data.detail || data.error || 'Failed to send OTP';
-        console.error('Server error:', errorMessage, data);
         throw new Error(errorMessage);
       }
       
       // Success - OTP sent
-      console.log('OTP resent successfully to:', email);
     } catch (error) {
-      console.error('Error sending OTP:', error);
       
       // Check for network errors
       if (error instanceof TypeError && error.message.includes('fetch')) {

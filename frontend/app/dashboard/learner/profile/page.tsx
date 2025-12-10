@@ -82,8 +82,6 @@ export default function StudentProfilePage() {
       setLoading(true);
       setError('');
       const data = await userApi.getProfile();
-      console.log('Profile data fetched:', data);
-      console.log('Profile picture URL:', data.profile?.profile_picture);
       setProfileData(data);
       
       // Initialize form data
@@ -162,7 +160,6 @@ export default function StudentProfilePage() {
         return;
       }
       
-      console.log('Image selected:', file.name, 'Size:', (file.size / 1024).toFixed(2), 'KB');
       setProfilePicture(file);
       
       // Create preview URL
@@ -170,7 +167,6 @@ export default function StudentProfilePage() {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setProfilePicturePreview(result);
-        console.log('Preview created successfully');
       };
       reader.onerror = () => {
         setProfileError('Failed to read the image file. Please try again.');
@@ -225,15 +221,8 @@ export default function StudentProfilePage() {
         formDataToSend.append('profile_picture', profilePicture);
       }
 
-      console.log('Updating profile with data:', {
-        user_data: { full_name: formData.full_name },
-        profile_data: profileDataToSend,
-        has_picture: !!profilePicture
-      });
-
       // Update user profile with file upload
-      const result = await userApi.updateProfileWithFile(formDataToSend);
-      console.log('Profile update result:', result);
+      await userApi.updateProfileWithFile(formDataToSend);
 
       // Refresh profile data
       await fetchProfileData();
@@ -344,9 +333,7 @@ export default function StudentProfilePage() {
                       }
                       alt="Profile"
                       className="w-full h-full object-cover"
-                      onLoad={() => console.log('Profile image loaded successfully in edit mode')}
                       onError={(e) => {
-                        console.error('Profile image failed to load in edit mode:', e.currentTarget.src);
                         // Show placeholder if image fails to load
                         e.currentTarget.style.display = 'none';
                       }}
@@ -557,9 +544,7 @@ export default function StudentProfilePage() {
                     }
                     alt="Profile"
                     className="w-24 h-24 rounded-full object-cover"
-                    onLoad={() => console.log('Profile image loaded successfully')}
                     onError={(e) => {
-                      console.error('Profile image failed to load:', e.currentTarget.src);
                       // Hide image if it fails to load
                       e.currentTarget.style.display = 'none';
                     }}

@@ -247,8 +247,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     fetchCourseData();
   }, [id, isLoggedIn]);
 
-  const handlePaymentSuccess = (paymentData: unknown) => {
-    console.log('Payment successful:', paymentData);
+  const handlePaymentSuccess = (_paymentData: unknown) => {
     // Payment successful - now pending KP approval
     setEnrollmentStatus('pending_approval');
     setPaymentStatus('paid');

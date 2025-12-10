@@ -216,8 +216,6 @@ export default function KPProfilePage() {
       if (formData.kp_admin_phone && formData.kp_admin_phone.trim()) updateData.kp_admin_phone = formData.kp_admin_phone.trim();
       if (formData.linkedin_url && formData.linkedin_url.trim()) updateData.linkedin_url = formData.linkedin_url.trim();
       
-      console.log('Sending only non-empty fields:', updateData);
-      
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
         method: 'PATCH',
         body: JSON.stringify(updateData),

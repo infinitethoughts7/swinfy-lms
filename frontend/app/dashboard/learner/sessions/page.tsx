@@ -122,13 +122,13 @@ export default function StudentSessionsPage() {
   };
 
   const handleJoinSession = (sessionId: string) => {
-    console.log('Joining session:', sessionId);
     // In a real app, this would redirect to the video conference
+    void sessionId; // Acknowledge parameter usage
   };
 
   const handleViewRecording = (sessionId: string) => {
-    console.log('Viewing recording:', sessionId);
     // In a real app, this would open the recorded session
+    void sessionId; // Acknowledge parameter usage
   };
 
   return (
