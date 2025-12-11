@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { userApi, learnerDashboardApi, paymentsApi, liveSessionApi, type LiveSession } from '@/lib/api';
@@ -148,7 +148,6 @@ export default function LearnerHomePage() {
   const recentCourses = enrolledCourses.slice(0, 3);
   const weeklyActivity = data?.weeklyActivity || [];
   const liveSessions = data?.liveSessions || [];
-
   // Minimal placeholder for new learners with no data yet
   const isNewLearner = (
     (!stats || Object.keys(stats).length === 0) &&
@@ -510,34 +509,6 @@ export default function LearnerHomePage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link 
-                href="/courses"
-                className="flex items-center p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-              >
-                <BookOpen className="w-5 h-5 text-blue-600 mr-3" />
-                <span className="text-blue-700 font-medium">Browse All Courses</span>
-              </Link>
-              <Link 
-                href="/dashboard/learner/live-sessions"
-                className="flex items-center p-3 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-              >
-                <Video className="w-5 h-5 text-green-600 mr-3" />
-                <span className="text-green-700 font-medium">Join Live Sessions</span>
-              </Link>
-              <Link 
-                href="/dashboard/learner/payments"
-                className="flex items-center p-3 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors"
-              >
-                <Clock className="w-5 h-5 text-purple-600 mr-3" />
-                <span className="text-purple-700 font-medium">View Payments</span>
-              </Link>
-            </div>
           </div>
         </div>
       </div>
