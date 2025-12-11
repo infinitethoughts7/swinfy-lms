@@ -318,9 +318,7 @@ export default function KPPaymentsPage() {
                         {payment.verified_at ? (
                           <div>
                             <div>Verified: {new Date(payment.verified_at).toLocaleDateString()}</div>
-                            {payment.verified_by && (
-                              <div className="text-xs text-gray-400">by {payment.verified_by.full_name}</div>
-                            )}
+                        
                             {payment.verification_notes && (
                               <div className="text-xs text-gray-400 mt-1 max-w-xs truncate" title={payment.verification_notes}>
                                 {payment.verification_notes}
