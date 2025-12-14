@@ -67,7 +67,7 @@ const SearchBar = () => {
             onKeyPress={handleSearchKeyPress}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-full bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 placeholder-gray-400"
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 placeholder-gray-400"
           />
           <button
             type="submit"
@@ -165,7 +165,7 @@ const StaticNavbar = () => {
   
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm"
+      className="fixed top-0 left-0 right-0 z-50 bg-white"
       role="navigation"
       aria-label="Main navigation"
     >
