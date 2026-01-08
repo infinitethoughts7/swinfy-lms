@@ -171,3 +171,6 @@ backend/test_api_image_urls.py
 frontend/test-image-urls.js
 
 .env.backup
+
+*.md
+!README.md
