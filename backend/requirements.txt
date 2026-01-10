@@ -43,3 +43,4 @@ resend>=2.19.0
 google-auth==2.36.0
 google-auth-oauthlib==1.2.1
 google-auth-httplib2==0.2.0
+cryptography>=41.0.0

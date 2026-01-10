@@ -73,7 +73,24 @@ class UserRepository:
         except Exception as e:
             logger.error(f"Error fetching user by google_id {google_id}: {str(e)}")
             return None
-    
+
+    @staticmethod
+    def get_by_apple_id(apple_id: str) -> Optional[User]:
+        """
+        Get user by Apple ID.
+
+        Args:
+            apple_id (str): Apple user ID
+
+        Returns:
+            User or None
+        """
+        try:
+            return User.objects.filter(apple_id=apple_id).first()
+        except Exception as e:
+            logger.error(f"Error fetching user by apple_id {apple_id}: {str(e)}")
+            return None
+
     @staticmethod
     def exists_by_email(email: str) -> bool:
         """

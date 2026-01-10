@@ -75,6 +75,26 @@ export interface ProfileCompletionResponse {
   redirect_to_dashboard: boolean;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    is_verified: boolean;
+    is_approved: boolean;
+  };
+}
+
 export interface GoogleOAuthRequest {
   token: string;
 }
@@ -97,6 +117,41 @@ export interface GoogleOAuthResponse {
 }
 
 export interface GoogleOAuthConfigResponse {
+  success: boolean;
+  client_id: string;
+  redirect_uri: string;
+}
+
+export interface AppleOAuthRequest {
+  id_token: string;
+  authorization_code?: string;
+  user?: {
+    email?: string;
+    name?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  };
+}
+
+export interface AppleOAuthResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    is_verified: boolean;
+    is_approved: boolean;
+  };
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+}
+
+export interface AppleOAuthConfigResponse {
   success: boolean;
   client_id: string;
   redirect_uri: string;
@@ -185,6 +240,26 @@ export class AuthAPI {
 
   static async getGoogleOAuthConfig(): Promise<GoogleOAuthConfigResponse> {
     return this.request<GoogleOAuthConfigResponse>('/auth/oauth/google/config/', {
+      method: 'GET',
+    });
+  }
+
+  static async login(data: LoginRequest): Promise<LoginResponse> {
+    return this.request<LoginResponse>('/auth/login/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async appleOAuth(data: AppleOAuthRequest): Promise<AppleOAuthResponse> {
+    return this.request<AppleOAuthResponse>('/auth/oauth/apple/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async getAppleOAuthConfig(): Promise<AppleOAuthConfigResponse> {
+    return this.request<AppleOAuthConfigResponse>('/auth/oauth/apple/config/', {
       method: 'GET',
     });
   }

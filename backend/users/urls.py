@@ -23,6 +23,8 @@ from .views.auth_views import (
 from .views.oauth_views import (
     GoogleOAuthView,
     GoogleOAuthConfigView,
+    AppleOAuthView,
+    AppleOAuthConfigView,
 )
 
 # Import profile views
@@ -91,7 +93,9 @@ urlpatterns = [
     # OAuth endpoints
     path('oauth/google/', GoogleOAuthView.as_view(), name='google_oauth'),
     path('oauth/google/config/', GoogleOAuthConfigView.as_view(), name='google_oauth_config'),
-    
+    path('oauth/apple/', AppleOAuthView.as_view(), name='apple_oauth'),
+    path('oauth/apple/config/', AppleOAuthConfigView.as_view(), name='apple_oauth_config'),
+
     # OTP Verification endpoints
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),

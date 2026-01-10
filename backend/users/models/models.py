@@ -60,9 +60,11 @@ class User(AbstractUser):
 
     # OAuth fields
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True, verbose_name='Google ID')
+    apple_id = models.CharField(max_length=255, unique=True, null=True, blank=True, verbose_name='Apple ID')
     auth_provider = models.CharField(max_length=50, default='email', choices=[
         ('email', 'Email/Password'),
         ('google', 'Google OAuth'),
+        ('apple', 'Apple Sign-In'),
     ])
     
     # Knowledge Partner Association (for learners who want to be part of an organization)
