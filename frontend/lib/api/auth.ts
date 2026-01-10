@@ -75,6 +75,33 @@ export interface ProfileCompletionResponse {
   redirect_to_dashboard: boolean;
 }
 
+export interface GoogleOAuthRequest {
+  token: string;
+}
+
+export interface GoogleOAuthResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    role: string;
+    is_verified: boolean;
+    is_approved: boolean;
+  };
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+}
+
+export interface GoogleOAuthConfigResponse {
+  success: boolean;
+  client_id: string;
+  redirect_uri: string;
+}
+
 export class AuthAPI {
   private static async request<T>(
     endpoint: string,
@@ -145,6 +172,19 @@ export class AuthAPI {
 
   static async getTrainingPartners() {
     return this.request('/auth/training-partners/', {
+      method: 'GET',
+    });
+  }
+
+  static async googleOAuth(data: GoogleOAuthRequest): Promise<GoogleOAuthResponse> {
+    return this.request<GoogleOAuthResponse>('/auth/oauth/google/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async getGoogleOAuthConfig(): Promise<GoogleOAuthConfigResponse> {
+    return this.request<GoogleOAuthConfigResponse>('/auth/oauth/google/config/', {
       method: 'GET',
     });
   }

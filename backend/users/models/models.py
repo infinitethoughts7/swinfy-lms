@@ -57,6 +57,13 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, verbose_name='Email Address')
     full_name = models.CharField(max_length=200, verbose_name='Full Name')
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='learner')
+
+    # OAuth fields
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True, verbose_name='Google ID')
+    auth_provider = models.CharField(max_length=50, default='email', choices=[
+        ('email', 'Email/Password'),
+        ('google', 'Google OAuth'),
+    ])
     
     # Knowledge Partner Association (for learners who want to be part of an organization)
     knowledge_partner = models.ForeignKey(

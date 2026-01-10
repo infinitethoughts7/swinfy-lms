@@ -19,6 +19,12 @@ from .views.auth_views import (
     verify_email,
 )
 
+# Import OAuth views
+from .views.oauth_views import (
+    GoogleOAuthView,
+    GoogleOAuthConfigView,
+)
+
 # Import profile views
 from .views.profile_views import (
     UserProfileView,
@@ -81,6 +87,10 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # OAuth endpoints
+    path('oauth/google/', GoogleOAuthView.as_view(), name='google_oauth'),
+    path('oauth/google/config/', GoogleOAuthConfigView.as_view(), name='google_oauth_config'),
     
     # OTP Verification endpoints
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),

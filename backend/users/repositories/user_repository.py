@@ -44,10 +44,10 @@ class UserRepository:
     def get_by_email(email: str) -> Optional[User]:
         """
         Get user by email (case-insensitive).
-        
+
         Args:
             email (str): Email address
-            
+
         Returns:
             User or None
         """
@@ -55,6 +55,23 @@ class UserRepository:
             return User.objects.filter(email__iexact=email).first()
         except Exception as e:
             logger.error(f"Error fetching user by email {email}: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_by_google_id(google_id: str) -> Optional[User]:
+        """
+        Get user by Google ID.
+
+        Args:
+            google_id (str): Google user ID
+
+        Returns:
+            User or None
+        """
+        try:
+            return User.objects.filter(google_id=google_id).first()
+        except Exception as e:
+            logger.error(f"Error fetching user by google_id {google_id}: {str(e)}")
             return None
     
     @staticmethod

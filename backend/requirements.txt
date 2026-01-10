@@ -40,3 +40,6 @@ wcwidth==0.2.13
 better-profanity==0.7.0
 openai==2.8.1
 resend>=2.19.0
+google-auth==2.36.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
