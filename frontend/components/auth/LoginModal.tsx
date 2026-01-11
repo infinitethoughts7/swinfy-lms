@@ -196,7 +196,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
         new_password: newPassword 
       });
       
-      // Reset all states and return to login screen with success message
+      // Reset all states and return to login screen with success 
       setForgotPasswordStep(null);
       setEmail('');
       setPassword('');
@@ -209,7 +209,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
       setSuccessMessage('Your password has been updated. Please login with your new password.');
       
       // Keep modal open and show login form
-      // Focus email input for convenience
+      // Focus email input for convenience  
       setTimeout(() => {
         const emailInput = document.getElementById('email') as HTMLInputElement | null;
         emailInput?.focus();
