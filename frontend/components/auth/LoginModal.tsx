@@ -196,7 +196,7 @@ export default function LoginModal({ open, onOpenChange, onSwitchToRegister, onL
         new_password: newPassword 
       });
       
-      // Reset all states and return to login screen with success 
+      // Reset all states and return to login screen with success message
       setForgotPasswordStep(null);
       setEmail('');
       setPassword('');
