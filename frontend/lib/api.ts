@@ -1,7 +1,25 @@
 // API service for backend communication
 import { getErrorMessage, parseErrorResponse, enhancedFetch } from './error-utils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Get base URL and ensure it includes /api path
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // If the URL doesn't end with /api, add it
+  if (!envUrl.endsWith('/api')) {
+    return `${envUrl}/api`;
+  }
+
+  return envUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug: Log the API_BASE_URL to ensure it's loaded correctly
+if (typeof window !== 'undefined') {
+  console.log('[API Config] API_BASE_URL:', API_BASE_URL);
+  console.log('[API Config] NEXT_PUBLIC_API_URL env var:', process.env.NEXT_PUBLIC_API_URL);
+}
 
 export interface LoginCredentials {
   email: string;
