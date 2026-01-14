@@ -395,23 +395,39 @@ export const coursesApi = {
     search?: string;
     featured?: boolean;
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, value.toString());
-        }
+    try {
+      const queryParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const url = `/courses/${queryParams.toString() ? `?${queryParams}` : ''}`;
+      const fullUrl = `${API_BASE_URL}${url}`;
+
+      console.log('[coursesApi.getCourses] Fetching from:', fullUrl);
+      const response = await enhancedFetch(fullUrl, {
+        method: 'GET',
       });
+
+      console.log('[coursesApi.getCourses] Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        console.error('[coursesApi.getCourses] Error response:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('[coursesApi.getCourses] Success, received courses:', data.results?.length || data.length || 'unknown count');
+      return data;
+    } catch (error) {
+      console.error('[coursesApi.getCourses] Exception:', error);
+      throw new Error(getErrorMessage(error));
     }
-    
-    const url = `/api/courses/${queryParams.toString() ? `?${queryParams}` : ''}`;
-    const response = await fetch(`${API_BASE_URL}${url}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch courses');
-    }
-    
-    return response.json();
   },
 
   // Alias for getAllCourses
@@ -427,79 +443,128 @@ export const coursesApi = {
 
   // Get course details by slug
   getCourse: async (slug: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/`);
-    
-    if (!response.ok) {
-      throw new Error('Course not found');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/${slug}/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get course modules
   getCourseModules: async (slug: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/modules/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch course modules');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/${slug}/modules/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get module lessons
   getModuleLessons: async (slug: string, moduleId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/modules/${moduleId}/lessons/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch module lessons');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/${slug}/modules/${moduleId}/lessons/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get course modules (public preview)
   getCourseModulesPreview: async (slug: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/preview/modules/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch course modules');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/${slug}/preview/modules/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get module lessons (public preview)
   getModuleLessonsPreview: async (slug: string, moduleId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/${slug}/preview/modules/${moduleId}/lessons/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch module lessons');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/${slug}/preview/modules/${moduleId}/lessons/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get featured courses
   getFeaturedCourses: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/featured/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch featured courses');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/featured/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Get course statistics
   getCourseStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/courses/stats/`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch course stats');
+    try {
+      const response = await enhancedFetch(`${API_BASE_URL}/courses/stats/`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorMessage = await parseErrorResponse(response);
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
     }
-    
-    return response.json();
   },
 
   // Enroll in course

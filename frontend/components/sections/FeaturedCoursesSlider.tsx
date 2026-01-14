@@ -63,18 +63,23 @@ const FeaturedCoursesSlider = () => {
       try {
         setLoading(true);
         setError('');
-        
+
+        console.log('[FeaturedCoursesSlider] Fetching courses with featured=true');
         const data = await coursesApi.getCourses({ featured: true });
+        console.log('[FeaturedCoursesSlider] Successfully fetched data:', data);
+
         const coursesData = data.results || data;
-        
-        const featuredCourses = Array.isArray(coursesData) 
-          ? coursesData.slice(0, 6) 
+
+        const featuredCourses = Array.isArray(coursesData)
+          ? coursesData.slice(0, 6)
           : [];
-        
+
+        console.log('[FeaturedCoursesSlider] Featured courses count:', featuredCourses.length);
         setCourses(featuredCourses);
       } catch (err) {
-        console.error('Error fetching featured courses:', err);
-        setError('Failed to load featured courses');
+        console.error('[FeaturedCoursesSlider] Error fetching featured courses:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load featured courses';
+        setError(errorMessage);
         setCourses([]);
       } finally {
         setLoading(false);
