@@ -1,13 +1,28 @@
 import { DefaultSession } from "next-auth"
 
 declare module "next-auth" {
-  interface Session extends DefaultSession {
-    googleIdToken?: string
+  interface Session {
+    accessToken?: string
+    refreshToken?: string
+    user: {
+      id: string
+      email: string
+      full_name: string
+      role: string
+    } & DefaultSession["user"]
+  }
+
+  interface Account {
+    djangoAccessToken?: string
+    djangoRefreshToken?: string
+    djangoUser?: any
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    googleIdToken?: string
+    accessToken?: string
+    refreshToken?: string
+    user?: any
   }
 }
