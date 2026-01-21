@@ -172,7 +172,7 @@ frontend/test-image-urls.js
 
 .env.backup
 
-*.md
+
 !README.md
 !GOOGLE_OAUTH_SETUP.md
 !OAUTH_IMPLEMENTATION_SUMMARY.md
