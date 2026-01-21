@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ModalProvider } from '@/components/providers/ModalProvider';
+import AuthProvider from '@/components/providers/AuthProvider';
 import RegistrationModalContainer from '@/components/auth/RegistrationModalContainer';
 import LoginModalContainer from '@/components/auth/LoginModalContainer';
 
@@ -21,11 +22,13 @@ export default function RootLayout({
         <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </head>
       <body className="font-sans antialiased">
-        <ModalProvider>
-          {children}
-          <RegistrationModalContainer />
-          <LoginModalContainer />
-        </ModalProvider>
+        <AuthProvider>
+          <ModalProvider>
+            {children}
+            <RegistrationModalContainer />
+            <LoginModalContainer />
+          </ModalProvider>
+        </AuthProvider>
       </body>
     </html>
   );
