@@ -12,6 +12,7 @@ from .user_service import UserService
 from .auth_service import AuthService
 from .profile_service import ProfileService
 from .kp_service import KPService
+from .oauth_service import OAuthService
 
 # Import email adapters
 from users.adapters.email.gmail_adapter import GmailAdapter
@@ -33,6 +34,7 @@ user_service = UserService()
 auth_service = AuthService()
 profile_service = ProfileService()
 kp_service = KPService()
+oauth_service = OAuthService()
 
 __all__ = [
     'OTPService',
@@ -41,10 +43,12 @@ __all__ = [
     'AuthService',
     'ProfileService',
     'KPService',
+    'OAuthService',
     'otp_service',
     'email_service',
     'user_service',
     'auth_service',
     'profile_service',
     'kp_service',
+    'oauth_service',
 ]
