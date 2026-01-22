@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import MobileMenuToggle from './MobileMenuToggle';
 import Logo from '@/components/shared/Logo';
 import { getCurrentUser, isAuthenticated, clearTokens } from '@/lib/auth';
@@ -103,47 +103,35 @@ const SearchBar = () => {
 
 const StaticNavbar = () => {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check auth on mount and periodically
   useEffect(() => {
-    // Check authentication from NextAuth session first, then localStorage
-    if (status === 'authenticated' && session?.user) {
-      const sessionUser = session.user as { full_name?: string; email?: string; role?: string };
-      setUser({
-        full_name: sessionUser.full_name,
-        email: sessionUser.email,
-        role: sessionUser.role,
-      });
-      setIsLoggedIn(true);
-    } else if (status === 'unauthenticated') {
-      // Check localStorage as fallback (for non-OAuth logins)
+    const checkAuth = () => {
       const currentUser = getCurrentUser();
       const authenticated = isAuthenticated();
       setUser(currentUser);
       setIsLoggedIn(authenticated);
-    }
-  }, [session, status]);
-
-  useEffect(() => {
-    // Listen for storage changes (login/logout from other tabs)
-    const handleStorageChange = () => {
-      if (status === 'unauthenticated') {
-        const currentUser = getCurrentUser();
-        const authenticated = isAuthenticated();
-        setUser(currentUser);
-        setIsLoggedIn(authenticated);
-      }
     };
 
+    // Initial check
+    checkAuth();
+
+    // Poll for auth changes (handles OAuth callback sync)
+    const interval = setInterval(checkAuth, 1000);
+
+    // Listen for storage changes
+    const handleStorageChange = () => checkAuth();
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('userLogin', handleStorageChange);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userLogin', handleStorageChange);
     };
-  }, [status]);
+  }, []);
 
   const handleLogout = async () => {
     // Clear localStorage tokens
