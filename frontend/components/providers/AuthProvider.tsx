@@ -1,8 +1,8 @@
 "use client"
 
-import { SessionProvider, useSession } from "next-auth/react"
+import { SessionProvider, useSession, signOut } from "next-auth/react"
 import { useEffect } from "react"
-import { saveTokens, saveUser } from "@/lib/auth"
+import { saveTokens, saveUser, clearTokens } from "@/lib/auth"
 
 // Component to sync NextAuth session to localStorage for lib/auth.ts compatibility
 function SessionSync({ children }: { children: React.ReactNode }) {
@@ -35,6 +35,26 @@ function SessionSync({ children }: { children: React.ReactNode }) {
       }
     }
   }, [session, status])
+
+  // Listen for logout events to ensure NextAuth session is cleared
+  useEffect(() => {
+    const handleLogout = async () => {
+      console.log("[SessionSync] Handling logout event - clearing NextAuth session")
+      try {
+        await signOut({ redirect: false })
+      } catch (error) {
+        console.error("[SessionSync] Error signing out from NextAuth:", error)
+      }
+      // Clear localStorage tokens as well
+      clearTokens()
+    }
+
+    window.addEventListener('userLogout', handleLogout)
+
+    return () => {
+      window.removeEventListener('userLogout', handleLogout)
+    }
+  }, [])
 
   // Always render children - no conditional returns
   return <>{children}</>

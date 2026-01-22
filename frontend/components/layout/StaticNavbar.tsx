@@ -121,15 +121,22 @@ const StaticNavbar = () => {
     // Poll for auth changes (handles OAuth callback sync)
     const interval = setInterval(checkAuth, 1000);
 
-    // Listen for storage changes
+    // Listen for storage changes and logout events
     const handleStorageChange = () => checkAuth();
+    const handleLogout = () => {
+      setUser(null);
+      setIsLoggedIn(false);
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('userLogin', handleStorageChange);
+    window.addEventListener('userLogout', handleLogout);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userLogin', handleStorageChange);
+      window.removeEventListener('userLogout', handleLogout);
     };
   }, []);
 
