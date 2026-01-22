@@ -1,15 +1,16 @@
 // API service for backend communication
 import { getErrorMessage, parseErrorResponse, enhancedFetch } from './error-utils';
 
-// Get base URL WITH /api suffix (all paths are relative to /api/)
+// Get base URL and ensure it includes /api path
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  // Ensure URL ends with /api
-  if (envUrl.endsWith('/api')) {
-    return envUrl;
+  // If the URL doesn't end with /api, add it
+  if (!envUrl.endsWith('/api')) {
+    return `${envUrl}/api`;
   }
-  return `${envUrl}/api`;
+
+  return envUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
