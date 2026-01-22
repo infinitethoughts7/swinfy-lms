@@ -980,11 +980,13 @@ export const userApi = {
   // Get user profile
   getProfile: async () => {
     const response = await authenticatedFetch('/api/auth/profile/detail/');
-    
+
     if (!response.ok) {
-      throw new Error('Failed to fetch user profile');
+      const errorText = await response.text();
+      console.error('Profile fetch failed:', response.status, errorText);
+      throw new Error(`Failed to fetch user profile: ${response.status}`);
     }
-    
+
     return response.json();
   },
 

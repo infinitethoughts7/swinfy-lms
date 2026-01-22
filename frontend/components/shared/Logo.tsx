@@ -20,22 +20,22 @@ export default function Logo({
 }: LogoProps) {
   const sizeClasses = {
     sm: {
-      container: 'w-6 h-4',
-      dot: 'w-1.5 h-1.5',
-      text: 'text-lg',
-      spacing: 'space-x-1.5'
+      container: 'w-5 h-3',
+      dot: 'w-1 h-1',
+      text: 'text-base',
+      spacing: 'space-x-0.5'
     },
     md: {
-      container: 'w-8 h-6',
-      dot: 'w-2 h-2',
-      text: 'text-2xl',
-      spacing: 'space-x-2'
+      container: 'w-6 h-4',
+      dot: 'w-1.5 h-1.5',
+      text: 'text-xl',
+      spacing: 'space-x-1'
     },
     lg: {
-      container: 'w-10 h-8',
-      dot: 'w-2.5 h-2.5',
-      text: 'text-3xl lg:text-4xl',
-      spacing: 'space-x-3'
+      container: 'w-8 h-6',
+      dot: 'w-2 h-2',
+      text: 'text-2xl lg:text-3xl',
+      spacing: 'space-x-1.5'
     }
   };
 
@@ -59,8 +59,11 @@ export default function Logo({
       </div>
       
       {showText && (
-        <span className={`${sizes.text} font-bold ${textClassName || 'text-gray-900'}`}>
-          OLLA
+        <span className={`${sizes.text} font-bold font-serif tracking-wider ${textClassName || 'text-gray-900'}`}>
+          <span className="text-blue-500">O</span>
+          <span className="text-green-500">L</span>
+          <span className="text-yellow-500">L</span>
+          <span className="text-red-500">A</span>
         </span>
       )}
     </div>
