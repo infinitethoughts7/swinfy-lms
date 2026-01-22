@@ -244,12 +244,7 @@ const StaticNavbar = () => {
             ) : (
               // User is not logged in - show Login and Join Now
               <>
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 transition-all duration-300 rounded-full"
-                >
-                  Login
-                </button>
+          
                 <button
                   onClick={() => router.push('/auth/login')}
                   className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
