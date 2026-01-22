@@ -4,11 +4,15 @@ import { redirect } from "next/navigation"
 export default async function DashboardPage() {
   const session = await auth()
   
+  console.log("[Dashboard] Session:", JSON.stringify(session, null, 2))
+  
   if (!session?.user) {
-    redirect("/login")
+    console.log("[Dashboard] No session, redirecting to login")
+    redirect("/auth/login")
   }
 
   const role = session.user.role
+  console.log("[Dashboard] User role:", role)
   
   switch (role) {
     case "learner":
@@ -20,6 +24,7 @@ export default async function DashboardPage() {
     case "super_admin":
       redirect("/dashboard/super-admin")
     default:
-      redirect("/dashboard/learner") // Default fallback
+      console.log("[Dashboard] Unknown role, defaulting to learner")
+      redirect("/dashboard/learner")
   }
 }

@@ -3,10 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import MobileMenuToggle from './MobileMenuToggle';
-import { useModal } from '@/components/providers/ModalProvider';
 import Logo from '@/components/shared/Logo';
-import { getCurrentUser, logout, isAuthenticated } from '@/lib/auth';
+import { getCurrentUser, isAuthenticated, clearTokens } from '@/lib/auth';
 
 interface User {
   full_name?: string;
@@ -102,45 +102,56 @@ const SearchBar = () => {
 };
 
 const StaticNavbar = () => {
-  const { openRegistrationModal, openLoginModal } = useModal();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check authentication status on component mount
-    const checkAuth = () => {
+    // Check authentication from NextAuth session first, then localStorage
+    if (status === 'authenticated' && session?.user) {
+      const sessionUser = session.user as { full_name?: string; email?: string; role?: string };
+      setUser({
+        full_name: sessionUser.full_name,
+        email: sessionUser.email,
+        role: sessionUser.role,
+      });
+      setIsLoggedIn(true);
+    } else if (status === 'unauthenticated') {
+      // Check localStorage as fallback (for non-OAuth logins)
       const currentUser = getCurrentUser();
       const authenticated = isAuthenticated();
       setUser(currentUser);
       setIsLoggedIn(authenticated);
-    };
+    }
+  }, [session, status]);
 
-    checkAuth();
-
+  useEffect(() => {
     // Listen for storage changes (login/logout from other tabs)
     const handleStorageChange = () => {
-      checkAuth();
-    };
-
-    // Listen for login events
-    const handleUserLogin = () => {
-      checkAuth();
+      if (status === 'unauthenticated') {
+        const currentUser = getCurrentUser();
+        const authenticated = isAuthenticated();
+        setUser(currentUser);
+        setIsLoggedIn(authenticated);
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('userLogin', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('userLogin', handleStorageChange);
     };
-  }, []);
+  }, [status]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Clear localStorage tokens
+    clearTokens();
+    // Sign out from NextAuth
+    await signOut({ redirect: false });
     setUser(null);
     setIsLoggedIn(false);
-    // Dispatch logout event
     window.dispatchEvent(new CustomEvent('userLogout'));
     router.push('/');
   };
@@ -236,19 +247,19 @@ const StaticNavbar = () => {
                 </div>
               </div>
             ) : (
-              // User is not logged in - show login and sign up
+              // User is not logged in - show Login and Join Now
               <>
                 <button
-                  onClick={openLoginModal}
-                  className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
+                  onClick={() => router.push('/auth/login')}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 transition-all duration-300 rounded-full"
                 >
                   Login
                 </button>
                 <button
-                  onClick={openRegistrationModal}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
+                  onClick={() => router.push('/auth/login')}
+                  className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
                 >
-                  Sign up
+                  Join Now
                 </button>
               </>
             )}

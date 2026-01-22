@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { AuthAPI } from '@/lib/api/auth';
 import { saveTokens, saveUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -11,24 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import Logo from '@/components/shared/Logo';
 
 // Apple icon SVG
 const AppleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
     <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
   </svg>
-);
-
-// Logo component with book icon
-const Logo = () => (
-  <div className="flex items-center gap-2 self-center font-medium">
-    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-      </svg>
-    </div>
-    Swinfy LMS
-  </div>
 );
 
 // Declare global for Apple Sign-In
@@ -62,14 +52,23 @@ declare global {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appleClientId, setAppleClientId] = useState<string>('');
 
+  // Redirect to dashboard if already authenticated
   useEffect(() => {
-    // Fetch Apple OAuth config
+    if (status === 'authenticated' && session?.user) {
+      console.log('[LoginPage] User authenticated, redirecting to dashboard...');
+      router.push('/dashboard');
+    }
+  }, [status, session, router]);
+
+  // Fetch Apple OAuth config
+  useEffect(() => {
     const fetchAppleConfig = async () => {
       try {
         const config = await AuthAPI.getAppleOAuthConfig();
@@ -95,6 +94,30 @@ export default function LoginPage() {
       }
     };
   }, []);
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="bg-muted flex min-h-svh flex-col items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while redirecting authenticated user
+  if (status === 'authenticated') {
+    return (
+      <div className="bg-muted flex min-h-svh flex-col items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="text-muted-foreground">Redirecting to dashboard...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -164,7 +187,9 @@ export default function LoginPage() {
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <Logo />
+        <div className="flex justify-center">
+          <Logo size="lg" showText={true} href="/" />
+        </div>
 
         <Card>
           <CardHeader className="text-center">

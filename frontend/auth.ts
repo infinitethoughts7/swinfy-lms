@@ -55,23 +55,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, account }) {
       // On initial sign in, save Django tokens
       if (account?.djangoAccessToken) {
+        console.log("[NextAuth JWT] Storing Django tokens in JWT")
         token.accessToken = account.djangoAccessToken
         token.refreshToken = account.djangoRefreshToken
         token.user = account.djangoUser
+        console.log("[NextAuth JWT] User data:", JSON.stringify(account.djangoUser))
       }
       return token
     },
 
     async session({ session, token }) {
       // Pass Django tokens to client session
+      console.log("[NextAuth Session] Building session from token")
       session.accessToken = token.accessToken
       session.refreshToken = token.refreshToken
-      session.user = token.user as any
+      if (token.user) {
+        session.user = token.user as any
+        console.log("[NextAuth Session] User:", JSON.stringify(session.user))
+      }
       return session
+    },
+
+    async redirect({ url, baseUrl }) {
+      // Allow relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allow callback URLs on the same origin
+      if (new URL(url).origin === baseUrl) return url
+      return `${baseUrl}/dashboard`
     },
   },
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: "/auth/login",
+    error: "/auth/login",
   },
 })

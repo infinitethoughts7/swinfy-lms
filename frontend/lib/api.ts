@@ -1,16 +1,15 @@
 // API service for backend communication
 import { getErrorMessage, parseErrorResponse, enhancedFetch } from './error-utils';
 
-// Get base URL and ensure it includes /api path
+// Get base URL WITH /api suffix (all paths are relative to /api/)
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  // If the URL doesn't end with /api, add it
-  if (!envUrl.endsWith('/api')) {
-    return `${envUrl}/api`;
+  // Ensure URL ends with /api
+  if (envUrl.endsWith('/api')) {
+    return envUrl;
   }
-
-  return envUrl;
+  return `${envUrl}/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -154,7 +153,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
   if (!refreshToken) return null;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
+    const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -177,6 +176,8 @@ const refreshAccessToken = async (): Promise<string | null> => {
 // Enhanced authenticated fetch with automatic token refresh
 const authenticatedFetchWithRefresh = async (url: string, options: RequestInit = {}) => {
   const token = getAuthToken();
+  // Strip /api/ prefix if present (API_BASE_URL already includes /api)
+  const cleanUrl = url.startsWith('/api/') ? url.slice(4) : url;
   
   const makeRequest = async (authToken: string | null) => {
     const headers: HeadersInit = {
@@ -194,7 +195,7 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
       headers,
     };
     
-    return fetch(`${API_BASE_URL}${url}`, config);
+    return fetch(`${API_BASE_URL}${cleanUrl}`, config);
   };
   
   // First attempt with current token
@@ -215,6 +216,8 @@ const authenticatedFetchWithRefresh = async (url: string, options: RequestInit =
 // Create authenticated fetch request
 const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
   const token = getAuthToken();
+  // Strip /api/ prefix if present (API_BASE_URL already includes /api)
+  const cleanUrl = url.startsWith('/api/') ? url.slice(4) : url;
   
   const config: RequestInit = {
     ...options,
@@ -225,7 +228,7 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
     },
   };
 
-  return fetch(`${API_BASE_URL}${url}`, config);
+  return fetch(`${API_BASE_URL}${cleanUrl}`, config);
 };
 
 // Authentication API methods
@@ -233,7 +236,7 @@ export const authApi = {
   // Login user
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/login/`, {
+      const response = await enhancedFetch(`${API_BASE_URL}/auth/login/`, {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
@@ -253,7 +256,7 @@ export const authApi = {
   // Register user
   register: async (userData: RegistrationData): Promise<RegistrationResponse> => {
     try {
-      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/register/`, {
+      const response = await enhancedFetch(`${API_BASE_URL}/auth/register/`, {
         method: 'POST',
         body: JSON.stringify(userData),
       });
@@ -273,7 +276,7 @@ export const authApi = {
   // Forgot password - send OTP
   forgotPassword: async (data: { email: string }): Promise<{ message: string }> => {
     try {
-      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/forgot-password/`, {
+      const response = await enhancedFetch(`${API_BASE_URL}/auth/forgot-password/`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -293,7 +296,7 @@ export const authApi = {
   // Verify reset OTP
   verifyResetOTP: async (data: { email: string; otp_code: string }): Promise<{ message: string }> => {
     try {
-      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/verify-reset-otp/`, {
+      const response = await enhancedFetch(`${API_BASE_URL}/auth/verify-reset-otp/`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -313,7 +316,7 @@ export const authApi = {
   // Reset password
   resetPassword: async (data: { email: string; otp_code: string; new_password: string }): Promise<{ message: string }> => {
     try {
-      const response = await enhancedFetch(`${API_BASE_URL}/api/auth/reset-password/`, {
+      const response = await enhancedFetch(`${API_BASE_URL}/auth/reset-password/`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
@@ -332,7 +335,7 @@ export const authApi = {
 
   // Refresh token
   refreshToken: async (refreshToken: string): Promise<{ access: string }> => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
+    const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -368,7 +371,7 @@ export const authApi = {
     
     if (refreshToken) {
       try {
-        await fetch(`${API_BASE_URL}/api/auth/logout/`, {
+        await fetch(`${API_BASE_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1401,7 +1404,7 @@ export const instructorApi = {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1449,7 +1452,7 @@ export const instructorApi = {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1474,7 +1477,7 @@ export const instructorApi = {
     delete: async (courseSlug: string): Promise<void> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1493,7 +1496,7 @@ export const instructorApi = {
     list: async (courseSlug: string): Promise<Module[]> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/modules/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1512,7 +1515,7 @@ export const instructorApi = {
     create: async (courseSlug: string, moduleData: ModuleCreateData): Promise<Module> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/modules/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1531,7 +1534,7 @@ export const instructorApi = {
     update: async (moduleId: string, moduleData: Partial<ModuleCreateData>): Promise<Module> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/modules/${moduleId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/modules/${moduleId}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1550,7 +1553,7 @@ export const instructorApi = {
     delete: async (moduleId: string): Promise<void> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/modules/${moduleId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/modules/${moduleId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1569,7 +1572,7 @@ export const instructorApi = {
     list: async (courseSlug: string, moduleId: string): Promise<Lesson[]> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1599,7 +1602,7 @@ export const instructorApi = {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/modules/${moduleId}/lessons/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1628,7 +1631,7 @@ export const instructorApi = {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/lessons/${lessonId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/lessons/${lessonId}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1646,7 +1649,7 @@ export const instructorApi = {
     delete: async (lessonId: string): Promise<void> => {
       const token = getAuthToken();
       
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/lessons/${lessonId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/lessons/${lessonId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1664,7 +1667,7 @@ export const instructorApi = {
   resources: {
     list: async (courseSlug: string) => {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/resources/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/resources/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1712,7 +1715,7 @@ export const instructorApi = {
       if (payload.order !== undefined) formData.append('order', String(payload.order));
       if (payload.file) formData.append('file', payload.file);
 
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/courses/${courseSlug}/resources/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/courses/${courseSlug}/resources/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1766,7 +1769,7 @@ export const instructorApi = {
           }
         }
       });
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/resources/${resourceId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/resources/${resourceId}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1783,7 +1786,7 @@ export const instructorApi = {
 
     delete: async (resourceId: string) => {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/api/courses/instructor/resources/${resourceId}/`, {
+      const response = await fetch(`${API_BASE_URL}/courses/instructor/resources/${resourceId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -10,25 +10,32 @@ function SessionSync({ children }: { children: React.ReactNode }) {
   const [synced, setSynced] = useState(false)
 
   useEffect(() => {
+    console.log("[SessionSync] Status:", status)
+    console.log("[SessionSync] Session:", session ? "exists" : "null")
+    
     // If we already have tokens in localStorage, we're synced
     if (getTokens()) {
+      console.log("[SessionSync] Tokens already in localStorage")
       setSynced(true)
       return
     }
 
     // If session is loading, wait
     if (status === "loading") {
+      console.log("[SessionSync] Waiting for session to load...")
       return
     }
 
     // If no session (not authenticated), allow rendering
     if (status === "unauthenticated") {
+      console.log("[SessionSync] Not authenticated, allowing render")
       setSynced(true)
       return
     }
 
     // If session has tokens, sync them
     if (session?.accessToken && session?.refreshToken && session?.user) {
+      console.log("[SessionSync] Syncing tokens to localStorage...")
       saveTokens({
         access: session.accessToken as string,
         refresh: session.refreshToken as string,
@@ -41,6 +48,8 @@ function SessionSync({ children }: { children: React.ReactNode }) {
         role?: string
       }
 
+      console.log("[SessionSync] User data:", JSON.stringify(user))
+
       if (user.id && user.email && user.role) {
         saveUser({
           id: user.id,
@@ -48,9 +57,15 @@ function SessionSync({ children }: { children: React.ReactNode }) {
           full_name: user.full_name || "",
           role: user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin',
         })
+        console.log("[SessionSync] User saved to localStorage")
       }
       setSynced(true)
     } else {
+      console.log("[SessionSync] Session exists but no tokens:", {
+        hasAccessToken: !!session?.accessToken,
+        hasRefreshToken: !!session?.refreshToken,
+        hasUser: !!session?.user
+      })
       // Session exists but no tokens - allow rendering anyway
       setSynced(true)
     }
