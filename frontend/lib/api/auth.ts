@@ -1,4 +1,9 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// Ensure API_BASE_URL always ends with /api
+const getApiBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+};
+const API_BASE_URL = getApiBaseUrl();
 
 export interface RegisterRequest {
   full_name: string;

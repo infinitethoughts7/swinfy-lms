@@ -3,10 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import MobileMenuToggle from './MobileMenuToggle';
-import { useModal } from '@/components/providers/ModalProvider';
 import Logo from '@/components/shared/Logo';
-import { getCurrentUser, logout, isAuthenticated } from '@/lib/auth';
+import { getCurrentUser, isAuthenticated, clearTokens } from '@/lib/auth';
 
 interface User {
   full_name?: string;
@@ -102,13 +102,12 @@ const SearchBar = () => {
 };
 
 const StaticNavbar = () => {
-  const { openRegistrationModal, openLoginModal } = useModal();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check auth on mount and periodically
   useEffect(() => {
-    // Check authentication status on component mount
     const checkAuth = () => {
       const currentUser = getCurrentUser();
       const authenticated = isAuthenticated();
@@ -116,31 +115,38 @@ const StaticNavbar = () => {
       setIsLoggedIn(authenticated);
     };
 
+    // Initial check
     checkAuth();
 
-    // Listen for storage changes (login/logout from other tabs)
-    const handleStorageChange = () => {
-      checkAuth();
-    };
+    // Poll for auth changes (handles OAuth callback sync)
+    const interval = setInterval(checkAuth, 1000);
 
-    // Listen for login events
-    const handleUserLogin = () => {
-      checkAuth();
+    // Listen for storage changes and logout events
+    const handleStorageChange = () => checkAuth();
+    const handleLogout = () => {
+      setUser(null);
+      setIsLoggedIn(false);
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('userLogin', handleUserLogin);
+    window.addEventListener('userLogin', handleStorageChange);
+    window.addEventListener('userLogout', handleLogout);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userLogin', handleUserLogin);
+      window.removeEventListener('userLogin', handleStorageChange);
+      window.removeEventListener('userLogout', handleLogout);
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Clear localStorage tokens
+    clearTokens();
+    // Sign out from NextAuth
+    await signOut({ redirect: false });
     setUser(null);
     setIsLoggedIn(false);
-    // Dispatch logout event
     window.dispatchEvent(new CustomEvent('userLogout'));
     router.push('/');
   };
@@ -236,19 +242,19 @@ const StaticNavbar = () => {
                 </div>
               </div>
             ) : (
-              // User is not logged in - show login and sign up
+              // User is not logged in - show Login and Join Now
               <>
                 <button
-                  onClick={openLoginModal}
-                  className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-text-primary hover:bg-gray-100 focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full"
+                  onClick={() => router.push('/auth/login')}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-200 transition-all duration-300 rounded-full"
                 >
                   Login
                 </button>
                 <button
-                  onClick={openRegistrationModal}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-text-primary text-white hover:bg-black focus:ring-2 focus:ring-text-primary/20 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
+                  onClick={() => router.push('/auth/login')}
+                  className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
                 >
-                  Sign up
+                  Join Now
                 </button>
               </>
             )}

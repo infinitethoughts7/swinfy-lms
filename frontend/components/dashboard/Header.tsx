@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
 import { authApi } from '@/lib/api';
 import { logout } from '@/lib/auth';
 import { getRoleDisplayName } from '@/lib/role-utils';
@@ -48,18 +49,23 @@ const Header = ({ user, onSidebarToggle, showSidebarToggle = true }: HeaderProps
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
-    
+
     setIsSigningOut(true);
     try {
-      // Call logout API to invalidate tokens on backend
+      // Call logout API to invalidate tokens on backend and clear localStorage
       await authApi.logout();
+
+      // Also sign out from NextAuth to ensure complete logout for Google OAuth users
+      await nextAuthSignOut({ redirect: false });
     } catch (error) {
       console.error('Logout error:', error);
       // Continue with logout even if API call fails
     }
-    
-    // Clear local storage and redirect
-    logout();
+
+    // Dispatch logout event to sync authentication state across components
+    window.dispatchEvent(new CustomEvent('userLogout'));
+
+    // Redirect to home page
     router.push('/');
   };
 

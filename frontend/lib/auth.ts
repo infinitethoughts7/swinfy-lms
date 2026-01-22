@@ -70,8 +70,9 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const response = await fetch(`${API_BASE_URL}/api/auth/token/refresh/`, {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_BASE_URL = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+    const response = await fetch(`${API_BASE_URL}/auth/token/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -129,8 +130,11 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     }
 
     // Prepend API base URL for relative URLs
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const API_BASE_URL = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+    // If URL starts with /api/, remove the prefix since API_BASE_URL already includes /api
+    const cleanUrl = url.startsWith('/api/') ? url.slice(4) : url;
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${cleanUrl}`;
 
     // Build headers. If body is FormData, let the browser set the multipart boundary
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;

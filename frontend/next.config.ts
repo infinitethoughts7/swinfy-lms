@@ -9,14 +9,30 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
-          : 'http://localhost:8000/api/:path*',
-      },
-    ];
+    // Get the backend URL, removing trailing /api if present
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
+      .replace(/\/api\/?$/, '');
+    
+    return {
+      beforeFiles: [
+        // Proxy Django API requests - but NOT NextAuth routes
+        // NextAuth routes (/api/auth/*) are handled by Next.js API routes
+        {
+          source: '/api/courses/:path*',
+          destination: `${backendUrl}/api/courses/:path*`,
+        },
+        {
+          source: '/api/payments/:path*',
+          destination: `${backendUrl}/api/payments/:path*`,
+        },
+        {
+          source: '/api/core/:path*',
+          destination: `${backendUrl}/api/core/:path*`,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async redirects() {
     return [

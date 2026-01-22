@@ -176,4 +176,5 @@ frontend/test-image-urls.js
 !README.md
 !GOOGLE_OAUTH_SETUP.md
 !OAUTH_IMPLEMENTATION_SUMMARY.md
-!QUICK_START.md
+!QUICK_START.md 
+!docs/**/*.md

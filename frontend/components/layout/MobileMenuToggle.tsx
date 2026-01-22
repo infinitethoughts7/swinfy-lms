@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { Menu, X, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useModal } from '@/components/providers/ModalProvider';
+import { useRouter } from 'next/navigation';
 
 const MobileMenuToggle = () => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { openRegistrationModal, openLoginModal } = useModal();
 
   return (
     <>
@@ -69,21 +69,21 @@ const MobileMenuToggle = () => {
               <div className="pt-4 space-y-3">
                 <button
                   onClick={() => {
-                    openLoginModal();
+                    router.push('/auth/login');
                     setIsOpen(false);
                   }}
-                  className="block w-full text-center py-2 px-4 font-inter font-medium text-text-primary hover:bg-text-primary/5 rounded-full"
+                  className="block w-full text-center py-2 px-4 font-inter font-medium text-gray-700 hover:bg-gray-100 rounded-full"
                 >
                   Login
                 </button>
                 <button
                   onClick={() => {
-                    openRegistrationModal();
+                    router.push('/auth/login');
                     setIsOpen(false);
                   }}
-                  className="block w-full text-center py-2 px-4 bg-text-primary text-white hover:bg-text-primary/90 font-inter font-medium rounded-full"
+                  className="block w-full text-center py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 font-inter font-medium rounded-full"
                 >
-                  Sign up
+                  Join Now
                 </button>
               </div>
             </div>

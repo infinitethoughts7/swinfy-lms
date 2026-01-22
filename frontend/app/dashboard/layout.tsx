@@ -7,72 +7,84 @@ import Header from '@/components/dashboard/Header';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { getCurrentUser, isAuthenticated } from '@/lib/auth';
 
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'learner' | 'tutor' | 'admin' | 'knowledge_partner_instructor' | 'knowledge_partner' | 'super_admin';
+  role_display?: string;
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // For desktop collapse
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // For mobile menu visibility
-  const [user, setUser] = useState(getCurrentUser());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Initialize as null to avoid hydration mismatch (don't call getCurrentUser during SSR)
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Check authentication and redirect if needed
+  // Mark as mounted (client-side only)
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Check authentication after mount
+  useEffect(() => {
+    if (!isMounted) return;
+
     const checkAuth = () => {
-      if (!isAuthenticated()) {
+      const authenticated = isAuthenticated();
+      const currentUser = getCurrentUser();
+
+      if (!authenticated || !currentUser) {
+        setIsLoading(false);
         router.push('/');
         return;
       }
 
-      const currentUser = getCurrentUser();
-      if (currentUser) {
-        // Check if user is accessing the correct dashboard
-        const pathSegment = pathname.split('/')[2]; // Extract role from /dashboard/role/...
-        
-        // Map roles to their dashboard paths
-        const roleToDashboard: Record<string, string> = {
-          'learner': 'learner',
-          'knowledge_partner_instructor': 'instructor',
-          'knowledge_partner': 'kp',
-          'tutor': 'tutor',
-          'admin': 'admin',
-          'super_admin': 'super-admin'
-        };
-        
-        const expectedDashboard = roleToDashboard[currentUser.role];
-        
-        if (pathSegment && expectedDashboard && pathSegment !== expectedDashboard) {
-          // Redirect to correct dashboard
-          router.push(`/dashboard/${expectedDashboard}`);
-          return;
-        }
-        setUser(currentUser);
+      // Check if user is accessing the correct dashboard
+      const pathSegment = pathname.split('/')[2];
+
+      const roleToDashboard: Record<string, string> = {
+        'learner': 'learner',
+        'knowledge_partner_instructor': 'instructor',
+        'knowledge_partner': 'kp',
+        'tutor': 'tutor',
+        'admin': 'admin',
+        'super_admin': 'super-admin'
+      };
+
+      const expectedDashboard = roleToDashboard[currentUser.role];
+
+      if (pathSegment && expectedDashboard && pathSegment !== expectedDashboard) {
+        router.push(`/dashboard/${expectedDashboard}`);
+        return;
       }
+
+      setUser(currentUser);
       setIsLoading(false);
     };
 
     checkAuth();
-  }, [pathname, router]);
+  }, [isMounted, pathname, router]);
 
-  // Close mobile menu when route changes - MUST be called before any early returns
+  // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Helper functions
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  // Show loading while checking authentication
-  if (isLoading) {
+  // Always render the same structure to avoid hydration mismatch
+  // Use CSS to show/hide loading state
+  if (!isMounted || isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center space-x-2">
@@ -83,32 +95,27 @@ export default function DashboardLayout({
     );
   }
 
-  // Show nothing if not authenticated (will redirect)
-  if (!user) {
-    return null;
-  }
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 flex">
-        {/* Desktop Sidebar - Always visible on lg+ */}
+        {/* Desktop Sidebar */}
         <div className={`hidden lg:block fixed left-0 top-0 z-40 transition-all duration-300 ${
           sidebarCollapsed ? 'w-16' : 'w-64'
         }`}>
           <Sidebar
-            userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
+            userRole={user.role}
             isCollapsed={sidebarCollapsed}
             onToggle={toggleSidebar}
           />
         </div>
 
-        {/* Mobile Sidebar - Only visible when mobileMenuOpen is true */}
+        {/* Mobile Sidebar */}
         <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <Sidebar
-            userRole={user.role as 'learner' | 'tutor' | 'admin' | 'knowledge_partner' | 'knowledge_partner_instructor' | 'super_admin'}
-            isCollapsed={false} // Never collapsed on mobile
+            userRole={user.role}
+            isCollapsed={false}
             onToggle={toggleMobileMenu}
           />
         </div>
@@ -117,14 +124,11 @@ export default function DashboardLayout({
         <div className={`flex-1 flex flex-col transition-all duration-300 ${
           sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
         }`}>
-          {/* Header */}
           <Header
             user={user}
-            onSidebarToggle={toggleMobileMenu} // This will handle mobile menu toggle
+            onSidebarToggle={toggleMobileMenu}
             showSidebarToggle={true}
           />
-
-          {/* Main Content Area */}
           <main className="flex-1 overflow-auto">
             <div className="p-3 sm:p-4 lg:p-6">
               {children}
@@ -132,7 +136,7 @@ export default function DashboardLayout({
           </main>
         </div>
 
-        {/* Mobile Sidebar Overlay */}
+        {/* Mobile Overlay */}
         {mobileMenuOpen && (
           <div
             className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
