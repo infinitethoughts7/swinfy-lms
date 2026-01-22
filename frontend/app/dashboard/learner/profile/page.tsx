@@ -330,11 +330,13 @@ export default function StudentProfilePage() {
                     />
                   ) : profileData.profile?.profile_picture ? (
                     <Image
-                      src={profileData.profile.profile_picture.startsWith('http') 
-                        ? profileData.profile.profile_picture 
+                      src={profileData.profile.profile_picture.startsWith('http')
+                        ? profileData.profile.profile_picture
                         : `${getBaseApiUrl()}${profileData.profile.profile_picture}`
                       }
                       alt="Profile"
+                      width={128}
+                      height={128}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         // Show placeholder if image fails to load
@@ -541,11 +543,13 @@ export default function StudentProfilePage() {
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                 {profileData.profile?.profile_picture ? (
                   <Image
-                    src={profileData.profile.profile_picture.startsWith('http') 
-                      ? profileData.profile.profile_picture 
+                    src={profileData.profile.profile_picture.startsWith('http')
+                      ? profileData.profile.profile_picture
                       : `${getBaseApiUrl()}${profileData.profile.profile_picture}`
                     }
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-24 h-24 rounded-full object-cover"
                     onError={(e) => {
                       // Hide image if it fails to load
