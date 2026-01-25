@@ -246,7 +246,7 @@ const StaticNavbar = () => {
               <>
           
                 <button
-                  onClick={() => router.push('/auth/login')}
+                 onClick={() => router.push(('/auth/login/'))}
                   className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 transition-all duration-300 rounded-full hover:scale-105 active:scale-95"
                 >
                   Join Now
