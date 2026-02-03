@@ -14,7 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
-import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
 
 interface Learner {
   id: string;

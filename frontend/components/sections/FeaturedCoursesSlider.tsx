@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight} from 'lucide-react';
 
-import { coursesApi } from '@/lib/api';
+import { coursesApi } from '@/features/courses/services/courses';
 import Link from 'next/link';
 
 interface Course {

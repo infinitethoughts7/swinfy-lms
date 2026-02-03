@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { userApi } from '@/lib/api';
-import { getBaseApiUrl } from '@/lib/api-config';
-import { useContentModeration } from '@/lib/useContentModeration';
+import { userApi } from '@/features/users/services/user';
+import { getBaseApiUrl } from '@/shared/services/api-client';
+import { useContentModeration } from '@/lib/hooks/useContentModeration';
 import { Edit3, Save, X, User, Phone, Target, Heart, Upload, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 

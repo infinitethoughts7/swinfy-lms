@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { instructorApi, type Course, type LiveSessionCreateData } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course, LiveSessionCreateData } from '@/shared/types';
 import { 
   X, 
   Calendar, 

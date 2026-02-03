@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { adminDashboardApi } from '@/lib/api';
+import { adminDashboardApi } from '@/features/dashboard/services/admin';
 import { 
   CheckCircle, 
   XCircle, 

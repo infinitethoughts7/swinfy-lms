@@ -7,7 +7,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
 
 interface LearnerProfile {
   bio: string | null;

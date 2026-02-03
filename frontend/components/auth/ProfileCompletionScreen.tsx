@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/shared/Logo';
-import { getAccessToken } from '@/lib/auth-utils';
+import { getAccessToken } from '@/lib/auth/token';
 
 interface ProfileCompletionScreenProps {
   userRole: 'learner' | 'tutor' | 'admin';

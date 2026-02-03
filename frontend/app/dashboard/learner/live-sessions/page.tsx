@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { liveSessionApi, type LiveSession } from '@/lib/api';
+import { liveSessionApi } from '@/features/live-sessions/services/live-session';
+import type { LiveSession } from '@/shared/types';
 import { 
   Video, 
   Calendar, 

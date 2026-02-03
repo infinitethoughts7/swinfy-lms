@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { authApi } from '@/lib/api';
-import { saveUser, saveTokens } from '@/lib/auth';
+import { authApi } from '@/features/auth/services/auth';
+import { saveUser, saveTokens } from '@/lib/auth/token';
 import Logo from '@/components/shared/Logo';
 
 interface LoginModalProps {

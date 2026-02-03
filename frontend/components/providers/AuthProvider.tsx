@@ -2,7 +2,7 @@
 
 import { SessionProvider, useSession, signOut } from "next-auth/react"
 import { useEffect } from "react"
-import { saveTokens, saveUser, clearTokens } from "@/lib/auth"
+import { saveTokens, saveUser, clearTokens } from "@/lib/auth/token"
 
 // Component to sync NextAuth session to localStorage for lib/auth.ts compatibility
 function SessionSync({ children }: { children: React.ReactNode }) {

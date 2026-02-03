@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { instructorApi, type LiveSession, type LiveSessionUpdateData } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { LiveSession, LiveSessionUpdateData } from '@/shared/types';
 import { 
   Calendar, 
   Video, 

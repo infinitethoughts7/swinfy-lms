@@ -12,7 +12,7 @@ import {
   Search
 } from 'lucide-react';
 import Link from 'next/link';
-import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
 
 interface Course {
   id: string;

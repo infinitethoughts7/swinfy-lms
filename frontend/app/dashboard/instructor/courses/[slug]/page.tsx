@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { instructorApi, type Course } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course } from '@/shared/types';
 import ModulesLessonsManager from '@/components/instructor/ModulesLessonsManager';
 import ResourcesManager from '@/components/instructor/ResourcesManager';
 import { 

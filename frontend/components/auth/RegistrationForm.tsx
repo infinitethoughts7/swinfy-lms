@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { authApi, RegistrationData } from '@/lib/api';
+import { authApi } from '@/features/auth/services/auth';
+import type { RegistrationData } from '@/shared/types';
 
 interface FormData {
   full_name: string;

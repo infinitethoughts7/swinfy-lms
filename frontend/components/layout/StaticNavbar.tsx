@@ -6,7 +6,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import MobileMenuToggle from './MobileMenuToggle';
 import Logo from '@/components/shared/Logo';
-import { getCurrentUser, isAuthenticated, clearTokens } from '@/lib/auth';
+import { getCurrentUser, isAuthenticated, clearTokens } from '@/lib/auth/token';
 
 interface User {
   full_name?: string;

@@ -21,9 +21,9 @@ import {
   Award,
   Lock
 } from 'lucide-react';
-import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth/token';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
-import { useContentModeration } from '@/lib/useContentModeration';
+import { useContentModeration } from '@/lib/hooks/useContentModeration';
 
 interface KPProfile {
   id: string;

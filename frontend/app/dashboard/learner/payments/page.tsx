@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { paymentsApi } from '@/lib/api';
+import { paymentsApi } from '@/features/payments/services/payments';
 
 interface Payment { id: string; amount: string; status: string; created_at: string; course_title?: string; }
 

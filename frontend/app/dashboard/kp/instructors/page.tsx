@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Search, Plus, Trash2 } from 'lucide-react';
-import { userApi, InstructorListItem } from '@/lib/api';
+import { userApi } from '@/features/users/services/user';
+import type { InstructorListItem } from '@/shared/types';
 import Link from 'next/link';
 
 export default function InstructorsPage() {

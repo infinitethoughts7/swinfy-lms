@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, User, Briefcase } from 'lucide-react';
-import { userApi, InstructorDetail, InstructorUpdateData } from '@/lib/api';
+import { userApi } from '@/features/users/services/user';
+import type { InstructorDetail, InstructorUpdateData } from '@/shared/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 

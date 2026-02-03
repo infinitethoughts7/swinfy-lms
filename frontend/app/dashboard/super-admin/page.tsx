@@ -13,7 +13,7 @@ import {
   Calendar
 } from 'lucide-react';
 import Link from 'next/link';
-import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
 
 interface DashboardStats {
   users: {

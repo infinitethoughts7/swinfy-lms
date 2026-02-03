@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AuthAPI, VerifyEmailRequest } from '@/lib/api/auth';
+import { AuthAPI, VerifyEmailRequest } from '@/lib/auth/api';
 
 interface EmailVerificationFormProps {
   email: string;

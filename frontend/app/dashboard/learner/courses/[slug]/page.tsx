@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { learnerDashboardApi } from '@/lib/api';
-import { authenticatedFetch, isAuthenticated } from '@/lib/auth';
-import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/image-utils';
+import { learnerDashboardApi } from '@/features/dashboard/services/learner';
+import { authenticatedFetch, isAuthenticated } from '@/lib/auth/token';
+import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/utils/image';
 import { 
   Play, 
   CheckCircle, 

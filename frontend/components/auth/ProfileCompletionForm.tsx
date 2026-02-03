@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AuthAPI, ProfileCompletionRequest } from '@/lib/api/auth';
+import { AuthAPI, ProfileCompletionRequest } from '@/lib/auth/api';
 
 interface ProfileCompletionFormProps {
   userRole: 'learner' | 'tutor' | 'admin';

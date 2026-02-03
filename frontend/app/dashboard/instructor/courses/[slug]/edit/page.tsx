@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { instructorApi, type Course, type CourseCreateData } from '@/lib/api';
-import { useContentModeration } from '@/lib/useContentModeration';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course, CourseCreateData } from '@/shared/types';
+import { useContentModeration } from '@/lib/hooks/useContentModeration';
 import { 
   ChevronRight, Save, X, Upload, AlertCircle,
   Image as ImageIcon, Video

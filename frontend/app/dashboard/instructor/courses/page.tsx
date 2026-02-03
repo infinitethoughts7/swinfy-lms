@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { instructorApi, type Course } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course } from '@/shared/types';
 import { BookOpen, Plus, Eye, Edit, Trash2, Search, Video, Users, Clock } from 'lucide-react';
 
 export default function CoursesPage() {

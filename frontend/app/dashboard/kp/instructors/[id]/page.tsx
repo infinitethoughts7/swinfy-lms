@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Mail, Calendar, Globe, CheckCircle, Clock, Edit, User } from 'lucide-react';
-import { userApi, InstructorDetail } from '@/lib/api';
+import { userApi } from '@/features/users/services/user';
+import type { InstructorDetail } from '@/shared/types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 

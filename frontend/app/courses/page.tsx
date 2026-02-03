@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { coursesApi } from '@/lib/api';
+import { coursesApi } from '@/features/courses/services/courses';
 
 // Interface for course data from backend
 interface Course {

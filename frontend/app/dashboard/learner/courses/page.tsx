@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { learnerDashboardApi } from '@/lib/api';
+import { learnerDashboardApi } from '@/features/dashboard/services/learner';
 
 interface Course {
   id: string;

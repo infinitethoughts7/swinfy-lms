@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { getCurrentUser, isAuthenticated } from '@/lib/auth';
+import { getCurrentUser, isAuthenticated } from '@/lib/auth/token';
 
 interface User {
   id: string;

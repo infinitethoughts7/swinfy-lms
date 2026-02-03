@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
-import { authenticatedFetch } from '@/lib/auth';
+import { authenticatedFetch } from '@/lib/auth/token';
 
 interface ChangePasswordFormProps {
   onSuccess?: () => void;

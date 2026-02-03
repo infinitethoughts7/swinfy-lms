@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { instructorApi, type Course } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course } from '@/shared/types';
 import { 
   FileText, Download, Upload, Plus, Edit, Trash2, 
   AlertCircle, Save, X, Link as LinkIcon

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { getCurrentUser, authenticatedFetch } from '@/lib/auth';
-import { instructorApi, type InstructorStats, type Course } from '@/lib/api';
+import { getCurrentUser, authenticatedFetch } from '@/lib/auth/token';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { InstructorStats, Course } from '@/shared/types';
 import { BookOpen, Users, TrendingUp, Award } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 

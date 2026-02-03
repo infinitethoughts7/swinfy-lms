@@ -3,8 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { userApi, learnerDashboardApi, paymentsApi, liveSessionApi, type LiveSession } from '@/lib/api';
-import { getCourseThumbnailUrl } from '@/lib/image-utils';
+import { userApi } from '@/features/users/services/user';
+import { learnerDashboardApi } from '@/features/dashboard/services/learner';
+import { paymentsApi } from '@/features/payments/services/payments';
+import { liveSessionApi } from '@/features/live-sessions/services/live-session';
+import type { LiveSession } from '@/shared/types';
+import { getCourseThumbnailUrl } from '@/lib/utils/image';
 import { BookOpen, Clock, Award, TrendingUp, Video, Calendar, Flame, Target } from 'lucide-react';
 
 interface DashboardStats {

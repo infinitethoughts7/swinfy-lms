@@ -10,7 +10,8 @@ import InstructorTab from '@/components/course/InstructorTab';
 import ReviewsTab from '@/components/course/ReviewsTab';
 import DemoVideoModal from '@/components/course/DemoVideoModal';
 import PaymentModal from '@/components/payment/PaymentModal';
-import { coursesApi, paymentsApi } from '@/lib/api';
+import { coursesApi } from '@/features/courses/services/courses';
+import { paymentsApi } from '@/features/payments/services/payments';
 import LoginModal from '@/components/auth/LoginModal';
 
 // [Keep all your existing interfaces]

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { instructorApi, type CourseCreateData } from '@/lib/api';
-import { useContentModeration } from '@/lib/useContentModeration';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { CourseCreateData } from '@/shared/types';
+import { useContentModeration } from '@/lib/hooks/useContentModeration';
 import { ArrowLeft, Upload, Save, Clock, BookOpen, AlertCircle } from 'lucide-react';
 
 const CATEGORIES = [

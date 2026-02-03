@@ -18,7 +18,7 @@ import {
   Trash2,
   AlertTriangle
 } from 'lucide-react';
-import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
 
 interface KPApplication {
   id: string;

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Save, User, Lock } from 'lucide-react';
-import { userApi, InstructorCreateData } from '@/lib/api';
+import { userApi } from '@/features/users/services/user';
+import type { InstructorCreateData } from '@/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 

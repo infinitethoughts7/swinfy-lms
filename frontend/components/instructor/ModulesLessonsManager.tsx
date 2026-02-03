@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { instructorApi, type Course, type Module, type Lesson } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { Course, Module, Lesson } from '@/shared/types';
 import { 
   Plus, Video, FileText, Edit, Trash2, GripVertical, 
   ChevronDown, ChevronRight, Play, Clock, AlertCircle, X,

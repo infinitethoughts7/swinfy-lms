@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth';
-import { authenticatedFetch } from '@/lib/auth';
-import { useContentModeration } from '@/lib/useContentModeration';
+import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth/token';
+import { authenticatedFetch } from '@/lib/auth/token';
+import { useContentModeration } from '@/lib/hooks/useContentModeration';
 import { User, Mail, Calendar, Award, Lock, X, AlertCircle } from 'lucide-react';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 

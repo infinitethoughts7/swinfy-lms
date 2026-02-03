@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Logo from '@/components/shared/Logo';
-import { authenticatedFetch } from '@/lib/auth';
+import { authenticatedFetch } from '@/lib/auth/token';
 import { getThemeForRole, getRoleDisplayName, type UserRole } from '@/lib/theme-config';
 
 interface SidebarProps {

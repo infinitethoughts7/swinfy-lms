@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
-import { authApi } from '@/lib/api';
-import { logout } from '@/lib/auth';
-import { getRoleDisplayName } from '@/lib/role-utils';
+import { authApi } from '@/features/auth/services/auth';
+import { logout } from '@/lib/auth/token';
+import { getRoleDisplayName } from '@/lib/utils/role';
 
 interface User {
   full_name?: string;

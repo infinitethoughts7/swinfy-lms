@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { WeeklyActivityChart, LearnerDistributionChart } from '@/components/dashboard/ProgressChart';
-import { learnerDashboardApi } from '@/lib/api';
+import { learnerDashboardApi } from '@/features/dashboard/services/learner';
 
 interface WeeklyActivity { day: string; hours: number; }
 interface LearnerDistribution { level: string; count: number; }

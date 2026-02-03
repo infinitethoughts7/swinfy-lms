@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, CreditCard, Shield, Clock } from 'lucide-react';
-import { paymentsApi } from '@/lib/api';
-import { loadRazorpay, createRazorpayInstance, validateRazorpayAccount } from '@/lib/razorpay-utils';
+import { paymentsApi } from '@/features/payments/services/payments';
+import { loadRazorpay, createRazorpayInstance, validateRazorpayAccount } from '@/lib/razorpay';
 
 interface PaymentModalProps {
   isOpen: boolean;

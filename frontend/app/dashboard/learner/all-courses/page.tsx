@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { coursesApi } from '@/lib/api';
+import { coursesApi } from '@/features/courses/services/courses';
 import CourseCard from '@/components/dashboard/CourseCard';
 import { Search, Grid, List } from 'lucide-react';
 

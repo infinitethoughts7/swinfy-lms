@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { instructorApi, type LiveSession } from '@/lib/api';
+import { instructorApi } from '@/features/courses/services/course-management';
+import type { LiveSession } from '@/shared/types';
 import CreateLiveSessionModal from '@/components/live-session/CreateLiveSessionModal';
 import { 
   Plus, 
