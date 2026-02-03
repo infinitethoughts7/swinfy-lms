@@ -4,18 +4,26 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string
     refreshToken?: string
+    error?: string
     user: {
       id: string
       email: string
       full_name: string
       role: string
+      avatar_url?: string
     } & DefaultSession["user"]
   }
 
   interface Account {
     djangoAccessToken?: string
     djangoRefreshToken?: string
-    djangoUser?: any
+    djangoUser?: {
+      id: string
+      email: string
+      full_name: string
+      role: string
+      avatar_url?: string
+    }
   }
 }
 
@@ -23,6 +31,14 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string
     refreshToken?: string
-    user?: any
+    accessTokenExpires?: number
+    error?: string
+    user?: {
+      id: string
+      email: string
+      full_name: string
+      role: string
+      avatar_url?: string
+    }
   }
 }
