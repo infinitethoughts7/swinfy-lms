@@ -4,19 +4,26 @@ import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
-export default function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+  onError?: (error: string) => void
+}
+
+export default function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true)
       console.log("[GoogleSignIn] Starting Google OAuth...")
-      await signIn("google", { 
+
+      // Use redirect: true for OAuth providers - this opens Google's account picker
+      await signIn("google", {
         callbackUrl: "/dashboard",
-        redirect: true 
+        redirect: true
       })
     } catch (error) {
       console.error("[GoogleSignIn] Error:", error)
+      onError?.("Something went wrong. Please try again.")
       setIsLoading(false)
     }
   }
