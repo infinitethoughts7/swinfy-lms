@@ -66,6 +66,8 @@ class User(AbstractUser):
         ('google', 'Google OAuth'),
         ('apple', 'Apple Sign-In'),
     ])
+    avatar_url = models.URLField(max_length=500, blank=True, null=True, verbose_name='Avatar URL',
+                                  help_text='Profile picture URL from OAuth provider')
     
     # Knowledge Partner Association (for learners who want to be part of an organization)
     knowledge_partner = models.ForeignKey(

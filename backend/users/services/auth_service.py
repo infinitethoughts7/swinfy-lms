@@ -172,6 +172,7 @@ class AuthService:
                 'role_display': user.get_role_display(),
                 'is_verified': user.is_verified,
                 'is_approved': user.is_approved,
+                'avatar_url': user.avatar_url or None,
                 'knowledge_partner': None
             }
             

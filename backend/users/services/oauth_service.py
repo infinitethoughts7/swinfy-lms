@@ -169,6 +169,7 @@ class OAuthService:
                 is_verified=True,  # Google emails are pre-verified
                 is_approved=True,  # Auto-approve learners
                 is_active=True,
+                avatar_url=google_user_info.get('picture', ''),  # Store Google profile picture
             )
 
             # Note: No password needed for OAuth users
