@@ -8,11 +8,17 @@ Uses OAuth service for all business logic.
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from users.services.oauth_service import oauth_service
 from users.services.auth_service import AuthService
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class OAuthRateThrottle(ScopedRateThrottle):
+    """Custom throttle for OAuth endpoints to prevent abuse."""
+    scope = 'oauth'
 
 
 class GoogleOAuthView(APIView):
@@ -24,6 +30,7 @@ class GoogleOAuthView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OAuthRateThrottle]
 
     def post(self, request, *args, **kwargs):
         """
@@ -124,6 +131,7 @@ class AppleOAuthView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OAuthRateThrottle]
 
     def post(self, request, *args, **kwargs):
         """
