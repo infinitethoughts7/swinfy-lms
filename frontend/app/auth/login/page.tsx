@@ -66,7 +66,28 @@ export default function LoginPage() {
       if (response.tokens) {
         saveTokens({ access: response.tokens.access, refresh: response.tokens.refresh });
         saveUser(response.user as Parameters<typeof saveUser>[0]);
-        router.push('/dashboard');
+
+        // Redirect to role-specific dashboard
+        const user = response.user as { role?: string };
+        const role = user.role;
+        let dashboardPath = '/dashboard/learner';
+
+        switch (role) {
+          case 'learner':
+            dashboardPath = '/dashboard/learner';
+            break;
+          case 'knowledge_partner_instructor':
+            dashboardPath = '/dashboard/instructor';
+            break;
+          case 'knowledge_partner':
+            dashboardPath = '/dashboard/kp';
+            break;
+          case 'super_admin':
+            dashboardPath = '/dashboard/super-admin';
+            break;
+        }
+
+        router.push(dashboardPath);
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
