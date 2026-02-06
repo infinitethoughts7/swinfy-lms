@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from 'react';
-import { ArrowLeft, Save, User, Lock } from 'lucide-react';
+import { ArrowLeft, Save, User, Lock, AlertCircle } from 'lucide-react';
 import { userApi } from '@/features/users/services/user';
 import type { InstructorCreateData } from '@/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface FormData {
   email: string;
@@ -35,7 +40,7 @@ export default function AddInstructorPage() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-    
+
     if (!formData.full_name) {
       newErrors.full_name = 'Full name is required';
     } else if (formData.full_name.length < 2) {
@@ -46,7 +51,6 @@ export default function AddInstructorPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Parse field-specific errors from error message
   const parseFieldErrors = (errorMessage: string): FormErrors => {
     const fieldErrors: FormErrors = {};
     const parts = errorMessage.split(';').map(p => p.trim());
@@ -62,7 +66,7 @@ export default function AddInstructorPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -73,12 +77,12 @@ export default function AddInstructorPage() {
       const instructorData: InstructorCreateData = {
         email: formData.email,
         full_name: formData.full_name,
-        password: '', // Empty password triggers auto-generation on backend
+        password: '',
         confirm_password: '',
       };
 
       await userApi.instructors.create(instructorData);
-      alert('✅ Instructor created successfully! An invitation email with login credentials has been sent to their email address.');
+      alert('Instructor created successfully! An invitation email with login credentials has been sent to their email address.');
       router.push('/dashboard/kp/instructors?success=created');
     } catch (err) {
       if (err instanceof Error) {
@@ -106,132 +110,106 @@ export default function AddInstructorPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <Link
-          href="/dashboard/kp/instructors"
-          className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
-        </Link>
+        <Button variant="ghost" size="icon" asChild className="rounded-xl">
+          <Link href="/dashboard/kp/instructors">
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+        </Button>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Add New Instructor</h1>
           <p className="text-gray-600 mt-1">Create a new instructor account</p>
         </div>
       </div>
 
-      {/* Info Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-        <div className="flex items-start">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <User className="h-5 w-5 text-blue-600" />
-          </div>
-          <div className="ml-4">
-            <h3 className="font-medium text-blue-900">Quick Setup</h3>
-            <p className="text-blue-700 mt-1">
-              Just provide basic account details. The instructor can complete their profile after logging in.
-            </p>
-          </div>
-        </div>
-      </div>
+      <Alert>
+        <User className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Quick Setup</strong> - Just provide basic account details. The instructor can complete their profile after logging in.
+        </AlertDescription>
+      </Alert>
 
-      {/* Error Message */}
       {submitError && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-          <div className="flex items-center">
-            <span className="text-red-600">⚠️</span>
-            <span className="text-red-700 ml-2">{submitError}</span>
-          </div>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Full Name
-              </label>
-              <input
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => handleChange('full_name', e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                  errors.full_name ? 'ring-2 ring-red-500' : ''
-                }`}
+                className={errors.full_name ? 'border-red-500' : ''}
                 placeholder="Enter instructor's full name"
               />
-              {errors.full_name && <p className="text-red-600 text-sm mt-2">{errors.full_name}</p>}
+              {errors.full_name && <p className="text-red-600 text-sm">{errors.full_name}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Email Address
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200 ${
-                  errors.email ? 'ring-2 ring-red-500' : ''
-                }`}
+                className={errors.email ? 'border-red-500' : ''}
                 placeholder="instructor@example.com"
               />
-              {errors.email && <p className="text-red-600 text-sm mt-2">{errors.email}</p>}
+              {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Security Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
-          <h3 className="font-medium text-blue-900 mb-3 flex items-center">
-            <Lock className="h-5 w-5 mr-2" />
-            Secure Password Generation
-          </h3>
-          <p className="text-blue-800 text-sm mb-2">
-            A secure, randomly-generated password will be automatically created for this instructor.
-          </p>
-          <p className="text-blue-700 text-sm">
-            The instructor will receive an email with their login credentials and will be prompted to change their password upon first login.
-          </p>
-        </div>
+        <Alert>
+          <Lock className="h-4 w-4" />
+          <AlertDescription className="space-y-2">
+            <p><strong>Secure Password Generation</strong></p>
+            <p className="text-sm">A secure, randomly-generated password will be automatically created for this instructor.</p>
+            <p className="text-sm text-muted-foreground">The instructor will receive an email with their login credentials and will be prompted to change their password upon first login.</p>
+          </AlertDescription>
+        </Alert>
 
-        {/* Professional Details Notice */}
-        <div className="bg-gray-50 rounded-2xl p-6">
-          <h3 className="font-medium text-gray-900 mb-2">What happens next?</h3>
-          <ul className="text-gray-700 space-y-2">
-            <li className="flex items-center">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              A secure temporary password is automatically generated
-            </li>
-            <li className="flex items-center">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              Instructor receives an invitation email with login credentials
-            </li>
-            <li className="flex items-center">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              They must change their password after first login for security
-            </li>
-            <li className="flex items-center">
-              <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-              They can complete their profile, bio, specializations, and start creating courses
-            </li>
-          </ul>
-        </div>
+        <Card className="bg-gray-50">
+          <CardHeader>
+            <CardTitle className="text-base">What happens next?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="text-gray-700 space-y-2">
+              <li className="flex items-center">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                A secure temporary password is automatically generated
+              </li>
+              <li className="flex items-center">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                Instructor receives an invitation email with login credentials
+              </li>
+              <li className="flex items-center">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                They must change their password after first login for security
+              </li>
+              <li className="flex items-center">
+                <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
+                They can complete their profile, bio, specializations, and start creating courses
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
 
-        {/* Submit */}
         <div className="flex gap-4">
-          <Link
-            href="/dashboard/kp/instructors"
-            className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/kp/instructors">Cancel</Link>
+          </Button>
+          <Button
             type="submit"
             disabled={loading}
-            className="flex-1 inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex-1"
           >
             {loading ? (
               <>
@@ -244,7 +222,7 @@ export default function AddInstructorPage() {
                 Create Instructor
               </>
             )}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

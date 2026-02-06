@@ -1,10 +1,33 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Search, Plus, Trash2 } from 'lucide-react';
+import { Users, Search, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { userApi } from '@/features/users/services/user';
 import type { InstructorListItem } from '@/shared/types';
 import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function InstructorsPage() {
   const [instructors, setInstructors] = useState<InstructorListItem[]>([]);
@@ -17,15 +40,14 @@ export default function InstructorsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params: { search?: string } = {};
       if (searchTerm) params.search = searchTerm;
-      
+
       const data = await userApi.instructors.list(params);
       setInstructors(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load instructors');
-      // Mock data for demo
       setInstructors([
         {
           id: '1',
@@ -120,196 +142,203 @@ export default function InstructorsPage() {
   };
 
   const filteredInstructors = instructors.filter(instructor => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       instructor.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instructor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instructor.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       instructor.technologies.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesSearch;
   });
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <Card>
+          <CardContent className="p-4">
+            <Skeleton className="h-10 w-full max-w-md" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-0">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center space-x-4 p-4 border-b">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Instructors</h1>
           <p className="text-gray-600 text-sm">Manage your knowledge partner instructors</p>
         </div>
-        <Link
-          href="/dashboard/kp/instructors/add"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Instructor
-        </Link>
-      </div>
-
-      {/* Search and Stats */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search instructors..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <div className="text-xl font-bold text-gray-900">{instructors.length}</div>
-              <div className="text-xs text-gray-600">Total</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-green-600">
-                {instructors.filter(i => i.is_active).length}
-              </div>
-              <div className="text-xs text-gray-600">Active</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <span className="text-red-700 ml-2">{error}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Instructors Table */}
-      {filteredInstructors.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No instructors found</h3>
-          <p className="text-gray-600 mb-4 text-sm">
-            {searchTerm 
-              ? "Try adjusting your search"
-              : "Get started by adding your first instructor"
-            }
-          </p>
-          <Link
-            href="/dashboard/kp/instructors/add"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
+        <Button asChild>
+          <Link href="/dashboard/kp/instructors/add">
             <Plus className="h-4 w-4 mr-2" />
             Add Instructor
           </Link>
-        </div>
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search instructors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-xl font-bold text-gray-900">{instructors.length}</div>
+                <div className="text-xs text-gray-600">Total</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-green-600">
+                  {instructors.filter(i => i.is_active).length}
+                </div>
+                <div className="text-xs text-gray-600">Active</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {filteredInstructors.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No instructors found</h3>
+            <p className="text-gray-600 mb-4 text-sm">
+              {searchTerm
+                ? "Try adjusting your search"
+                : "Get started by adding your first instructor"
+              }
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/kp/instructors/add">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Instructor
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                  Title
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                  Experience
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead className="hidden md:table-cell">Title</TableHead>
+                <TableHead className="hidden lg:table-cell">Experience</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredInstructors.map((instructor) => (
-                <tr key={instructor.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap">
+                <TableRow key={instructor.id}>
+                  <TableCell>
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {(instructor.full_name || 'U').charAt(0).toUpperCase()}
-                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                          {(instructor.full_name || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">{instructor.full_name || 'Unknown'}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell>
                     <div className="text-sm text-gray-600">{instructor.email}</div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="text-sm text-gray-600">{instructor.title || '-'}</div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <div className="text-sm text-gray-600">
                       {instructor.years_of_experience ? `${instructor.years_of_experience} years` : '-'}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      instructor.is_active 
-                        ? 'bg-green-100 text-green-800' 
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={
+                      instructor.is_active
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    }>
                       {instructor.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right">
-                    <button
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setDeleteConfirm(instructor.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Delete instructor"
+                      className="text-gray-400 hover:text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Instructor</h3>
-            <p className="text-gray-600 mb-6">
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Instructor</DialogTitle>
+            <DialogDescription>
               Are you sure you want to delete this instructor? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

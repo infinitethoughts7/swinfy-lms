@@ -1,18 +1,31 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  Eye, 
+import {
+  BookOpen,
+  Clock,
+  User,
+  CheckCircle,
+  Eye,
   Star,
   Users,
   Search
 } from 'lucide-react';
 import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Course {
   id: string;
@@ -69,11 +82,9 @@ export default function KPCoursesPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
 
-  // Ensure courses is always an array
   const safeCourses = Array.isArray(courses) ? courses : [];
 
   useEffect(() => {
-    // Check if user is authenticated before making API calls
     if (!isAuthenticated()) {
       logout();
       return;
@@ -85,36 +96,31 @@ export default function KPCoursesPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/courses/`, {
         method: 'GET',
       });
 
       const data = await response.json();
-      
-      // Handle paginated response - extract results array
       const coursesArray = data.results || data;
-      
-      // Ensure courses is always an array
       setCourses(Array.isArray(coursesArray) ? coursesArray : []);
     } catch (err) {
       console.error('Error fetching courses:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch courses');
-      setCourses([]); // Set empty array on error
+      setCourses([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter courses based on search and filters
   const filteredCourses = safeCourses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.short_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.tutor.full_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = !selectedCategory || course.category === selectedCategory;
-    const matchesLevel = !selectedLevel || course.level === selectedLevel;
-    
+
+    const matchesCategory = !selectedCategory || selectedCategory === 'all' || course.category === selectedCategory;
+    const matchesLevel = !selectedLevel || selectedLevel === 'all' || course.level === selectedLevel;
+
     return matchesSearch && matchesCategory && matchesLevel;
   });
 
@@ -133,29 +139,49 @@ export default function KPCoursesPage() {
     }
   };
 
-
-  // Get unique categories and levels for filters
   const categories = [...new Set(safeCourses.map(course => course.category))];
   const levels = [...new Set(safeCourses.map(course => course.level))];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-6 w-24 mb-2" />
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchCourses}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Try Again
-        </button>
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="text-center">
+          <Button onClick={fetchCourses}>
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -168,217 +194,225 @@ export default function KPCoursesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Approved Courses</h1>
           <p className="text-gray-600 text-sm">Manage and view all approved courses from instructors</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Link
-            href="/dashboard/kp/course-review"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-          >
+        <Button asChild>
+          <Link href="/dashboard/kp/course-review">
             <Eye className="h-4 w-4 mr-2" />
             Review Courses
           </Link>
-        </div>
+        </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Approved</p>
-              <p className="text-2xl font-bold text-green-600">{safeCourses.length}</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Approved</p>
+                <p className="text-2xl font-bold text-green-600">{safeCourses.length}</p>
+              </div>
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
             </div>
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Enrollments</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {safeCourses.reduce((total, course) => total + course.enrollment_count, 0)}
-              </p>
-            </div>
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Lessons</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {safeCourses.reduce((total, course) => total + course.lessons_count, 0)}
-              </p>
-            </div>
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BookOpen className="h-5 w-5 text-purple-600" />
-            </div>
-          </div>
-        </div>
-        
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Enrollments</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {safeCourses.reduce((total, course) => total + course.enrollment_count, 0)}
+                </p>
+              </div>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Lessons</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {safeCourses.reduce((total, course) => total + course.lessons_count, 0)}
+                </p>
+              </div>
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <BookOpen className="h-5 w-5 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search courses, instructors, or descriptions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-500 focus:border-transparent"
-              />
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search courses, instructors, or descriptions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="lg:w-48">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Level Filter */}
+            <div className="lg:w-48">
+              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  {levels.map(level => (
+                    <SelectItem key={level} value={level}>
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
-          {/* Category Filter */}
-          <div className="lg:w-48">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Level Filter */}
-          <div className="lg:w-48">
-            <select
-              value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Levels</option>
-              {levels.map(level => (
-                <option key={level} value={level}>
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Courses List */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
+      <Card>
+        <CardHeader>
+          <CardTitle>
             Approved Courses ({filteredCourses.length})
-          </h2>
-        </div>
-        
-        {filteredCourses.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">
-              {safeCourses.length === 0 
-                ? "No approved courses yet" 
-                : "No courses match your search criteria"
-              }
-            </p>
-            <p className="text-gray-400 text-sm">
-              {safeCourses.length === 0 
-                ? "Courses will appear here once they are approved by admins" 
-                : "Try adjusting your search or filter criteria"
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredCourses.map((course) => (
-              <div key={course.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
-                {/* Course Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{course.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.approval_status)}`}>
-                        {course.approval_status_display}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-3">{course.short_description}</p>
-                    
-                    {/* Course Meta */}
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
-                      <div className="flex items-center">
-                        <User className="h-3 w-3 mr-1" />
-                        {course.tutor?.full_name || 'Unknown Instructor'}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {course.duration_weeks} weeks
-                      </div>
-                      <div className="flex items-center">
-                        <BookOpen className="h-3 w-3 mr-1" />
-                        {course.lessons_count} lessons
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredCourses.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">
+                {safeCourses.length === 0
+                  ? "No approved courses yet"
+                  : "No courses match your search criteria"
+                }
+              </p>
+              <p className="text-gray-400 text-sm">
+                {safeCourses.length === 0
+                  ? "Courses will appear here once they are approved by admins"
+                  : "Try adjusting your search or filter criteria"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredCourses.map((course) => (
+                <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    {/* Course Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{course.title}</h3>
+                          <Badge className={getStatusColor(course.approval_status)}>
+                            {course.approval_status_display}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-600 text-sm line-clamp-2 mb-3">{course.short_description}</p>
 
-                {/* Course Details */}
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Category</span>
-                    <span className="text-sm font-medium">{course.category_display}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Level</span>
-                    <span className="text-sm font-medium">{course.level_display}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Price</span>
-                    <span className="text-lg font-bold text-green-600">₹{course.price}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Enrollments</span>
-                    <span className="text-sm font-medium">{course.enrollment_count}</span>
-                  </div>
-                  {course.rating > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Rating</span>
-                      <div className="flex items-center">
-                        <Star className="h-3 w-3 text-yellow-400 mr-1" />
-                        <span className="text-sm font-medium">{course.rating.toFixed(1)}</span>
+                        {/* Course Meta */}
+                        <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
+                          <div className="flex items-center">
+                            <User className="h-3 w-3 mr-1" />
+                            {course.tutor?.full_name || 'Unknown Instructor'}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {course.duration_weeks} weeks
+                          </div>
+                          <div className="flex items-center">
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            {course.lessons_count} lessons
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Course Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="text-xs text-gray-500">
-                    Created {new Date(course.created_at).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Link
-                      href={`/courses/${course.slug}`}
-                      className="px-3 py-1 text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
-                    >
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                    {/* Course Details */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Category</span>
+                        <span className="text-sm font-medium">{course.category_display}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Level</span>
+                        <span className="text-sm font-medium">{course.level_display}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Price</span>
+                        <span className="text-lg font-bold text-green-600">₹{course.price}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Enrollments</span>
+                        <span className="text-sm font-medium">{course.enrollment_count}</span>
+                      </div>
+                      {course.rating > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Rating</span>
+                          <div className="flex items-center">
+                            <Star className="h-3 w-3 text-yellow-400 mr-1" />
+                            <span className="text-sm font-medium">{course.rating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Course Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="text-xs text-gray-500">
+                        Created {new Date(course.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/courses/${course.slug}`}>
+                            View
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

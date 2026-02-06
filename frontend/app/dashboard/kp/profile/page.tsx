@@ -1,29 +1,41 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { 
-  User, 
-  Building, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Globe, 
-  Linkedin, 
-  Upload, 
-  X, 
-  Save, 
+import {
+  User,
+  Building,
+  Upload,
+  Save,
   Edit3,
-  CheckCircle,
-  AlertCircle,
   Calendar,
-  Users,
-  BookOpen,
   Award,
-  Lock
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import { authenticatedFetch, isAuthenticated, logout, safeJsonParse } from '@/lib/auth/token';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 import { useContentModeration } from '@/lib/hooks/useContentModeration';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface KPProfile {
   id: string;
@@ -39,19 +51,6 @@ interface KPProfile {
   linkedin_url: string;
   is_active: boolean;
   is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProfileStats {
-  organization_name: string;
-  organization_type: string;
-  is_verified: boolean;
-  is_active: boolean;
-  total_courses: number;
-  approved_courses: number;
-  pending_courses: number;
-  total_instructors: number;
   created_at: string;
   updated_at: string;
 }
@@ -79,7 +78,6 @@ const KP_TYPE_OPTIONS = [
 
 export default function KPProfilePage() {
   const [profile, setProfile] = useState<KPProfile | null>(null);
-  const [stats, setStats] = useState<ProfileStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,15 +98,13 @@ export default function KPProfilePage() {
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // Content moderation hook
-  const { 
-    checkField, 
-    getFieldError, 
+  const {
+    checkField,
+    getFieldError,
     hasErrors: hasModerationErrors,
     clearAllErrors: clearModerationErrors
   } = useContentModeration();
 
-  // Parse field-specific errors from error message
   const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
     const errors: {[key: string]: string} = {};
     const parts = errorMessage.split(';').map(p => p.trim());
@@ -123,13 +119,11 @@ export default function KPProfilePage() {
   };
 
   useEffect(() => {
-    // Check if user is authenticated before making API calls
     if (!isAuthenticated()) {
       logout();
       return;
     }
-    
-    // Check if user has the correct role
+
     const user = localStorage.getItem('user');
     if (user) {
       try {
@@ -142,16 +136,15 @@ export default function KPProfilePage() {
         console.error('Error parsing user data:', e);
       }
     }
-    
+
     fetchProfile();
-    fetchStats();
   }, []);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
         method: 'GET',
       });
@@ -177,21 +170,7 @@ export default function KPProfilePage() {
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/stats/`, {
-        method: 'GET',
-      });
-
-      const data = await response.json();
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-    }
-  };
-
   const handleSave = async () => {
-    // Check for content moderation errors first
     if (hasModerationErrors) {
       setError('Please fix the content issues highlighted in red before saving.');
       return;
@@ -201,11 +180,9 @@ export default function KPProfilePage() {
       setSaving(true);
       setError(null);
       setFieldErrors({});
-      
-      // Only send fields that have values or have been changed
+
       const updateData: KPProfileUpdateData = {};
-      
-      // Only include fields that have actual values
+
       if (formData.name && formData.name.trim()) updateData.name = formData.name.trim();
       if (formData.type) updateData.type = formData.type;
       if (formData.description && formData.description.trim()) updateData.description = formData.description.trim();
@@ -215,7 +192,7 @@ export default function KPProfilePage() {
       if (formData.kp_admin_email && formData.kp_admin_email.trim()) updateData.kp_admin_email = formData.kp_admin_email.trim();
       if (formData.kp_admin_phone && formData.kp_admin_phone.trim()) updateData.kp_admin_phone = formData.kp_admin_phone.trim();
       if (formData.linkedin_url && formData.linkedin_url.trim()) updateData.linkedin_url = formData.linkedin_url.trim();
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/profile/`, {
         method: 'PATCH',
         body: JSON.stringify(updateData),
@@ -223,19 +200,17 @@ export default function KPProfilePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        // Check for field-specific validation errors (including content moderation)
         const fieldErrorsFound = Object.entries(errorData)
           .filter(([, value]) => Array.isArray(value) && value.length > 0)
           .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
           .join('; ');
-        
+
         if (fieldErrorsFound) {
           throw new Error(fieldErrorsFound);
         }
         throw new Error(errorData.error || errorData.detail || 'Failed to update profile');
       }
 
-      // Refresh the profile data to show updated information
       await fetchProfile();
       setIsEditing(false);
       alert('Profile updated successfully!');
@@ -297,13 +272,11 @@ export default function KPProfilePage() {
           const errorData = await safeJsonParse(response) as { error?: string };
           errorMessage = errorData.error || errorMessage;
         } catch {
-          // If response is not JSON, use status text
           errorMessage = `Failed to upload logo: ${response.status} ${response.statusText}`;
         }
         throw new Error(errorMessage);
       }
 
-      // Refresh the profile data to show updated logo
       await fetchProfile();
       alert('Logo uploaded successfully!');
     } catch (err) {
@@ -311,7 +284,6 @@ export default function KPProfilePage() {
       let errorMessage = 'Failed to upload logo';
       if (err instanceof Error) {
         errorMessage = err.message;
-        // Check for specific error types and provide better guidance
         if (errorMessage.includes('KP Profile not found')) {
           errorMessage = 'Profile not found. Please ensure you are logged in with a Knowledge Partner Admin account.';
         } else if (errorMessage.includes('Invalid file type')) {
@@ -342,7 +314,6 @@ export default function KPProfilePage() {
           const errorData = await safeJsonParse(response) as { error?: string };
           errorMessage = errorData.error || errorMessage;
         } catch {
-          // If response is not JSON, use status text
           errorMessage = `Failed to remove logo: ${response.status} ${response.statusText}`;
         }
         throw new Error(errorMessage);
@@ -360,8 +331,34 @@ export default function KPProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-48 mb-4" />
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardContent className="p-6">
+              <Skeleton className="h-32 w-32 mx-auto rounded-lg mb-4" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -369,48 +366,23 @@ export default function KPProfilePage() {
   if (error && !profile) {
     return (
       <div className="max-w-2xl mx-auto py-12">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center mb-3">
-            <AlertCircle className="h-6 w-6 text-red-500 mr-2" />
-            <h2 className="text-lg font-semibold text-red-700">Access Error</h2>
-          </div>
-          <p className="text-red-700 mb-4">{error}</p>
-          
-          {error.includes('Access denied') && (
-            <div className="mb-4 text-sm text-red-600">
-              <strong>Available KP Admin accounts:</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li><strong>adfdfm@gmail.com</strong> (hanuman organization)</li>
-                <li><strong>rakeshganji99@gmail.com</strong> (Ganji Rocky&apos;s Organization)</li>
-                <li><strong>amaz@gmail.com</strong> (Empty Fields Test 2)</li>
-              </ul>
-              <p className="mt-3">Password for all accounts: <code className="bg-red-100 px-2 py-1 rounded">rockyg07</code></p>
-              <p className="mt-2 text-xs">Please logout and login with one of these accounts to access KP features.</p>
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Access Error</AlertTitle>
+          <AlertDescription>
+            <p className="mb-4">{error}</p>
+            <div className="flex space-x-3">
+              <Button onClick={fetchProfile}>Retry</Button>
+              <Button variant="outline" onClick={logout}>Logout</Button>
             </div>
-          )}
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={fetchProfile}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Retry
-            </button>
-            <button
-              onClick={logout}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Knowledge Partner Profile</h1>
@@ -419,94 +391,73 @@ export default function KPProfilePage() {
         <div className="flex items-center space-x-3">
           {!isEditing ? (
             <>
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setShowPasswordModal(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center"
               >
                 <Lock className="h-4 w-4 mr-2" />
                 Update Password
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-              >
+              </Button>
+              <Button onClick={() => setIsEditing(true)}>
                 <Edit3 className="h-4 w-4 mr-2" />
                 Edit Profile
-              </button>
+              </Button>
             </>
           ) : (
             <div className="flex items-center space-x-2">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
+              <Button variant="outline" onClick={handleCancel}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={saving || hasModerationErrors}
-                className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center ${
-                  hasModerationErrors ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-                }`}
+                variant={hasModerationErrors ? 'destructive' : 'default'}
               >
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? 'Saving...' : hasModerationErrors ? 'Fix Content Issues' : 'Save Changes'}
-              </button>
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-red-700 font-medium">Error</p>
-          </div>
-          <p className="text-red-700 mt-2">{error}</p>
-          {error.includes('Access denied') && (
-            <div className="mt-3 text-sm text-red-600">
-              <p>Please contact your system administrator for access credentials.</p>
-            </div>
-          )}
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Knowledge Partner Information */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Building className="h-5 w-5 text-white" />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Building className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle>Knowledge Partner Information</CardTitle>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Knowledge Panter Information</h2>
-            </div>
-
-            <div className="space-y-4">
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Knowledge Partner Name
-                  </label>
+                <div className="space-y-2">
+                  <Label>Knowledge Partner Name</Label>
                   {isEditing ? (
                     <>
-                      <input
-                        type="text"
+                      <Input
                         value={formData.name}
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, name: e.target.value }));
                           if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: '' }));
                           checkField('name', e.target.value);
                         }}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors.name || getFieldError('name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                        }`}
+                        className={fieldErrors.name || getFieldError('name') ? 'border-red-500' : ''}
                         placeholder="Enter Knowledge Partner name"
                       />
                       {(fieldErrors.name || getFieldError('name')) && (
-                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <p className="text-xs text-red-600 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           {fieldErrors.name || getFieldError('name')}
                         </p>
@@ -517,22 +468,24 @@ export default function KPProfilePage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Knowledge Panter Type
-                  </label>
+                <div className="space-y-2">
+                  <Label>Knowledge Partner Type</Label>
                   {isEditing ? (
-                    <select
+                    <Select
                       value={formData.type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
                     >
-                      {KP_TYPE_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {KP_TYPE_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <p className="text-gray-900 font-medium">
                       {KP_TYPE_OPTIONS.find(opt => opt.value === profile?.type)?.label || 'Not provided'}
@@ -541,13 +494,11 @@ export default function KPProfilePage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Description
-                </label>
+              <div className="space-y-2">
+                <Label>Description</Label>
                 {isEditing ? (
                   <>
-                    <textarea
+                    <Textarea
                       value={formData.description}
                       onChange={(e) => {
                         setFormData(prev => ({ ...prev, description: e.target.value }));
@@ -555,13 +506,11 @@ export default function KPProfilePage() {
                         checkField('description', e.target.value);
                       }}
                       rows={4}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        fieldErrors.description || getFieldError('description') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                      }`}
+                      className={fieldErrors.description || getFieldError('description') ? 'border-red-500' : ''}
                       placeholder="Describe your knowledge partner..."
                     />
                     {(fieldErrors.description || getFieldError('description')) && (
-                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                      <p className="text-xs text-red-600 flex items-center">
                         <AlertCircle className="h-3 w-3 mr-1" />
                         {fieldErrors.description || getFieldError('description')}
                       </p>
@@ -573,27 +522,22 @@ export default function KPProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Location
-                  </label>
+                <div className="space-y-2">
+                  <Label>Location</Label>
                   {isEditing ? (
                     <>
-                    <input
-                      type="text"
-                      value={formData.location}
+                      <Input
+                        value={formData.location}
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, location: e.target.value }));
                           if (fieldErrors.location) setFieldErrors(prev => ({ ...prev, location: '' }));
                           checkField('location', e.target.value);
                         }}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors.location || getFieldError('location') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                        }`}
-                      placeholder="City, State, Country"
-                    />
+                        className={fieldErrors.location || getFieldError('location') ? 'border-red-500' : ''}
+                        placeholder="City, State, Country"
+                      />
                       {(fieldErrors.location || getFieldError('location')) && (
-                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <p className="text-xs text-red-600 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           {fieldErrors.location || getFieldError('location')}
                         </p>
@@ -604,16 +548,13 @@ export default function KPProfilePage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Website
-                  </label>
+                <div className="space-y-2">
+                  <Label>Website</Label>
                   {isEditing ? (
-                    <input
+                    <Input
                       type="url"
                       value={formData.website}
                       onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="https://example.com"
                     />
                   ) : (
@@ -627,41 +568,36 @@ export default function KPProfilePage() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Admin Information */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle>Admin Information</CardTitle>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Admin Information</h2>
-            </div>
-
-            <div className="space-y-4">
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Admin Name
-                  </label>
+                <div className="space-y-2">
+                  <Label>Admin Name</Label>
                   {isEditing ? (
                     <>
-                    <input
-                      type="text"
-                      value={formData.kp_admin_name}
+                      <Input
+                        value={formData.kp_admin_name}
                         onChange={(e) => {
                           setFormData(prev => ({ ...prev, kp_admin_name: e.target.value }));
                           if (fieldErrors.kp_admin_name) setFieldErrors(prev => ({ ...prev, kp_admin_name: '' }));
                           checkField('kp_admin_name', e.target.value);
                         }}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                          fieldErrors.kp_admin_name || getFieldError('kp_admin_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                        }`}
-                      placeholder="Enter admin name"
-                    />
+                        className={fieldErrors.kp_admin_name || getFieldError('kp_admin_name') ? 'border-red-500' : ''}
+                        placeholder="Enter admin name"
+                      />
                       {(fieldErrors.kp_admin_name || getFieldError('kp_admin_name')) && (
-                        <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <p className="text-xs text-red-600 flex items-center">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           {fieldErrors.kp_admin_name || getFieldError('kp_admin_name')}
                         </p>
@@ -672,16 +608,13 @@ export default function KPProfilePage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Admin Email
-                  </label>
+                <div className="space-y-2">
+                  <Label>Admin Email</Label>
                   {isEditing ? (
-                    <input
+                    <Input
                       type="email"
                       value={formData.kp_admin_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, kp_admin_email: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="admin@example.com"
                     />
                   ) : (
@@ -691,16 +624,13 @@ export default function KPProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Admin Phone
-                  </label>
+                <div className="space-y-2">
+                  <Label>Admin Phone</Label>
                   {isEditing ? (
-                    <input
+                    <Input
                       type="tel"
                       value={formData.kp_admin_phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, kp_admin_phone: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="+1 (555) 123-4567"
                     />
                   ) : (
@@ -708,16 +638,13 @@ export default function KPProfilePage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    LinkedIn URL
-                  </label>
+                <div className="space-y-2">
+                  <Label>LinkedIn URL</Label>
                   {isEditing ? (
-                    <input
+                    <Input
                       type="url"
                       value={formData.linkedin_url}
                       onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       placeholder="https://linkedin.com/company/example"
                     />
                   ) : (
@@ -731,109 +658,105 @@ export default function KPProfilePage() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Logo and Status */}
         <div className="space-y-6">
-          {/* Logo Section */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Upload className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Knowledge Partner Logo</h2>
-            </div>
-
-            <div className="text-center">
-              {profile?.logo ? (
-                <div className="space-y-4">
-                  <div className="w-32 h-32 mx-auto rounded-lg overflow-hidden border-2 border-gray-200">
-                    <img
-                      src={profile.logo.startsWith('http') ? profile.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${profile.logo}`}
-                      alt="Knowledge Partner Logo"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={logoUploading}
-                      className="hidden"
-                      id="logo-upload"
-                    />
-                    <label
-                      htmlFor="logo-upload"
-                      className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      {logoUploading ? 'Uploading...' : 'Change Logo'}
-                    </label>
-                    <button
-                      onClick={handleRemoveLogo}
-                      className="block w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Remove Logo
-                    </button>
-                  </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Upload className="h-5 w-5 text-white" />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="w-32 h-32 mx-auto rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <Upload className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={logoUploading}
-                      className="hidden"
-                      id="logo-upload"
-                    />
-                    <label
-                      htmlFor="logo-upload"
-                      className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      {logoUploading ? 'Uploading...' : 'Upload Logo'}
-                    </label>
-                    <p className="text-xs text-gray-500 mt-2">
-                      PNG, JPG, GIF up to 5MB
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Status Section */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
-                <Award className="h-5 w-5 text-white" />
+                <CardTitle>Knowledge Partner Logo</CardTitle>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Status</h2>
-            </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                {profile?.logo ? (
+                  <div className="space-y-4">
+                    <div className="w-32 h-32 mx-auto rounded-lg overflow-hidden border-2 border-gray-200">
+                      <img
+                        src={profile.logo.startsWith('http') ? profile.logo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${profile.logo}`}
+                        alt="Knowledge Partner Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={logoUploading}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label htmlFor="logo-upload">
+                        <Button asChild className="w-full cursor-pointer" disabled={logoUploading}>
+                          <span>{logoUploading ? 'Uploading...' : 'Change Logo'}</span>
+                        </Button>
+                      </label>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={handleRemoveLogo}
+                      >
+                        Remove Logo
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="w-32 h-32 mx-auto rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={logoUploading}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label htmlFor="logo-upload">
+                        <Button asChild className="w-full cursor-pointer" disabled={logoUploading}>
+                          <span>{logoUploading ? 'Uploading...' : 'Upload Logo'}</span>
+                        </Button>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        PNG, JPG, GIF up to 5MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
+                  <Award className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle>Status</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600">Knowledge Partner Status</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  profile?.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <Badge className={profile?.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                   {profile?.is_active ? 'Active' : 'Inactive'}
-                </span>
+                </Badge>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-600">Verification Status</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  profile?.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>
+                <Badge className={profile?.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                   {profile?.is_verified ? 'Verified' : 'Pending'}
-                </span>
+                </Badge>
               </div>
 
               <div className="pt-4 border-t border-gray-200">
@@ -845,37 +768,25 @@ export default function KPProfilePage() {
                   {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
                 </p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-
       </div>
 
-      {/* Change Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Update Your Password</h2>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-6">
-              <ChangePasswordForm 
-                onSuccess={() => {
-                  setTimeout(() => {
-                    setShowPasswordModal(false);
-                  }, 2000);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Update Your Password</DialogTitle>
+          </DialogHeader>
+          <ChangePasswordForm
+            onSuccess={() => {
+              setTimeout(() => {
+                setShowPasswordModal(false);
+              }, 2000);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

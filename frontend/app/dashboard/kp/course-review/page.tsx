@@ -1,25 +1,43 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  MessageSquare,
-  Calendar,
+import {
+  BookOpen,
+  Clock,
+  User,
+  CheckCircle,
+  XCircle,
+  Eye,
   Star,
-  Users,
   Play,
   FileText,
   Image,
   Award,
   Search
 } from 'lucide-react';
-import Link from 'next/link';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Course {
   id: string;
@@ -95,24 +113,9 @@ interface LessonMaterial {
   order: number;
 }
 
-interface ReviewStats {
-  total_pending: number;
-  total_approved: number;
-  total_rejected: number;
-  total_draft: number;
-  recent_activity: Array<{
-    id: string;
-    title: string;
-    instructor: string;
-    created_at: string;
-    status: string;
-  }>;
-}
-
 export default function CourseReviewPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
-  const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -131,11 +134,11 @@ export default function CourseReviewPage() {
       return;
     }
     fetchCourses();
-    fetchStats();
   }, []);
 
   useEffect(() => {
-    let filtered = safeCourses;
+    const coursesToFilter = Array.isArray(courses) ? courses : [];
+    let filtered = coursesToFilter;
 
     if (searchTerm.trim()) {
       filtered = filtered.filter(course =>
@@ -150,13 +153,13 @@ export default function CourseReviewPage() {
     }
 
     setFilteredCourses(filtered);
-  }, [safeCourses, searchTerm, statusFilter]);
+  }, [courses, searchTerm, statusFilter]);
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/all/`, {
         method: 'GET',
       });
@@ -173,23 +176,10 @@ export default function CourseReviewPage() {
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/stats/`, {
-        method: 'GET',
-      });
-
-      const data = await response.json();
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-    }
-  };
-
   const handleApprove = async (courseId: string) => {
     try {
       setActionLoading(true);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/approve/`, {
         method: 'POST',
         body: JSON.stringify({
@@ -206,8 +196,6 @@ export default function CourseReviewPage() {
       setShowReviewModal(false);
       setReviewNotes('');
       fetchCourses();
-      fetchStats();
-      // Refresh sidebar counts
       if ((window as any).refreshSidebarCounts) {
         (window as any).refreshSidebarCounts();
       }
@@ -227,7 +215,7 @@ export default function CourseReviewPage() {
 
     try {
       setActionLoading(true);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/admin/course-review/${courseId}/reject/`, {
         method: 'POST',
         body: JSON.stringify({
@@ -244,8 +232,6 @@ export default function CourseReviewPage() {
       setShowReviewModal(false);
       setReviewNotes('');
       fetchCourses();
-      fetchStats();
-      // Refresh sidebar counts
       if ((window as any).refreshSidebarCounts) {
         (window as any).refreshSidebarCounts();
       }
@@ -295,22 +281,43 @@ export default function CourseReviewPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-80" />
+              <Skeleton className="h-10 w-40" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchCourses}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Try Again
-        </button>
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="text-center">
+          <Button onClick={fetchCourses}>
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -325,198 +332,190 @@ export default function CourseReviewPage() {
         </div>
       </div>
 
-
-
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg border border-gray-200 p-3 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-80">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
-              />
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-center gap-3">
+            <div className="w-80">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="w-40">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending_approval">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(searchTerm || statusFilter !== 'all') && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                }}
+              >
+                Clear
+              </Button>
+            )}
+
+            <div className="ml-auto text-sm text-gray-500">
+              {safeFilteredCourses.length} of {safeCourses.length} courses
             </div>
           </div>
-          
-          <div className="w-40">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="all">All Status</option>
-              <option value="pending_approval">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="draft">Draft</option>
-            </select>
-          </div>
-          
-          {(searchTerm || statusFilter !== 'all') && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-              }}
-              className="px-3 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors text-sm"
-            >
-              Clear
-            </button>
-          )}
-          
-          <div className="ml-auto text-sm text-gray-500">
-            {safeFilteredCourses.length} of {safeCourses.length} courses
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Courses List */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
-          Course History
-        </h2>
-        
-        {safeFilteredCourses.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">
-              {safeCourses.length === 0 
-                ? "No courses found" 
-                : "No courses match your search criteria"}
-            </p>
-            <p className="text-gray-400 text-sm">
-              {safeCourses.length === 0 
-                ? "No courses have been created for this Knowledge Partner yet"
-                : "Try adjusting your search terms or filters"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {safeFilteredCourses.map((course) => (
-              <div key={course.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{course.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(course.approval_status)}`}>
-                        {course.approval_status.replace('_', ' ').toUpperCase()}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-2">{course.short_description}</p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1" />
-                        {course.tutor?.full_name || 'Unknown Instructor'}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {course.duration_weeks} weeks
-                      </div>
-                      <div className="flex items-center">
-                        <BookOpen className="h-4 w-4 mr-1" />
-                        {course.lessons_count} lessons
-                      </div>
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 mr-1" />
-                        ₹{course.price}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => openReviewModal(course)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      {course.approval_status === 'pending_approval' ? 'Review' : 'View Details'}
-                    </button>
-                    
-                    {course.approval_status === 'pending_approval' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(course.id)}
-                          disabled={actionLoading}
-                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Quick Approve
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedCourse(course);
-                            setReviewNotes('');
-                            setShowReviewModal(true);
-                          }}
-                          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    
-                    {(course.approval_status === 'approved' || course.approval_status === 'rejected') && course.approval_notes && (
-                      <div className="text-xs text-gray-500 max-w-xs">
-                        <strong>Review Notes:</strong> {course.approval_notes}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {course.modules && course.modules.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Course Content:</h4>
-                    <div className="space-y-2">
-                      {course.modules.slice(0, 2).map((module) => (
-                        <div key={module.id} className="bg-gray-50 rounded-lg p-3">
-                          <h5 className="font-medium text-gray-900 text-sm">{module.title}</h5>
-                          <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
-                            <span>{module.lessons.length} lessons</span>
-                            <span>{module.lessons.reduce((total, lesson) => total + lesson.duration_minutes, 0)} min</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Course History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {safeFilteredCourses.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">
+                {safeCourses.length === 0
+                  ? "No courses found"
+                  : "No courses match your search criteria"}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {safeCourses.length === 0
+                  ? "No courses have been created for this Knowledge Partner yet"
+                  : "Try adjusting your search terms or filters"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {safeFilteredCourses.map((course) => (
+                <Card key={course.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{course.title}</h3>
+                          <Badge className={getStatusColor(course.approval_status)}>
+                            {course.approval_status.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-600 mb-2">{course.short_description}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-1" />
+                            {course.tutor?.full_name || 'Unknown Instructor'}
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {course.duration_weeks} weeks
+                          </div>
+                          <div className="flex items-center">
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            {course.lessons_count} lessons
+                          </div>
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 mr-1" />
+                            ₹{course.price}
                           </div>
                         </div>
-                      ))}
-                      {course.modules.length > 2 && (
-                        <p className="text-xs text-gray-500">+{course.modules.length - 2} more modules</p>
-                      )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button onClick={() => openReviewModal(course)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          {course.approval_status === 'pending_approval' ? 'Review' : 'View Details'}
+                        </Button>
+
+                        {course.approval_status === 'pending_approval' && (
+                          <>
+                            <Button
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApprove(course.id)}
+                              disabled={actionLoading}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Quick Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setReviewNotes('');
+                                setShowReviewModal(true);
+                              }}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+
+                        {(course.approval_status === 'approved' || course.approval_status === 'rejected') && course.approval_notes && (
+                          <div className="text-xs text-gray-500 max-w-xs">
+                            <strong>Review Notes:</strong> {course.approval_notes}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+                    {course.modules && course.modules.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Course Content:</h4>
+                        <div className="space-y-2">
+                          {course.modules.slice(0, 2).map((module) => (
+                            <div key={module.id} className="bg-gray-50 rounded-lg p-3">
+                              <h5 className="font-medium text-gray-900 text-sm">{module.title}</h5>
+                              <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                                <span>{module.lessons.length} lessons</span>
+                                <span>{module.lessons.reduce((total, lesson) => total + lesson.duration_minutes, 0)} min</span>
+                              </div>
+                            </div>
+                          ))}
+                          {course.modules.length > 2 && (
+                            <p className="text-xs text-gray-500">+{course.modules.length - 2} more modules</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Review Modal */}
-      {showReviewModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {selectedCourse.approval_status === 'pending_approval' ? 'Review Course' : 'Course Details'}
-                </h3>
-                <p className="text-gray-600">{selectedCourse.title}</p>
-              </div>
-              <button
-                onClick={() => setShowReviewModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
-            </div>
+      <Dialog open={showReviewModal} onOpenChange={setShowReviewModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedCourse?.approval_status === 'pending_approval' ? 'Review Course' : 'Course Details'}
+            </DialogTitle>
+            <DialogDescription>{selectedCourse?.title}</DialogDescription>
+          </DialogHeader>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
+          {selectedCourse && (
+            <div className="space-y-6">
               {/* Course Overview */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
                   Course Overview
@@ -555,16 +554,16 @@ export default function CourseReviewPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">Status</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCourse.approval_status)}`}>
+                      <Badge className={getStatusColor(selectedCourse.approval_status)}>
                         {selectedCourse.approval_status.replace('_', ' ').toUpperCase()}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Course Description */}
-              <div className="mb-6">
+              <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Course Description</h4>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <p className="text-sm text-gray-700 leading-relaxed">{selectedCourse.description}</p>
@@ -573,7 +572,7 @@ export default function CourseReviewPage() {
 
               {/* Course Short Description */}
               {selectedCourse.short_description && (
-                <div className="mb-6">
+                <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Course Summary</h4>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-gray-700 leading-relaxed">{selectedCourse.short_description}</p>
@@ -586,9 +585,9 @@ export default function CourseReviewPage() {
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Course Content</h4>
                   <p className="text-sm text-gray-600 mb-6">
-                    {Math.round(selectedCourse.total_duration_minutes / 60)}h {selectedCourse.total_duration_minutes % 60}m • {selectedCourse.modules.length} Sections • {selectedCourse.lessons_count} Lessons
+                    {Math.round(selectedCourse.total_duration_minutes / 60)}h {selectedCourse.total_duration_minutes % 60}m - {selectedCourse.modules.length} Sections - {selectedCourse.lessons_count} Lessons
                   </p>
-                  
+
                   <div className="space-y-1">
                     {selectedCourse.modules.map((module, moduleIndex) => (
                       <div key={module.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -602,18 +601,12 @@ export default function CourseReviewPage() {
                                 {module.title}
                               </h5>
                               <p className="text-sm text-gray-600">
-                                {module.lessons?.length || 0} lessons • {module.lessons?.reduce((total, lesson) => total + (lesson.duration_minutes || 0), 0) || 0}m
+                                {module.lessons?.length || 0} lessons - {module.lessons?.reduce((total, lesson) => total + (lesson.duration_minutes || 0), 0) || 0}m
                               </p>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
                         </div>
-                        
-                        {/* Show lessons directly under each module */}
+
                         {module.lessons && module.lessons.length > 0 && (
                           <div className="mt-4 pl-12 space-y-1">
                             {module.lessons.map((lesson) => (
@@ -632,10 +625,10 @@ export default function CourseReviewPage() {
                                 <div className="flex items-center space-x-2">
                                   <span className="text-xs text-gray-500">{lesson.duration_minutes}m</span>
                                   {lesson.is_preview && (
-                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Preview</span>
+                                    <Badge className="bg-blue-100 text-blue-800">Preview</Badge>
                                   )}
                                   {lesson.is_mandatory && (
-                                    <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Mandatory</span>
+                                    <Badge className="bg-red-100 text-red-800">Mandatory</Badge>
                                   )}
                                 </div>
                               </div>
@@ -648,17 +641,16 @@ export default function CourseReviewPage() {
                 </div>
               )}
 
-              {/* Review Notes - Show for all statuses */}
+              {/* Review Notes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {selectedCourse.approval_status === 'pending_approval' ? 'Review Notes' : 'Previous Review Notes'}
                 </label>
                 {selectedCourse.approval_status === 'pending_approval' ? (
-                  <textarea
+                  <Textarea
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
                     placeholder="Add your review notes here..."
                   />
                 ) : (
@@ -668,40 +660,36 @@ export default function CourseReviewPage() {
                 )}
               </div>
             </div>
+          )}
 
-            {/* Modal Actions - Only show for pending courses */}
-            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
-              <button
-                onClick={() => setShowReviewModal(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-              
-              {selectedCourse.approval_status === 'pending_approval' && (
-                <>
-                  <button
-                    onClick={() => handleReject(selectedCourse.id)}
-                    disabled={actionLoading}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    {actionLoading ? 'Rejecting...' : 'Reject'}
-                  </button>
-                  <button
-                    onClick={() => handleApprove(selectedCourse.id)}
-                    disabled={actionLoading}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {actionLoading ? 'Approving...' : 'Approve'}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReviewModal(false)}>
+              Close
+            </Button>
+
+            {selectedCourse?.approval_status === 'pending_approval' && (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => selectedCourse && handleReject(selectedCourse.id)}
+                  disabled={actionLoading}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {actionLoading ? 'Rejecting...' : 'Reject'}
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => selectedCourse && handleApprove(selectedCourse.id)}
+                  disabled={actionLoading}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {actionLoading ? 'Approving...' : 'Approve'}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
