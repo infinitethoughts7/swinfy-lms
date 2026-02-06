@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatsCardProps {
   title: string;
@@ -86,71 +88,74 @@ const StatsCard = ({
 
   if (loading) {
     return (
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${sizes.padding} animate-pulse`}>
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="h-4 bg-gray-200 rounded mb-3"></div>
-            <div className="h-8 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded w-20"></div>
+      <Card className={sizes.padding}>
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className={`${sizes.iconSize} rounded-lg`} />
           </div>
-          <div className={`${sizes.iconSize} bg-gray-200 rounded-lg`}></div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div 
-      className={`bg-white rounded-xl shadow-sm border border-gray-200 ${sizes.padding} transition-all duration-200 hover:shadow-md ${
+    <Card
+      className={`${sizes.padding} transition-all duration-200 hover:shadow-md ${
         onClick ? 'cursor-pointer hover:scale-105' : ''
       } ${colors.bg}`}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className={`${sizes.titleText} font-medium text-gray-600 mb-2`}>
-            {title}
-          </p>
-          <p className={`${sizes.valueText} font-bold text-gray-900 mb-1`}>
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
-          
-          {change && (
-            <div className="flex items-center">
-              <span className={`inline-flex items-center text-xs font-medium ${
-                change.type === 'increase' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {change.type === 'increase' ? (
-                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {change.value}%
-              </span>
-              {change.timeframe && (
-                <span className="text-xs text-gray-500 ml-2">
-                  {change.timeframe}
+      <CardContent className="p-0">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className={`${sizes.titleText} font-medium text-gray-600 mb-2`}>
+              {title}
+            </p>
+            <p className={`${sizes.valueText} font-bold text-gray-900 mb-1`}>
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </p>
+
+            {change && (
+              <div className="flex items-center">
+                <span className={`inline-flex items-center text-xs font-medium ${
+                  change.type === 'increase' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {change.type === 'increase' ? (
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {change.value}%
                 </span>
-              )}
+                {change.timeframe && (
+                  <span className="text-xs text-gray-500 ml-2">
+                    {change.timeframe}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {icon && (
+            <div className={`${sizes.iconSize} ${colors.icon} rounded-lg flex items-center justify-center flex-shrink-0 ml-4`}>
+              {icon}
             </div>
           )}
         </div>
-        
-        {icon && (
-          <div className={`${sizes.iconSize} ${colors.icon} rounded-lg flex items-center justify-center flex-shrink-0 ml-4`}>
-            {icon}
-          </div>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Predefined stats card components for common use cases
 export const CourseStatsCard = ({ completed, total, ...props }: { completed: number; total: number } & Omit<StatsCardProps, 'title' | 'value' | 'icon'>) => (
   <StatsCard
     title="Course Progress"

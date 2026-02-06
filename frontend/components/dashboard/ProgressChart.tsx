@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProgressData {
   label: string;
@@ -17,28 +18,25 @@ interface ProgressChartProps {
   animated?: boolean;
 }
 
-// Simple chart implementation without external dependencies
-// In a real project, you might want to use Chart.js, Recharts, or similar
-
-const ProgressChart = ({ 
-  data, 
-  type, 
-  title, 
-  height = 300, 
+const ProgressChart = ({
+  data,
+  type,
+  title,
+  height = 300,
   showLegend = true,
-  animated = true 
+  animated = true
 }: ProgressChartProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const colors = [
-    '#3B82F6', // blue
-    '#10B981', // green
-    '#F59E0B', // yellow
-    '#EF4444', // red
-    '#8B5CF6', // purple
-    '#06B6D4', // cyan
-    '#F97316', // orange
-    '#84CC16', // lime
+    '#3B82F6',
+    '#10B981',
+    '#F59E0B',
+    '#EF4444',
+    '#8B5CF6',
+    '#06B6D4',
+    '#F97316',
+    '#84CC16',
   ];
 
   useEffect(() => {
@@ -48,7 +46,6 @@ const ProgressChart = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Normalize and defensively copy data
     const safeData: ProgressData[] = Array.isArray(data)
       ? data.map((item, index) => ({
           label: (item?.label ?? `Item ${index + 1}`).toString(),
@@ -57,16 +54,13 @@ const ProgressChart = ({
         }))
       : [];
 
-    // Set canvas size
     canvas.width = canvas.offsetWidth * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.offsetWidth, height);
 
     if (safeData.length === 0) {
-      // Render empty-state text
       ctx.fillStyle = '#9CA3AF';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
@@ -84,10 +78,10 @@ const ProgressChart = ({
   }, [data, type, height]);
 
   const drawPieChart = (
-    ctx: CanvasRenderingContext2D, 
-    data: ProgressData[], 
-    width: number, 
-    height: number, 
+    ctx: CanvasRenderingContext2D,
+    data: ProgressData[],
+    width: number,
+    height: number,
     isDoughnut: boolean
   ) => {
     const centerX = width / 2;
@@ -96,10 +90,9 @@ const ProgressChart = ({
     const innerRadius = isDoughnut ? radius * 0.6 : 0;
 
     const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
-    let currentAngle = -Math.PI / 2; // Start from top
+    let currentAngle = -Math.PI / 2;
 
     if (total <= 0) {
-      // Draw a faint empty circle for zero total
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
       ctx.strokeStyle = '#E5E7EB';
@@ -112,7 +105,6 @@ const ProgressChart = ({
       const sliceAngle = total > 0 ? (value / total) * 2 * Math.PI : 0;
       const color = item.color || colors[index % colors.length];
 
-      // Draw slice
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
       if (isDoughnut) {
@@ -127,7 +119,6 @@ const ProgressChart = ({
       currentAngle += sliceAngle;
     });
 
-    // Draw center text for doughnut
     if (isDoughnut) {
       ctx.fillStyle = '#374151';
       ctx.font = 'bold 20px sans-serif';
@@ -138,9 +129,9 @@ const ProgressChart = ({
   };
 
   const drawBarChart = (
-    ctx: CanvasRenderingContext2D, 
-    data: ProgressData[], 
-    width: number, 
+    ctx: CanvasRenderingContext2D,
+    data: ProgressData[],
+    width: number,
     height: number
   ) => {
     const padding = 40;
@@ -160,25 +151,22 @@ const ProgressChart = ({
 
       const color = item.color || colors[index % colors.length];
 
-      // Draw bar
       ctx.fillStyle = color;
       ctx.fillRect(x, y, barWidth, barHeight);
 
-      // Draw value label
       ctx.fillStyle = '#374151';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText((value).toString(), x + barWidth / 2, y - 5);
 
-      // Draw label
       ctx.fillText(item.label, x + barWidth / 2, height - padding + 20);
     });
   };
 
   const drawLineChart = (
-    ctx: CanvasRenderingContext2D, 
-    data: ProgressData[], 
-    width: number, 
+    ctx: CanvasRenderingContext2D,
+    data: ProgressData[],
+    width: number,
     height: number
   ) => {
     const padding = 40;
@@ -189,7 +177,6 @@ const ProgressChart = ({
     const maxValue = Math.max(...values, 0) || 1;
     const stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
 
-    // Draw line
     ctx.beginPath();
     ctx.strokeStyle = colors[0];
     ctx.lineWidth = 3;
@@ -205,7 +192,6 @@ const ProgressChart = ({
         ctx.lineTo(x, y);
       }
 
-      // Draw points
       ctx.save();
       ctx.fillStyle = colors[0];
       ctx.beginPath();
@@ -213,7 +199,6 @@ const ProgressChart = ({
       ctx.fill();
       ctx.restore();
 
-      // Draw labels
       ctx.fillStyle = '#374151';
       ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
@@ -225,42 +210,44 @@ const ProgressChart = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <Card>
       {title && (
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
       )}
-      
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          style={{ width: '100%', height: `${height}px` }}
-          className="block"
-        />
-      </div>
-
-      {showLegend && (type === 'pie' || type === 'doughnut') && (
-        <div className="mt-4 flex flex-wrap gap-4 justify-center">
-          {data.map((item, index) => {
-            const color = item.color || colors[index % colors.length];
-            return (
-              <div key={item.label} className="flex items-center space-x-2">
-                <div 
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: color }}
-                ></div>
-                <span className="text-sm text-gray-600">
-                  {item.label}: {item.value}%
-                </span>
-              </div>
-            );
-          })}
+      <CardContent className={title ? '' : 'pt-6'}>
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            style={{ width: '100%', height: `${height}px` }}
+            className="block"
+          />
         </div>
-      )}
-    </div>
+
+        {showLegend && (type === 'pie' || type === 'doughnut') && (
+          <div className="mt-4 flex flex-wrap gap-4 justify-center">
+            {data.map((item, index) => {
+              const color = item.color || colors[index % colors.length];
+              return (
+                <div key={item.label} className="flex items-center space-x-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color }}
+                  ></div>
+                  <span className="text-sm text-gray-600">
+                    {item.label}: {item.value}%
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
-// Predefined chart components for common use cases
 export const CourseProgressChart = ({ progress }: { progress: number }) => (
   <ProgressChart
     data={[
@@ -284,8 +271,8 @@ export const PerformanceChart = ({ data }: { data: { month: string; score: numbe
   />
 );
 
-export const LearnerDistributionChart = ({ learners }: { 
-  learners: { level: string; count: number }[] 
+export const LearnerDistributionChart = ({ learners }: {
+  learners: { level: string; count: number }[]
 }) => (
   <ProgressChart
     data={(learners || []).map(item => ({ label: item.level, value: item.count }))}
@@ -295,8 +282,8 @@ export const LearnerDistributionChart = ({ learners }: {
   />
 );
 
-export const WeeklyActivityChart = ({ activities }: { 
-  activities: { day: string; hours: number }[] 
+export const WeeklyActivityChart = ({ activities }: {
+  activities: { day: string; hours: number }[]
 }) => (
   <ProgressChart
     data={(activities || []).map(item => ({ label: item.day, value: item.hours }))}

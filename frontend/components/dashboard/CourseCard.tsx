@@ -2,6 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 interface Course {
   id: string;
@@ -36,38 +40,38 @@ interface CourseCardProps {
   onDelete?: (courseId: string) => void;
 }
 
-const CourseCard = ({ 
-  course, 
-  variant = 'student', 
+const CourseCard = ({
+  course,
+  variant = 'student',
   showProgress = true,
   onEdit,
-  onDelete 
+  onDelete
 }: CourseCardProps) => {
-  const getStatusColor = (status?: string) => {
+  const getStatusVariant = (status?: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'default';
       case 'completed':
-        return 'bg-blue-100 text-blue-800';
+        return 'secondary';
       case 'upcoming':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'outline';
       case 'draft':
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   };
 
-  const getLevelColor = (level: string) => {
+  const getLevelVariant = (level: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (level) {
       case 'Beginner':
-        return 'bg-green-100 text-green-800';
+        return 'default';
       case 'Intermediate':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'outline';
       case 'Advanced':
-        return 'bg-red-100 text-red-800';
+        return 'destructive';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'secondary';
     }
   };
 
@@ -85,7 +89,7 @@ const CourseCard = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
+    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 group">
       {/* Course Image */}
       <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
         <Image
@@ -94,21 +98,21 @@ const CourseCard = ({
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Status Badge */}
         {course.status && (
           <div className="absolute top-3 left-3">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(course.status)}`}>
+            <Badge variant={getStatusVariant(course.status)} className="capitalize">
               {course.status}
-            </span>
+            </Badge>
           </div>
         )}
 
         {/* Level Badge */}
         <div className="absolute top-3 right-3">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(course.level)}`}>
+          <Badge variant={getLevelVariant(course.level)}>
             {course.level}
-          </span>
+          </Badge>
         </div>
 
         {/* Actions Menu */}
@@ -116,32 +120,36 @@ const CourseCard = ({
           <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="flex space-x-2">
               {onEdit && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => {
                     e.preventDefault();
                     onEdit(course.id);
                   }}
-                  className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
+                  className="bg-white/90 backdrop-blur-sm hover:bg-white"
                   title="Edit course"
                 >
                   <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                </button>
+                </Button>
               )}
               {onDelete && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => {
                     e.preventDefault();
                     onDelete(course.id);
                   }}
-                  className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-red-50 transition-colors"
+                  className="bg-white/90 backdrop-blur-sm hover:bg-red-50"
                   title="Delete course"
                 >
                   <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -149,11 +157,11 @@ const CourseCard = ({
       </div>
 
       {/* Course Content */}
-      <div className="p-6">
+      <CardContent className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
           {course.title}
         </h3>
-        
+
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
           {course.description}
         </p>
@@ -165,12 +173,7 @@ const CourseCard = ({
               <span className="text-sm font-medium text-gray-700">Progress</span>
               <span className="text-sm text-gray-500">{course.progress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${course.progress}%` }}
-              ></div>
-            </div>
+            <Progress value={course.progress} className="h-2" />
           </div>
         )}
 
@@ -182,7 +185,7 @@ const CourseCard = ({
             </svg>
             {course.duration}
           </div>
-          
+
           {course.students && (
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,7 +194,7 @@ const CourseCard = ({
               {course.students} students
             </div>
           )}
-          
+
           {course.rating && Number(course.rating) > 0 && (
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -209,7 +212,7 @@ const CourseCard = ({
               {(() => {
                 const name = course.instructor?.name || course.tutor?.full_name || 'Unknown';
                 const avatar = course.instructor?.avatar || course.tutor?.avatar;
-                
+
                 if (avatar) {
                   return (
                     <Image
@@ -243,17 +246,16 @@ const CourseCard = ({
         )}
 
         {/* Action Button */}
-        <Link
-          href={getActionLink()}
-          className="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors group-hover:shadow-lg"
-        >
-          {variant === 'student' && course.progress === 100 && 'Review Course'}
-          {variant === 'student' && course.progress !== 100 && (course.progress ? 'Continue Learning' : 'Start Course')}
-          {variant === 'tutor' && 'Manage Course'}
-          {variant === 'admin' && 'View Details'}
-        </Link>
-      </div>
-    </div>
+        <Button asChild className="w-full">
+          <Link href={getActionLink()}>
+            {variant === 'student' && course.progress === 100 && 'Review Course'}
+            {variant === 'student' && course.progress !== 100 && (course.progress ? 'Continue Learning' : 'Start Course')}
+            {variant === 'tutor' && 'Manage Course'}
+            {variant === 'admin' && 'View Details'}
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

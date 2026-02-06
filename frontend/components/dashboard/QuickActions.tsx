@@ -1,5 +1,9 @@
 'use client';
 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
 interface QuickAction {
   id: string;
   label: string;
@@ -51,15 +55,17 @@ const QuickActions = ({ actions, variant = 'grid', size = 'md' }: QuickActionsPr
 
   if (variant === 'list') {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className={`${sizes.spacing}`}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className={sizes.spacing}>
           {actions.map((action) => (
-            <button
+            <Button
               key={action.id}
               onClick={action.onClick}
               disabled={action.disabled}
-              className={`w-full flex items-center justify-between ${sizes.button} rounded-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+              className={`w-full flex items-center justify-between ${sizes.button} transition-all duration-200 hover:scale-105 ${
                 colorClasses[action.color]
               }`}
             >
@@ -68,78 +74,83 @@ const QuickActions = ({ actions, variant = 'grid', size = 'md' }: QuickActionsPr
                 <span className={`font-medium ${sizes.text}`}>{action.label}</span>
               </div>
               {action.badge && (
-                <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full">
+                <Badge variant="secondary" className="bg-white/20 text-white">
                   {action.badge}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Horizontal layout - all actions in a single row
   if (variant === 'horizontal') {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="flex flex-wrap gap-3 sm:gap-4 justify-start lg:justify-start">
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3 sm:gap-4 justify-start lg:justify-start">
+            {actions.map((action) => (
+              <Button
+                key={action.id}
+                onClick={action.onClick}
+                disabled={action.disabled}
+                className={`relative flex items-center space-x-2 sm:space-x-3 ${sizes.button} transition-all duration-200 hover:scale-105 hover:shadow-lg min-w-fit flex-shrink-0 ${
+                  colorClasses[action.color]
+                }`}
+              >
+                <span className={sizes.icon}>{action.icon}</span>
+                <span className={`font-medium ${sizes.text} whitespace-nowrap`}>{action.label}</span>
+                {action.badge && (
+                  <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs">
+                    {action.badge}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {actions.map((action) => (
-            <button
+            <Button
               key={action.id}
               onClick={action.onClick}
               disabled={action.disabled}
-              className={`relative flex items-center space-x-2 sm:space-x-3 ${sizes.button} rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+              className={`relative flex flex-col items-center justify-center ${sizes.button} transition-all duration-200 hover:scale-105 hover:shadow-lg h-auto ${
                 colorClasses[action.color]
-              } min-w-fit flex-shrink-0`}
+              }`}
             >
-              <span className={sizes.icon}>{action.icon}</span>
-              <span className={`font-medium ${sizes.text} whitespace-nowrap`}>{action.label}</span>
+              <span className={`${sizes.icon} mb-2`}>{action.icon}</span>
+              <span className={`font-medium ${sizes.text} text-center`}>{action.label}</span>
               {action.badge && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs">
                   {action.badge}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  // Grid layout (default)
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {actions.map((action) => (
-          <button
-            key={action.id}
-            onClick={action.onClick}
-            disabled={action.disabled}
-            className={`relative flex flex-col items-center justify-center ${sizes.button} rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-              colorClasses[action.color]
-            }`}
-          >
-            <span className={`${sizes.icon} mb-2`}>{action.icon}</span>
-            <span className={`font-medium ${sizes.text} text-center`}>{action.label}</span>
-            {action.badge && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                {action.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// Predefined action sets for different user roles
-export const StudentQuickActions = ({ 
-  onJoinSession, 
-  onViewCourses, 
+export const StudentQuickActions = ({
+  onJoinSession,
+  onViewCourses,
   onCheckAssignments,
   onViewProgress,
   upcomingSessions = 0,
@@ -204,9 +215,9 @@ export const StudentQuickActions = ({
   return <QuickActions actions={actions} variant="horizontal" />;
 };
 
-export const TutorQuickActions = ({ 
-  onStartSession, 
-  onCreateCourse, 
+export const TutorQuickActions = ({
+  onStartSession,
+  onCreateCourse,
   onViewStudents,
   onScheduleSession,
   liveStudents = 0
@@ -268,9 +279,9 @@ export const TutorQuickActions = ({
   return <QuickActions actions={actions} variant="horizontal" />;
 };
 
-export const AdminQuickActions = ({ 
-  onManageUsers, 
-  onSystemSettings, 
+export const AdminQuickActions = ({
+  onManageUsers,
+  onSystemSettings,
   onViewReports,
   onBackupSystem,
   pendingApprovals = 0
