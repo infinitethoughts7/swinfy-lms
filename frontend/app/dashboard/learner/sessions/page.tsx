@@ -3,6 +3,11 @@
 import { useState } from 'react';
 import LiveSessionCard from '@/components/dashboard/LiveSessionCard';
 import StatsCard from '@/components/dashboard/StatsCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Clock, Video, Calendar, CheckCircle } from 'lucide-react';
 
 // Mock data for student sessions
 const allSessions = [
@@ -14,7 +19,7 @@ const allSessions = [
       name: 'Dr. Sarah Wilson',
       avatar: '/assets/students/s4.jpg'
     },
-    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
+    startTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
     duration: 90,
     participants: 15,
     maxParticipants: 25,
@@ -29,7 +34,7 @@ const allSessions = [
       name: 'Dr. Lisa Rodriguez',
       avatar: '/assets/students/s6.jpg'
     },
-    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // tomorrow
+    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     duration: 60,
     participants: 0,
     maxParticipants: 30,
@@ -44,7 +49,7 @@ const allSessions = [
       name: 'Dr. Emma Watson',
       avatar: '/assets/students/s8.jpg'
     },
-    startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+    startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
     duration: 120,
     participants: 0,
     maxParticipants: 20,
@@ -59,7 +64,7 @@ const allSessions = [
       name: 'John Martinez',
       avatar: '/assets/students/s7.jpg'
     },
-    startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     duration: 90,
     status: 'ended' as const,
     recordingAvailable: true,
@@ -73,7 +78,7 @@ const allSessions = [
       name: 'Prof. Michael Chen',
       avatar: '/assets/students/s5.jpg'
     },
-    startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+    startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     duration: 60,
     status: 'ended' as const,
     recordingAvailable: true,
@@ -87,7 +92,7 @@ const allSessions = [
       name: 'Dr. Lisa Rodriguez',
       avatar: '/assets/students/s6.jpg'
     },
-    startTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+    startTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     duration: 90,
     status: 'ended' as const,
     recordingAvailable: false,
@@ -122,13 +127,11 @@ export default function StudentSessionsPage() {
   };
 
   const handleJoinSession = (sessionId: string) => {
-    // In a real app, this would redirect to the video conference
-    void sessionId; // Acknowledge parameter usage
+    void sessionId;
   };
 
   const handleViewRecording = (sessionId: string) => {
-    // In a real app, this would open the recorded session
-    void sessionId; // Acknowledge parameter usage
+    void sessionId;
   };
 
   return (
@@ -141,9 +144,9 @@ export default function StudentSessionsPage() {
             Join live sessions and access recordings from your courses
           </p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <Button>
           Schedule 1-on-1 Session
-        </button>
+        </Button>
       </div>
 
       {/* Stats Overview */}
@@ -151,97 +154,75 @@ export default function StudentSessionsPage() {
         <StatsCard
           title="Total Sessions"
           value={sessionStats.totalSessions}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          }
+          icon={<Video className="w-5 h-5" />}
           color="blue"
         />
         <StatsCard
           title="Upcoming"
           value={sessionStats.upcoming}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<Clock className="w-5 h-5" />}
           color="yellow"
           change={{ value: 1, type: 'increase', timeframe: 'this week' }}
         />
         <StatsCard
           title="Attended"
           value={sessionStats.attended}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
+          icon={<CheckCircle className="w-5 h-5" />}
           color="green"
         />
         <StatsCard
           title="This Week"
           value={sessionStats.thisWeek}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          }
+          icon={<Calendar className="w-5 h-5" />}
           color="purple"
         />
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
-          {(['upcoming', 'ended', 'all'] as const).map((filterOption) => (
-            <button
-              key={filterOption}
-              onClick={() => setFilter(filterOption)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === filterOption
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-              <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
-                {filterCounts[filterOption]}
-              </span>
-            </button>
-          ))}
-        </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
+            {(['upcoming', 'ended', 'all'] as const).map((filterOption) => (
+              <Button
+                key={filterOption}
+                variant={filter === filterOption ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setFilter(filterOption)}
+                className={filter === filterOption ? 'shadow-sm' : ''}
+              >
+                {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+                <Badge variant="secondary" className="ml-2">
+                  {filterCounts[filterOption]}
+                </Badge>
+              </Button>
+            ))}
+          </div>
 
-        <div className="mt-4 text-sm text-gray-600">
-          Showing {filteredSessions.length} {filter === 'all' ? '' : filter} sessions
-        </div>
-      </div>
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredSessions.length} {filter === 'all' ? '' : filter} sessions
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Next Session Alert */}
       {sessionStats.upcoming > 0 && filter === 'upcoming' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-1">
-                Next Session Starting Soon!
-              </h3>
-              <p className="text-blue-700 mb-3">
-                {allSessions.find(s => s.status === 'upcoming')?.title} starts in 2 hours
-              </p>
-              <button 
-                onClick={() => handleJoinSession(allSessions.find(s => s.status === 'upcoming')?.id || '')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Prepare to Join
-              </button>
-            </div>
-          </div>
-        </div>
+        <Alert className="bg-blue-50 border-blue-200">
+          <Clock className="h-6 w-6 text-blue-600" />
+          <AlertDescription className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 mb-1">
+              Next Session Starting Soon!
+            </h3>
+            <p className="text-blue-700 mb-3">
+              {allSessions.find(s => s.status === 'upcoming')?.title} starts in 2 hours
+            </p>
+            <Button
+              size="sm"
+              onClick={() => handleJoinSession(allSessions.find(s => s.status === 'upcoming')?.id || '')}
+            >
+              Prepare to Join
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Sessions List */}
@@ -259,23 +240,25 @@ export default function StudentSessionsPage() {
 
       {/* Empty State */}
       {filteredSessions.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎥</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No {filter === 'all' ? '' : filter} sessions
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {filter === 'upcoming' 
-              ? "You don't have any upcoming sessions scheduled."
-              : filter === 'ended'
-              ? "You haven't attended any sessions yet."
-              : "No sessions available."
-            }
-          </p>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Browse Available Sessions
-          </button>
-        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No {filter === 'all' ? '' : filter} sessions
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {filter === 'upcoming'
+                ? "You don't have any upcoming sessions scheduled."
+                : filter === 'ended'
+                ? "You haven't attended any sessions yet."
+                : "No sessions available."
+              }
+            </p>
+            <Button>
+              Browse Available Sessions
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

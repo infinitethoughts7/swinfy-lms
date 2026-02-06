@@ -4,8 +4,19 @@ import { useState, useEffect } from 'react';
 import { coursesApi } from '@/features/courses/services/courses';
 import CourseCard from '@/components/dashboard/CourseCard';
 import { Search, Grid, List } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-// Define the course interface based on the API response structure
 interface Course {
   id: string;
   title: string;
@@ -19,7 +30,7 @@ interface Course {
   level: 'beginner' | 'intermediate' | 'advanced';
   level_display: string;
   rating: number;
-  average_rating?: number; // Some APIs might use this field name
+  average_rating?: number;
   total_reviews: number;
   enrollment_count: number;
   thumbnail: string | null;
@@ -38,6 +49,31 @@ interface Course {
   };
 }
 
+function CoursesSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-10 w-10 rounded-lg" />
+        </div>
+      </div>
+
+      <Skeleton className="h-24 rounded-xl" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-80 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AllCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +88,7 @@ export default function AllCoursesPage() {
       try {
         setLoading(true);
         setError('');
-        
+
         const response = await coursesApi.getAllCourses();
         setCourses(response.results || []);
       } catch (err) {
@@ -66,23 +102,21 @@ export default function AllCoursesPage() {
     fetchAllCourses();
   }, []);
 
-  // Filter and search courses
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          course.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (filter === 'all') return matchesSearch;
     if (filter === 'free') return matchesSearch && course.price === 0;
     if (filter === 'paid') return matchesSearch && course.price > 0;
     if (filter === 'beginner') return matchesSearch && course.level === 'beginner';
     if (filter === 'intermediate') return matchesSearch && course.level === 'intermediate';
     if (filter === 'advanced') return matchesSearch && course.level === 'advanced';
-    
+
     return matchesSearch;
   });
 
-  // Sort courses
   const sortedCourses = [...filteredCourses].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
@@ -103,27 +137,19 @@ export default function AllCoursesPage() {
   });
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading courses...</p>
-        </div>
-      </div>
-    );
+    return <CoursesSkeleton />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <Button onClick={() => window.location.reload()}>
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -140,68 +166,74 @@ export default function AllCoursesPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <button
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="icon"
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
           >
             <Grid className="w-5 h-5" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="icon"
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
           >
             <List className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search courses, topics, or skills..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search courses, topics, or skills..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filter */}
+            <div className="flex gap-2">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Courses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Newest First" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="title">Alphabetical</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-
-          {/* Filter */}
-          <div className="flex gap-2">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Courses</option>
-              <option value="free">Free</option>
-              <option value="paid">Paid</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
-              <option value="title">Alphabetical</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Results Summary */}
       <div className="flex items-center justify-between">
@@ -226,17 +258,14 @@ export default function AllCoursesPage() {
             {searchTerm ? 'Try adjusting your search terms or filters' : 'No courses are available at the moment'}
           </p>
           {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
+            <Button onClick={() => setSearchTerm('')}>
               Clear Search
-            </button>
+            </Button>
           )}
         </div>
       ) : (
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+        <div className={viewMode === 'grid'
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           : "space-y-4"
         }>
           {sortedCourses.map((course) => (

@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { learnerDashboardApi } from '@/features/dashboard/services/learner';
 import { authenticatedFetch, isAuthenticated } from '@/lib/auth/token';
 import { getLessonVideoUrl, getLessonMaterialUrl, getCourseResourceUrl } from '@/lib/utils/image';
-import { 
-  Play, 
-  CheckCircle, 
+import {
+  Play,
+  CheckCircle,
   Download,
   ChevronRight,
   ChevronDown,
@@ -16,8 +16,22 @@ import {
   FileText,
   Video,
   File,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Course {
   id: string;
@@ -150,12 +164,30 @@ interface Enrollment {
   can_access_content: boolean;
 }
 
+function CourseSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Skeleton className="h-8 w-1/3 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3 space-y-6">
+            <Skeleton className="h-64 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-48 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CourseLearningPage() {
   const params = useParams();
   const courseSlug = params.slug as string;
-  
-  // Debug logging (client side only)
-  
+
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -204,39 +236,33 @@ export default function CourseLearningPage() {
     try {
       setLoading(true);
       setError('');
-      
-      // Fetch course details
+
       const courseResponse = await learnerDashboardApi.getCourseDetail(courseSlug);
       setCourse(courseResponse);
-      
-      // Fetch enrollment status
+
       const enrollmentResponse = await learnerDashboardApi.getMyCourses();
       const enrollments = (enrollmentResponse?.results || enrollmentResponse || []) as Enrollment[];
       const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
       setEnrollment(currentEnrollment || null);
-      
-      // Fetch course progress if enrollment exists
+
       if (currentEnrollment) {
         try {
           const progressResponse = await learnerDashboardApi.getCourseProgress(courseSlug);
           if (progressResponse) {
-            // Update enrollment with fresh progress data
             setEnrollment(prev => prev ? { ...prev, progress_percentage: progressResponse.overall_progress } : null);
           }
         } catch (progressErr) {
           console.warn('Could not fetch course progress:', progressErr);
         }
       }
-      
-      // Expand first module by default
+
       if (courseResponse?.modules?.length > 0) {
         setExpandedModules(new Set([courseResponse.modules[0].id]));
       }
-      
-      // Fetch course resources and content
+
       await fetchCourseResources();
       await fetchCourseContent();
-      
+
     } catch (err: unknown) {
       console.error('Error fetching course data:', err);
       if (err instanceof Error && err.message.includes('No valid access token available')) {
@@ -252,16 +278,15 @@ export default function CourseLearningPage() {
   }, [courseSlug, fetchCourseResources, fetchCourseContent]);
 
   useEffect(() => {
-    // Check authentication on client side only
     if (typeof window !== 'undefined') {
       const authStatus = isAuthenticated();
-      
+
       if (!authStatus) {
         setError('Please log in to access this course');
         setLoading(false);
         return;
       }
-      
+
       if (courseSlug) {
         fetchCourseData();
       }
@@ -270,7 +295,6 @@ export default function CourseLearningPage() {
 
 
   const handleCourseContentLessonClick = async (lesson: CourseContent['modules'][0]['lessons'][0]) => {
-    // Convert course content lesson to Lesson format for compatibility
     const lessonData: Lesson = {
       id: lesson.id,
       title: lesson.title,
@@ -290,10 +314,9 @@ export default function CourseLearningPage() {
       created_at: lesson.created_at,
       updated_at: lesson.updated_at
     };
-    
+
     setSelectedLesson(lessonData);
-    
-    // Fetch lesson materials
+
     try {
       const response = await authenticatedFetch(
         `/api/courses/lessons/${lesson.id}/materials/`
@@ -322,38 +345,32 @@ export default function CourseLearningPage() {
       );
 
       if (response.ok) {
-        // Update the lesson completion status in the UI
         if (courseContent) {
           const updatedCourseContent = { ...courseContent };
           updatedCourseContent.modules = updatedCourseContent.modules.map(module => ({
             ...module,
-            lessons: module.lessons?.map(lesson => 
-              lesson.id === lessonId 
+            lessons: module.lessons?.map(lesson =>
+              lesson.id === lessonId
                 ? { ...lesson, is_completed: true }
                 : lesson
             ) || []
           }));
           setCourseContent(updatedCourseContent);
         }
-        
-        // Update selected lesson if it's the one being completed
+
         if (selectedLesson?.id === lessonId) {
           setSelectedLesson({ ...selectedLesson, is_completed: true });
         }
-        
-        // Refresh enrollment data to update progress
+
         const enrollmentResponse = await learnerDashboardApi.getMyCourses();
         const enrollments = (enrollmentResponse?.results || enrollmentResponse || []) as Enrollment[];
         const currentEnrollment = enrollments.find(e => e.course.slug === courseSlug);
         setEnrollment(currentEnrollment || null);
-        
-        // Refresh course content from backend to ensure we have the latest completion status
+
         await fetchCourseContent();
-        
-        // Show success message
+
         alert('Lesson completed successfully!');
-        
-        // Close the modal after user clicks OK
+
         setSelectedLesson(null);
         setShowVideoPlayer(false);
       } else {
@@ -418,78 +435,51 @@ export default function CourseLearningPage() {
   };
 
   const calculateTotalProgress = () => {
-    // Use enrollment progress percentage if available, otherwise calculate from modules
     if (enrollment && enrollment.progress_percentage !== undefined) {
       return Math.round(enrollment.progress_percentage);
     }
-    
+
     if (!courseContent || !courseContent.modules) return 0;
     const totalLessons = courseContent.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0);
-    const completedLessons = courseContent.modules.reduce((total, module) => 
+    const completedLessons = courseContent.modules.reduce((total, module) =>
       total + (module.lessons?.filter(lesson => lesson.is_completed).length || 0), 0
     );
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-3 space-y-6">
-                <div className="h-64 bg-gray-200 rounded-lg"></div>
-                <div className="h-32 bg-gray-200 rounded-lg"></div>
-              </div>
-              <div className="space-y-6">
-                <div className="h-48 bg-gray-200 rounded-lg"></div>
-                <div className="h-32 bg-gray-200 rounded-lg"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <CourseSkeleton />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-red-600 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {error === 'Please log in to access this course' ? 'Authentication Required' : 'Course Not Found'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {error === 'Please log in to access this course' 
-                ? 'Please log in to access this course content.' 
-                : error || 'The course you are looking for does not exist or you do not have access to it.'
-              }
-            </p>
-            <div className="flex space-x-4 justify-center">
-              {error === 'Please log in to access this course' ? (
-                <Link 
-                  href="/auth/login"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Log In
-                </Link>
-              ) : (
-                <Link 
-                  href="/dashboard/learner/courses"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Back to My Courses 
-                </Link> 
-              )}
-            </div>
-          </div>
+          <Card className="text-center p-8">
+            <CardContent className="pt-6">
+              <AlertTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {error === 'Please log in to access this course' ? 'Authentication Required' : 'Course Not Found'}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {error === 'Please log in to access this course'
+                  ? 'Please log in to access this course content.'
+                  : error || 'The course you are looking for does not exist or you do not have access to it.'
+                }
+              </p>
+              <div className="flex space-x-4 justify-center">
+                {error === 'Please log in to access this course' ? (
+                  <Button asChild>
+                    <Link href="/auth/login">Log In</Link>
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/dashboard/learner/courses">Back to My Courses</Link>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -499,25 +489,18 @@ export default function CourseLearningPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-red-600 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
-            <p className="text-gray-600 mb-4">
-              The course you are looking for does not exist or you do not have access to it.
-            </p>
-            <div className="flex space-x-4 justify-center">
-              <Link 
-                href="/dashboard/learner/courses"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Back to My Courses 
-              </Link>
-            </div>
-          </div>
+          <Card className="text-center p-8">
+            <CardContent className="pt-6">
+              <AlertTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
+              <p className="text-gray-600 mb-4">
+                The course you are looking for does not exist or you do not have access to it.
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/learner/courses">Back to My Courses</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -526,66 +509,54 @@ export default function CourseLearningPage() {
 
   if (!enrollment || !enrollment.can_access_content) {
     const isPendingApproval = enrollment?.status === 'pending_approval' || enrollment?.status === 'pending';
-    
+
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className={`mb-4 ${isPendingApproval ? 'text-yellow-600' : 'text-red-600'}`}>
+          <Card className="text-center p-8">
+            <CardContent className="pt-6">
               {isPendingApproval ? (
-                <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Clock className="mx-auto h-12 w-12 text-yellow-600 mb-4" />
               ) : (
-              <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+                <AlertTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
               )}
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {isPendingApproval ? 'Pending Approval' : 'Access Restricted'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {!enrollment 
-                ? 'You need to enroll in this course to access its content.'
-                : enrollment?.status === 'pending_approval'
-                ? 'Your payment has been received. Please wait for the course provider to approve your enrollment.'
-                : enrollment?.status === 'pending' 
-                ? 'Your enrollment is pending approval. You will be notified once approved.'
-                : enrollment?.status === 'rejected'
-                ? 'Your enrollment has been rejected. Please contact support for more information.'
-                : !enrollment.can_access_content
-                ? 'Your enrollment is not active. Please wait for course provider approval.'
-                : 'You need to enroll in this course to access its content.'
-              }
-            </p>
-            {isPendingApproval && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-2 text-yellow-800">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-medium">You will be notified once your enrollment is approved.</span>
-                </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {isPendingApproval ? 'Pending Approval' : 'Access Restricted'}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {!enrollment
+                  ? 'You need to enroll in this course to access its content.'
+                  : enrollment?.status === 'pending_approval'
+                  ? 'Your payment has been received. Please wait for the course provider to approve your enrollment.'
+                  : enrollment?.status === 'pending'
+                  ? 'Your enrollment is pending approval. You will be notified once approved.'
+                  : enrollment?.status === 'rejected'
+                  ? 'Your enrollment has been rejected. Please contact support for more information.'
+                  : !enrollment.can_access_content
+                  ? 'Your enrollment is not active. Please wait for course provider approval.'
+                  : 'You need to enroll in this course to access its content.'
+                }
+              </p>
+              {isPendingApproval && (
+                <Alert className="bg-yellow-50 border-yellow-200 max-w-md mx-auto mb-4">
+                  <Clock className="h-4 w-4 text-yellow-800" />
+                  <AlertDescription className="text-yellow-800">
+                    You will be notified once your enrollment is approved.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button variant="outline" asChild>
+                  <Link href="/dashboard/learner/courses">Back to My Courses</Link>
+                </Button>
+                {!enrollment && (
+                  <Button asChild>
+                    <Link href={`/courses/course/${courseSlug}`}>Enroll Now</Link>
+                  </Button>
+                )}
               </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link 
-                href="/dashboard/learner/courses"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Back to My Courses
-              </Link>
-              {!enrollment && (
-                <Link 
-                  href={`/courses/course/${courseSlug}`}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  Enroll Now
-                </Link>
-              )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -597,22 +568,19 @@ export default function CourseLearningPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <Link 
-              href="/dashboard/learner/courses"
-              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to My Courses
-            </Link>
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(enrollment.status)}`}>
-                {enrollment.status}
-              </span>
-            </div>
+            <Button variant="ghost" asChild className="p-0">
+              <Link href="/dashboard/learner/courses" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to My Courses
+              </Link>
+            </Button>
+            <Badge className={getStatusColor(enrollment.status)}>
+              {enrollment.status}
+            </Badge>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course.title}</h1>
           <p className="text-lg text-gray-600 mb-4">{course.short_description}</p>
         </div>
@@ -620,18 +588,19 @@ export default function CourseLearningPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content - Course Modules */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Course Content</h2>
-                
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Content</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   {courseContent && courseContent.modules && courseContent.modules.length > 0 ? courseContent.modules.map((module) => {
                     const moduleProgress = calculateCourseContentModuleProgress(module);
                     const isExpanded = expandedModules.has(module.id);
                     const completedLessons = module.lessons?.filter(lesson => lesson.is_completed).length || 0;
-                    
+
                     return (
-                      <div key={module.id} className="border border-gray-200 rounded-lg">
+                      <Card key={module.id}>
                         <button
                           onClick={() => toggleModule(module.id)}
                           className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
@@ -648,7 +617,7 @@ export default function CourseLearningPage() {
                               <div>
                                 <h3 className="font-medium text-gray-900">{module.title}</h3>
                                 <p className="text-sm text-gray-600 mt-1">
-                                  {completedLessons}/{module.lessons?.length || 0} lessons • {module.duration_formatted}
+                                  {completedLessons}/{module.lessons?.length || 0} lessons - {module.duration_formatted}
                                 </p>
                               </div>
                             </div>
@@ -656,22 +625,17 @@ export default function CourseLearningPage() {
                               <div className="text-sm text-gray-500">
                                 {moduleProgress}% complete
                               </div>
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${moduleProgress}%` }}
-                                />
-                              </div>
+                              <Progress value={moduleProgress} className="w-16 h-2" />
                             </div>
                           </div>
                         </button>
-                        
+
                         {isExpanded && (
                           <div className="border-t border-gray-200 p-4 bg-gray-50">
                             <div className="space-y-2">
                               {module.lessons?.map((lesson) => {
                                 const LessonIcon = getLessonIcon(lesson.lesson_type);
-                                
+
                                 return (
                                   <div
                                     key={lesson.id}
@@ -694,61 +658,58 @@ export default function CourseLearningPage() {
                                         <div>
                                           <h4 className="font-medium text-gray-900">{lesson.title}</h4>
                                           <p className="text-sm text-gray-600">
-                                            {lesson.lesson_type_display} • {lesson.duration_formatted}
-                                            {lesson.is_mandatory && ' • Required'}
+                                            {lesson.lesson_type_display} - {lesson.duration_formatted}
+                                            {lesson.is_mandatory && ' - Required'}
                                           </p>
                                         </div>
                                       </div>
                                       <div className="flex items-center space-x-2">
                                         {lesson.is_preview && (
-                                          <span className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full">
+                                          <Badge variant="secondary" className="bg-blue-100 text-blue-600">
                                             Preview
-                                          </span>
+                                          </Badge>
                                         )}
-                                        
-                                        {/* Show Pay button only for non-enrolled students */}
+
                                         {!enrollment && !lesson.is_preview && (
-                                          <button
+                                          <Button
+                                            size="sm"
+                                            className="bg-green-600 hover:bg-green-700"
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              // Handle payment logic here
                                             }}
-                                            className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors"
                                           >
-                                            <span>Pay to Access</span>
-                                          </button>
+                                            Pay to Access
+                                          </Button>
                                         )}
-                                        
-                                        {/* Show Watch button for enrolled students or preview lessons */}
+
                                         {enrollment && lesson.lesson_type === 'video' && lesson.video_file && (
-                                          <button
+                                          <Button
+                                            size="sm"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               handleCourseContentLessonClick(lesson);
                                               setShowVideoPlayer(true);
                                             }}
-                                            className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                                           >
-                                            <Play className="h-4 w-4" />
-                                            <span>Watch</span>
-                                          </button>
+                                            <Play className="h-4 w-4 mr-1" />
+                                            Watch
+                                          </Button>
                                         )}
-                                        
-                                        {/* Show Watch button for preview lessons (even if not enrolled) */}
+
                                         {!enrollment && lesson.is_preview && lesson.lesson_type === 'video' && lesson.video_file && (
-                                          <button
+                                          <Button
+                                            size="sm"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               handleCourseContentLessonClick(lesson);
                                               setShowVideoPlayer(true);
                                             }}
-                                            className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                                           >
-                                            <Play className="h-4 w-4" />
-                                            <span>Watch</span>
-                                          </button>
+                                            <Play className="h-4 w-4 mr-1" />
+                                            Watch
+                                          </Button>
                                         )}
-                                        
+
                                         <span className="text-sm text-gray-500">
                                           {lesson.duration_formatted || 'Duration not set'}
                                         </span>
@@ -760,7 +721,7 @@ export default function CourseLearningPage() {
                             </div>
                           </div>
                         )}
-                      </div>
+                      </Card>
                     );
                   }) : (
                     <div className="text-center py-8 text-gray-500">
@@ -768,219 +729,200 @@ export default function CourseLearningPage() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Progress Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Overall Progress</span>
-                    <span>{calculateTotalProgress()}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${calculateTotalProgress()}%` }}
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-center">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{courseContent?.modules?.length || 0}</div>
-                    <div className="text-sm text-gray-600">Modules</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">
-                      {courseContent?.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0}
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Overall Progress</span>
+                      <span>{calculateTotalProgress()}%</span>
                     </div>
-                    <div className="text-sm text-gray-600">Lessons</div>
+                    <Progress value={calculateTotalProgress()} className="h-3" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{courseContent?.modules?.length || 0}</div>
+                      <div className="text-sm text-gray-600">Modules</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {courseContent?.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Lessons</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
+              </CardContent>
+            </Card>
 
             {/* Course Resources */}
             {courseResources.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Resources</h3>
-                <div className="space-y-3">
-                  {courseResources.slice(0, 3).map((resource) => (
-                    <div key={resource.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          {resource.file ? (
-                            <File className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <ExternalLink className="w-4 h-4 text-blue-600" />
-                          )}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resources</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {courseResources.slice(0, 3).map((resource) => (
+                      <div key={resource.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            {resource.file ? (
+                              <File className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <ExternalLink className="w-4 h-4 text-blue-600" />
+                            )}
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-900 text-sm">{resource.title}</h5>
+                            <p className="text-xs text-gray-600">{resource.resource_type}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h5 className="font-medium text-gray-900 text-sm">{resource.title}</h5>
-                          <p className="text-xs text-gray-600">{resource.resource_type}</p>
-                        </div>
+                        {resource.file ? (
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={getCourseResourceUrl(resource.file)} download>
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        ) : resource.url ? (
+                          <Button variant="ghost" size="icon" asChild>
+                            <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        ) : null}
                       </div>
-                      {resource.file ? (
-                        <a
-                          href={getCourseResourceUrl(resource.file)}
-                          download
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                      ) : resource.url ? (
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
 
-        {/* Lesson Content Modal */}
-        {selectedLesson && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900">{selectedLesson.title}</h3>
-                  <button
-                    onClick={() => {
-                      setSelectedLesson(null);
-                      setShowVideoPlayer(false);
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+        {/* Lesson Content Dialog */}
+        <Dialog open={!!selectedLesson} onOpenChange={() => { setSelectedLesson(null); setShowVideoPlayer(false); }}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedLesson?.title}</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <span className="flex items-center">
+                  {(() => {
+                    const LessonIcon = getLessonIcon(selectedLesson?.lesson_type || 'text');
+                    return <LessonIcon className="w-4 h-4 mr-1" />;
+                  })()}
+                  <span className="ml-1">{selectedLesson?.lesson_type_display}</span>
+                </span>
+                <span>{selectedLesson?.duration_formatted}</span>
+                {selectedLesson?.is_mandatory && (
+                  <Badge variant="destructive">Required</Badge>
+                )}
+                {selectedLesson?.is_completed && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-600">Completed</Badge>
+                )}
+              </div>
+
+              {/* Video Player */}
+              {(selectedLesson?.video_url || selectedLesson?.video_file) && (
+                <div className="bg-gray-900 rounded-lg overflow-hidden">
+                  {showVideoPlayer ? (
+                    <video
+                      controls
+                      className="w-full h-96 object-contain"
+                      src={selectedLesson.video_url || getLessonVideoUrl(selectedLesson.video_file)}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="h-96 flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={handleVideoPlay}
+                        className="bg-white/20 hover:bg-white/30 rounded-full p-4"
+                      >
+                        <Play className="w-16 h-16 text-white" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      {(() => {
-                        const LessonIcon = getLessonIcon(selectedLesson.lesson_type);
-                        return <LessonIcon className="w-4 h-4 mr-1" />;
-                      })()}
-                      <span className="ml-1">{selectedLesson.lesson_type_display}</span>
-                    </span>
-                    <span>{selectedLesson.duration_formatted}</span>
-                    {selectedLesson.is_mandatory && (
-                      <span className="px-2 py-1 text-xs font-medium text-red-600 bg-red-100 rounded-full">
-                        Required
-                      </span>
-                    )}
-                    {selectedLesson.is_completed && (
-                      <span className="px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded-full">
-                        Completed
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Video Player */}
-                  {(selectedLesson.video_url || selectedLesson.video_file) && (
-                    <div className="bg-gray-900 rounded-lg overflow-hidden">
-                      {showVideoPlayer ? (
-                        <video
-                          controls
-                          className="w-full h-96 object-contain"
-                          src={selectedLesson.video_url || getLessonVideoUrl(selectedLesson.video_file)}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      ) : (
-                        <div className="h-96 flex items-center justify-center">
-                          <button
-                            onClick={handleVideoPlay}
-                            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-4 transition-all"
-                          >
-                            <Play className="w-16 h-16 text-white" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Lesson Content */}
-                  {selectedLesson.content && (
-                    <div className="prose max-w-none">
-                      <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
-                    </div>
-                  )}
-                  
-                  {/* Lesson Materials */}
-                  {lessonMaterials.length > 0 && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h4 className="font-medium text-blue-900 mb-3">Lesson Materials</h4>
-                      <div className="space-y-2">
-                        {lessonMaterials.map((material) => (
-                          <div key={material.id} className="flex items-center justify-between bg-white rounded-lg p-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <File className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div>
-                                <h5 className="font-medium text-gray-900">{material.title}</h5>
-                                <p className="text-sm text-gray-600">{material.file_size_formatted}</p>
-                              </div>
+              )}
+
+              {/* Lesson Content */}
+              {selectedLesson?.content && (
+                <div className="prose max-w-none">
+                  <div dangerouslySetInnerHTML={{ __html: selectedLesson.content }} />
+                </div>
+              )}
+
+              {/* Lesson Materials */}
+              {lessonMaterials.length > 0 && (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <File className="h-4 w-4 text-blue-900" />
+                  <AlertDescription>
+                    <h4 className="font-medium text-blue-900 mb-3">Lesson Materials</h4>
+                    <div className="space-y-2">
+                      {lessonMaterials.map((material) => (
+                        <div key={material.id} className="flex items-center justify-between bg-white rounded-lg p-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <File className="w-4 h-4 text-blue-600" />
                             </div>
-                            {material.is_downloadable && (
-                              <a
-                                href={getLessonMaterialUrl(material.file)}
-                                download
-                                className="px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
-                              >
+                            <div>
+                              <h5 className="font-medium text-gray-900">{material.title}</h5>
+                              <p className="text-sm text-gray-600">{material.file_size_formatted}</p>
+                            </div>
+                          </div>
+                          {material.is_downloadable && (
+                            <Button variant="secondary" size="sm" asChild>
+                              <a href={getLessonMaterialUrl(material.file)} download>
                                 Download
                               </a>
-                            )}
-                          </div>
-                        ))}
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Lesson Completion */}
+              {!selectedLesson?.is_completed && (
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => handleCompleteLesson(selectedLesson!.id)}
+                    disabled={completingLesson === selectedLesson?.id}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {completingLesson === selectedLesson?.id ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Completing...
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Lesson Completion */}
-                  {!selectedLesson.is_completed && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => handleCompleteLesson(selectedLesson.id)}
-                        disabled={completingLesson === selectedLesson.id}
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {completingLesson === selectedLesson.id ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Completing...
-                          </div>
-                        ) : (
-                          'Mark as Complete'
-                        )}
-                      </button>
-                    </div>
-                  )}
+                    ) : (
+                      'Mark as Complete'
+                    )}
+                  </Button>
                 </div>
-              </div>
+              )}
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
