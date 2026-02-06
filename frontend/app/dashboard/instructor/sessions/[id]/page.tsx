@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { instructorApi } from '@/features/courses/services/course-management';
 import type { LiveSession } from '@/shared/types';
-import { 
-  Calendar, 
-  Clock, 
-  Video, 
-  Users, 
-  ArrowLeft, 
+import {
+  Calendar,
+  Clock,
+  Video,
+  Users,
+  ArrowLeft,
   Edit,
   Play,
   Square,
@@ -18,12 +18,17 @@ import {
   XCircle,
   ExternalLink
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LiveSessionDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.id as string;
-  
+
   const [session, setSession] = useState<LiveSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,11 +54,11 @@ export default function LiveSessionDetailsPage() {
 
   const handleUpdateStatus = async (newStatus: 'live' | 'completed' | 'cancelled') => {
     if (!session) return;
-    
+
     try {
       setUpdating(true);
       await instructorApi.liveSessions.updateStatus(sessionId, { status: newStatus });
-      await fetchSession(); // Refresh session data
+      await fetchSession();
     } catch (err) {
       console.error('Error updating status:', err);
       alert('Failed to update session status');
@@ -64,12 +69,12 @@ export default function LiveSessionDetailsPage() {
 
   const handleSendReminder = async () => {
     if (!session) return;
-    
+
     try {
       setUpdating(true);
       await instructorApi.liveSessions.sendReminder(sessionId);
       alert('Reminder sent successfully!');
-      await fetchSession(); // Refresh session data
+      await fetchSession();
     } catch (err) {
       console.error('Error sending reminder:', err);
       alert('Failed to send reminder');
@@ -78,10 +83,52 @@ export default function LiveSessionDetailsPage() {
     }
   };
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending_approval':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'live':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div>
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+          <div className="flex space-x-3">
+            <Skeleton className="h-8 w-20 rounded-full" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-56 w-full rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -90,13 +137,12 @@ export default function LiveSessionDetailsPage() {
     return (
       <div className="text-center py-12">
         <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchSession}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <Alert variant="destructive" className="max-w-md mx-auto">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={fetchSession} className="mt-4">
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -115,40 +161,30 @@ export default function LiveSessionDetailsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.push('/dashboard/instructor/sessions')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="Back to Sessions"
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{session.title}</h1>
             <p className="text-sm text-gray-600 mt-1">Live Session Details</p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            session.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-            session.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
-            session.status === 'approved' ? 'bg-green-100 text-green-800' :
-            session.status === 'rejected' ? 'bg-red-100 text-red-800' :
-            session.status === 'live' ? 'bg-blue-100 text-blue-800' :
-            session.status === 'completed' ? 'bg-green-100 text-green-800' :
-            'bg-gray-100 text-gray-800'
-          }`}>
+          <Badge className={getStatusBadgeClass(session.status)}>
             {session.status}
-          </span>
-          
+          </Badge>
+
           {canEdit && (
-            <button
-              onClick={() => router.push(`/dashboard/instructor/sessions/${sessionId}/edit`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-            >
+            <Button onClick={() => router.push(`/dashboard/instructor/sessions/${sessionId}/edit`)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -158,42 +194,44 @@ export default function LiveSessionDetailsPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Session Details */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Session Information</h2>
-            
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Session Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Description</h3>
                 <p className="text-gray-900">{session.description}</p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-1">Course</h3>
                   <p className="text-gray-900">{session.course_title}</p>
                 </div>
-                
+
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-1">Duration</h3>
                   <p className="text-gray-900">{session.formatted_duration}</p>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Meeting Information */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Video className="h-5 w-5 mr-2" />
-              Meeting Details
-            </h2>
-            
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Video className="h-5 w-5 mr-2" />
+                Meeting Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Platform</h3>
                 <p className="text-gray-900">{session.meeting_platform_display}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Meeting Link</h3>
                 <div className="flex items-center space-x-2">
@@ -208,7 +246,7 @@ export default function LiveSessionDetailsPage() {
                   <ExternalLink className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
-              
+
               {(session.meeting_id || session.meeting_password) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {session.meeting_id && (
@@ -217,7 +255,7 @@ export default function LiveSessionDetailsPage() {
                       <p className="text-gray-900 font-mono">{session.meeting_id}</p>
                     </div>
                   )}
-                  
+
                   {session.meeting_password && (
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 mb-1">Password</h3>
@@ -226,7 +264,7 @@ export default function LiveSessionDetailsPage() {
                   )}
                 </div>
               )}
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <input
@@ -239,7 +277,7 @@ export default function LiveSessionDetailsPage() {
                     Recording enabled
                   </label>
                 </div>
-                
+
                 {session.max_participants && (
                   <div className="flex items-center">
                     <Users className="h-4 w-4 text-gray-400 mr-1" />
@@ -249,65 +287,70 @@ export default function LiveSessionDetailsPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Session Notes */}
           {session.session_notes && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Session Notes</h2>
-              <p className="text-gray-900 whitespace-pre-wrap">{session.session_notes}</p>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-900 whitespace-pre-wrap">{session.session_notes}</p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Post-Session Notes */}
           {session.post_session_notes && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Post-Session Notes</h2>
-              <p className="text-gray-900 whitespace-pre-wrap">{session.post_session_notes}</p>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Post-Session Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-900 whitespace-pre-wrap">{session.post_session_notes}</p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Recording Link */}
           {session.recording_link && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Session Recording</h2>
-              <a
-                href={session.recording_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-blue-600 hover:text-blue-700 hover:underline"
-              >
-                <Video className="h-4 w-4 mr-2" />
-                Watch Recording
-                <ExternalLink className="h-4 w-4 ml-1" />
-              </a>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Recording</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <a
+                  href={session.recording_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  <Video className="h-4 w-4 mr-2" />
+                  Watch Recording
+                  <ExternalLink className="h-4 w-4 ml-1" />
+                </a>
+              </CardContent>
+            </Card>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Session Status */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Status</h3>
-            
-            <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Session Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Status</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  session.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                  session.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
-                  session.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  session.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  session.status === 'live' ? 'bg-blue-100 text-blue-800' :
-                  session.status === 'completed' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <Badge className={getStatusBadgeClass(session.status)}>
                   {session.status}
-                </span>
+                </Badge>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Approved</span>
                 <span className="flex items-center">
@@ -318,102 +361,106 @@ export default function LiveSessionDetailsPage() {
                   )}
                 </span>
               </div>
-              
+
               {session.approved_by_name && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Approved by</span>
                   <span className="text-sm text-gray-900">{session.approved_by_name}</span>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Scheduling */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Schedule
-            </h3>
-            
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div>
                 <span className="text-sm text-gray-600">Scheduled</span>
                 <p className="text-sm font-medium text-gray-900">
                   {new Date(session.scheduled_datetime).toLocaleString()}
                 </p>
               </div>
-              
+
               <div>
                 <span className="text-sm text-gray-600">Ends</span>
                 <p className="text-sm font-medium text-gray-900">
                   {new Date(session.end_datetime).toLocaleString()}
                 </p>
               </div>
-              
+
               <div className="flex items-center">
                 <Clock className="h-4 w-4 text-gray-400 mr-1" />
                 <span className="text-sm text-gray-600">
                   {session.formatted_duration}
                 </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Actions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-            
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               {canStart && (
-                <button
+                <Button
                   onClick={() => handleUpdateStatus('live')}
                   disabled={updating}
-                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  className="w-full bg-green-600 hover:bg-green-700"
                 >
                   <Play className="h-4 w-4 mr-2" />
                   Start Session
-                </button>
+                </Button>
               )}
-              
+
               {canEnd && (
-                <button
+                <Button
                   onClick={() => handleUpdateStatus('completed')}
                   disabled={updating}
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  variant="destructive"
+                  className="w-full"
                 >
                   <Square className="h-4 w-4 mr-2" />
                   End Session
-                </button>
+                </Button>
               )}
-              
+
               {canSendReminder && (
-                <button
+                <Button
                   onClick={handleSendReminder}
                   disabled={updating}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  className="w-full bg-purple-600 hover:bg-purple-700"
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Send Reminder
-                </button>
+                </Button>
               )}
-              
+
               {canEdit && (
-                <button
+                <Button
                   onClick={() => router.push(`/dashboard/instructor/sessions/${sessionId}/edit`)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  className="w-full"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Session
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Notifications */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h3>
-            
-            <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Enrollment notification</span>
                 <span className="flex items-center">
@@ -424,7 +471,7 @@ export default function LiveSessionDetailsPage() {
                   )}
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Reminder sent</span>
                 <span className="flex items-center">
@@ -435,8 +482,8 @@ export default function LiveSessionDetailsPage() {
                   )}
                 </span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

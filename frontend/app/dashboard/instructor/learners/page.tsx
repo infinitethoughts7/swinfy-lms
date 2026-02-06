@@ -1,20 +1,26 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Search, 
-  Mail, 
+import {
+  Users,
+  Search,
+  Mail,
   Calendar,
   BookOpen,
   Target,
   User,
-  X,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import Image from 'next/image';
 import { authenticatedFetch, isAuthenticated, logout } from '@/lib/auth/token';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Learner {
   id: string;
@@ -54,14 +60,13 @@ export default function InstructorLearnersPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/courses/instructor/dashboard/learner-progress/`, {
         method: 'GET',
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        // Handle paginated response or direct array
         const learners = data.results || data || [];
         setAllLearners(learners);
       } else {
@@ -106,8 +111,17 @@ export default function InstructorLearnersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -116,13 +130,12 @@ export default function InstructorLearnersPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchLearners}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <Alert variant="destructive" className="max-w-md mx-auto">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={fetchLearners} className="mt-4">
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -142,230 +155,204 @@ export default function InstructorLearnersPage() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg border border-gray-200 p-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or course..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
-      </div>
-
-      {/* Learners Grid - Horizontal Cards */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {filteredLearners.length === 0 ? (
-          <div className="text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">
-              {allLearners.length === 0 ? 'No learners found' : 'No learners match your search'}
-            </p>
-            <p className="text-gray-400 text-sm">
-              {allLearners.length === 0 
-                ? 'Learners will appear here once they enroll in your courses'
-                : 'Try adjusting your search terms'}
-            </p>
+      <Card>
+        <CardContent className="p-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Search by name, email, or course..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredLearners.map((learner) => (
-              <div key={learner.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start space-x-4">
-                  {/* Profile Picture */}
-                  <div className="flex-shrink-0">
-                    {learner.profile_picture ? (
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden">
-                        <Image
-                          src={learner.profile_picture}
-                          alt={learner.full_name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-8 w-8 text-blue-600" />
-                      </div>
-                    )}
-                  </div>
+        </CardContent>
+      </Card>
 
-                  {/* Learner Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">
-                        {learner.full_name}
-                      </h3>
-                    </div>
-                    
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Mail className="h-3 w-3" />
-                        <span className="truncate">{learner.email}</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-1">
-                        <BookOpen className="h-3 w-3" />
-                        <span className="truncate">{learner.course_title}</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>Enrolled {formatDate(learner.enrollment_date)}</span>
-                      </div>
-                    </div>
+      {/* Learners Grid */}
+      <Card>
+        <CardContent className="p-6">
+          {filteredLearners.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">
+                {allLearners.length === 0 ? 'No learners found' : 'No learners match your search'}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {allLearners.length === 0
+                  ? 'Learners will appear here once they enroll in your courses'
+                  : 'Try adjusting your search terms'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredLearners.map((learner) => (
+                <Card key={learner.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-4">
+                      {/* Profile Picture */}
+                      <Avatar className="w-16 h-16">
+                        {learner.profile_picture ? (
+                          <AvatarImage src={learner.profile_picture} alt={learner.full_name} />
+                        ) : null}
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          <User className="h-8 w-8" />
+                        </AvatarFallback>
+                      </Avatar>
 
-                    {/* Progress Info */}
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>Progress ({learner.lessons_completed || 0}/{learner.total_lessons || 0} lessons)</span>
-                        <span>{formatProgress(learner.progress_percentage || learner.overall_progress)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${formatProgress(learner.progress_percentage || learner.overall_progress)}%` }}
-                        ></div>
+                      {/* Learner Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            {learner.full_name}
+                          </h3>
+                        </div>
+
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <Mail className="h-3 w-3" />
+                            <span className="truncate">{learner.email}</span>
+                          </div>
+
+                          <div className="flex items-center space-x-1">
+                            <BookOpen className="h-3 w-3" />
+                            <span className="truncate">{learner.course_title}</span>
+                          </div>
+
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>Enrolled {formatDate(learner.enrollment_date)}</span>
+                          </div>
+                        </div>
+
+                        {/* Progress Info */}
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                            <span>Progress ({learner.lessons_completed || 0}/{learner.total_lessons || 0} lessons)</span>
+                            <span>{formatProgress(learner.progress_percentage || learner.overall_progress)}%</span>
+                          </div>
+                          <Progress value={formatProgress(learner.progress_percentage || learner.overall_progress)} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detailed Modal */}
-      {showModal && selectedLearner && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center space-x-4">
-                {selectedLearner.profile_picture ? (
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden">
-                    <Image
-                      src={selectedLearner.profile_picture}
-                      alt={selectedLearner.full_name}
-                      fill
-                      className="object-cover"
-                      sizes="64px"
-                    />
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl">
+          {selectedLearner && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-16 h-16">
+                    {selectedLearner.profile_picture ? (
+                      <AvatarImage src={selectedLearner.profile_picture} alt={selectedLearner.full_name} />
+                    ) : null}
+                    <AvatarFallback className="bg-blue-100 text-blue-600">
+                      <User className="h-8 w-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <DialogTitle className="text-xl">{selectedLearner.full_name}</DialogTitle>
+                    <p className="text-gray-600">{selectedLearner.email}</p>
+                    <p className="text-sm text-blue-600">{selectedLearner.course_title}</p>
                   </div>
-                ) : (
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-blue-600" />
-                  </div>
-                )}
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {/* Course Information */}
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {selectedLearner.full_name}
-                  </h3>
-                  <p className="text-gray-600">{selectedLearner.email}</p>
-                  <p className="text-sm text-blue-600">{selectedLearner.course_title}</p>
-                </div>
-              </div>
-              <button
-                onClick={closeModal}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              {/* Course Information */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-3">Course Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
-                    <div className="flex items-center space-x-2 text-gray-900">
-                      <BookOpen className="h-4 w-4 text-gray-400" />
-                      <span>{selectedLearner.course_title}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment Date</label>
-                    <div className="flex items-center space-x-2 text-gray-900">
-                      <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>{formatDate(selectedLearner.enrollment_date)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Information */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-3">Learning Progress</h4>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
-                      <span>Overall Progress</span>
-                      <span className="font-semibold">{formatProgress(selectedLearner.progress_percentage)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                        style={{ width: `${formatProgress(selectedLearner.progress_percentage)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Course Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Target className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-900">Course Progress</span>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                      <div className="flex items-center space-x-2 text-gray-900">
+                        <BookOpen className="h-4 w-4 text-gray-400" />
+                        <span>{selectedLearner.course_title}</span>
                       </div>
-                      <p className="text-xs text-blue-700 mt-1">
-                        {formatProgress(selectedLearner.progress_percentage)}% completed
-                      </p>
                     </div>
-                    
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-900">Status</span>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment Date</label>
+                      <div className="flex items-center space-x-2 text-gray-900">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span>{formatDate(selectedLearner.enrollment_date)}</span>
                       </div>
-                      <p className="text-xs text-green-700 mt-1">
-                        {formatProgress(selectedLearner.progress_percentage) === 100 ? 'Completed' : 'In Progress'}
-                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Contact Information */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-3">Contact Information</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 text-gray-900">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span>{selectedLearner.email}</span>
+                {/* Progress Information */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Learning Progress</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
+                        <span>Overall Progress</span>
+                        <span className="font-semibold">{formatProgress(selectedLearner.progress_percentage)}%</span>
+                      </div>
+                      <Progress value={formatProgress(selectedLearner.progress_percentage)} className="h-3" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="bg-blue-50">
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <Target className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-900">Course Progress</span>
+                          </div>
+                          <p className="text-xs text-blue-700 mt-1">
+                            {formatProgress(selectedLearner.progress_percentage)}% completed
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-green-50">
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-900">Status</span>
+                          </div>
+                          <p className="text-xs text-green-700 mt-1">
+                            {formatProgress(selectedLearner.progress_percentage) === 100 ? 'Completed' : 'In Progress'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="flex justify-end p-6 border-t border-gray-200">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                {/* Contact Information */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Contact Information</h4>
+                  <Card className="bg-gray-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-2 text-gray-900">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span>{selectedLearner.email}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={closeModal}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

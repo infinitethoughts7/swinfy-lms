@@ -4,8 +4,18 @@ import { useState, useEffect } from 'react';
 import { isAuthenticated, logout, safeJsonParse } from '@/lib/auth/token';
 import { authenticatedFetch } from '@/lib/auth/token';
 import { useContentModeration } from '@/lib/hooks/useContentModeration';
-import { User, Mail, Calendar, Award, Lock, X, AlertCircle } from 'lucide-react';
+import { User, Mail, Calendar, Award, Lock, AlertCircle } from 'lucide-react';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserProfile {
   user: {
@@ -57,15 +67,13 @@ export default function InstructorProfilePage() {
   });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // Content moderation hook
-  const { 
-    checkField, 
-    getFieldError, 
+  const {
+    checkField,
+    getFieldError,
     hasErrors: hasModerationErrors,
     clearAllErrors: clearModerationErrors
   } = useContentModeration();
 
-  // Parse field-specific errors from error message
   const parseFieldErrors = (errorMessage: string): {[key: string]: string} => {
     const errors: {[key: string]: string} = {};
     const parts = errorMessage.split(';').map(p => p.trim());
@@ -91,16 +99,16 @@ export default function InstructorProfilePage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/profile/detail/`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch profile: ${response.status} ${response.statusText}`);
       }
-      
+
       const data = await safeJsonParse(response) as UserProfile;
       setProfile(data);
-      
+
       const profileData = data.profile || {};
       setFormData({
         phone_number: profileData.phone_number || '',
@@ -124,7 +132,6 @@ export default function InstructorProfilePage() {
   };
 
   const handleSave = async () => {
-    // Check for content moderation errors
     if (hasModerationErrors) {
       setError('Please fix the content issues highlighted in red before saving.');
       return;
@@ -134,7 +141,7 @@ export default function InstructorProfilePage() {
       setSaving(true);
       setError(null);
       setFieldErrors({});
-      
+
       const updateData = {
         profile_data: {
           bio: formData.bio,
@@ -150,7 +157,7 @@ export default function InstructorProfilePage() {
           is_available: formData.is_available,
         }
       };
-      
+
       const response = await authenticatedFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/profile/detail/`, {
         method: 'PATCH',
         headers: {
@@ -158,17 +165,16 @@ export default function InstructorProfilePage() {
         },
         body: JSON.stringify(updateData),
       });
-      
+
       if (!response.ok) {
         let errorMessage = 'Failed to update profile';
         try {
           const errorData = await response.json();
-          // Check for field-specific validation errors (including content moderation)
           const fieldErrorsFound = Object.entries(errorData)
             .filter(([, value]) => Array.isArray(value) && value.length > 0)
             .map(([field, errors]) => `${field}: ${(errors as string[]).join(', ')}`)
             .join('; ');
-          
+
           if (fieldErrorsFound) {
             errorMessage = fieldErrorsFound;
           } else {
@@ -179,12 +185,11 @@ export default function InstructorProfilePage() {
         }
         throw new Error(errorMessage);
       }
-      
-      // Refresh the profile data to show updated information
+
       await fetchProfile();
       setIsEditing(false);
       alert('Profile updated successfully!');
-      
+
     } catch (err) {
       console.error('Error saving profile:', err);
       if (err instanceof Error) {
@@ -225,14 +230,11 @@ export default function InstructorProfilePage() {
     setIsEditing(false);
   };
 
-  // Handle input change with content moderation
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear field-specific error when user starts typing
     if (fieldErrors[field]) {
       setFieldErrors(prev => ({ ...prev, [field]: '' }));
     }
-    // Check content moderation for text fields
     const textFields = ['bio', 'title', 'specializations', 'technologies', 'certifications'];
     if (textFields.includes(field)) {
       checkField(field, value);
@@ -241,22 +243,41 @@ export default function InstructorProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex space-x-3">
+            <Skeleton className="h-10 w-36" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-64 w-full rounded-xl" />
+            <Skeleton className="h-80 w-full rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-40 w-full rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !profile) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchProfile}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+        <Alert variant="destructive" className="max-w-md mx-auto">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={fetchProfile} className="mt-4">
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -276,34 +297,27 @@ export default function InstructorProfilePage() {
         <div className="flex items-center space-x-3">
           {!isEditing ? (
             <>
-              <button
+              <Button
                 onClick={() => setShowPasswordModal(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center"
+                variant="outline"
+                className="bg-purple-600 text-white hover:bg-purple-700 border-purple-600"
               >
                 <Lock className="h-4 w-4 mr-2" />
                 Update Password
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
+              </Button>
+              <Button onClick={() => setIsEditing(true)}>
                 Edit Profile
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-              >
+              <Button variant="outline" onClick={handleCancel}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={saving || hasModerationErrors}
-                className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 flex items-center ${
-                  hasModerationErrors ? 'bg-red-500' : 'bg-green-600 hover:bg-green-700'
-                }`}
+                className={hasModerationErrors ? 'bg-red-500 hover:bg-red-600' : ''}
               >
                 {saving ? (
                   <>
@@ -318,7 +332,7 @@ export default function InstructorProfilePage() {
                 ) : (
                   'Save Changes'
                 )}
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -326,20 +340,15 @@ export default function InstructorProfilePage() {
 
       {/* Error Banner for Editing */}
       {isEditing && (error || hasModerationErrors) && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-          <AlertCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium text-red-800">
-              {hasModerationErrors ? 'Content Issues Detected' : 'Error'}
-            </h3>
-            <p className="text-sm text-red-700 mt-1">
-              {hasModerationErrors 
-                ? 'Please fix the content issues highlighted in red below before saving.'
-                : error
-              }
-            </p>
-          </div>
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {hasModerationErrors
+              ? 'Please fix the content issues highlighted in red below before saving.'
+              : error
+            }
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Profile Content */}
@@ -347,331 +356,323 @@ export default function InstructorProfilePage() {
         {/* Left Column - Main Content */}
         <div className="lg:col-span-2 space-y-4">
           {/* Personal Information */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
-              <User className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
-            </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <User className="h-5 w-5 text-blue-600 mr-2" />
+                Personal Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-semibold">Full Name</Label>
+                  <p className="text-sm text-gray-900 font-medium">{profile?.user?.full_name || 'Not available'}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
-                <p className="text-sm text-gray-900 font-medium">{profile?.user?.full_name || 'Not available'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
-              </div>
+                <div>
+                  <Label className="text-xs font-semibold">Email</Label>
+                  <p className="text-sm text-gray-900 font-medium">{profile?.user?.email || 'Not available'}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
-                <p className="text-sm text-gray-900 font-medium">{profile?.user?.email || 'Not available'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Contact admin to change</p>
-              </div>
+                <div>
+                  <Label className="text-xs font-semibold">Phone</Label>
+                  {isEditing ? (
+                    <Input
+                      type="tel"
+                      value={formData.phone_number}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-900 font-medium">{profile?.profile?.phone_number || 'Not provided'}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Phone</label>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={formData.phone_number}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.phone_number || 'Not provided'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Availability Status</label>
-                {isEditing ? (
-                  <select
-                    value={formData.is_available ? 'available' : 'unavailable'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'available' }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="available">Available for Teaching</option>
-                    <option value="unavailable">Currently Unavailable</option>
-                  </select>
-                ) : (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    profile?.profile?.is_available 
-                      ? 'bg-green-100 text-green-800' 
+                <div>
+                  <Label className="text-xs font-semibold">Availability Status</Label>
+                  {isEditing ? (
+                    <Select
+                      value={formData.is_available ? 'available' : 'unavailable'}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, is_available: value === 'available' }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available for Teaching</SelectItem>
+                        <SelectItem value="unavailable">Currently Unavailable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge className={profile?.profile?.is_available
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
-                  }`}>
-                    {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
-                  </span>
+                    }>
+                      {profile?.profile?.is_available ? 'Available' : 'Unavailable'}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Job Title</Label>
+                {isEditing ? (
+                  <>
+                    <Input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
+                      className={fieldErrors.title || getFieldError('title') ? 'border-red-500 bg-red-50' : ''}
+                      placeholder="e.g., Senior Software Engineer"
+                    />
+                    {(fieldErrors.title || getFieldError('title')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.title || getFieldError('title')}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
                 )}
               </div>
-            </div>
 
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Job Title</label>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.title || getFieldError('title') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., Senior Software Engineer"
-                  />
-                  {(fieldErrors.title || getFieldError('title')) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {fieldErrors.title || getFieldError('title')}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-900 font-medium">{profile?.profile?.title || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Bio</label>
-              {isEditing ? (
-                <>
-                  <textarea
-                    value={formData.bio}
-                    onChange={(e) => handleInputChange('bio', e.target.value)}
-                    rows={3}
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.bio || getFieldError('bio') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="Tell us about yourself..."
-                  />
-                  {(fieldErrors.bio || getFieldError('bio')) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {fieldErrors.bio || getFieldError('bio')}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
-              )}
-            </div>
-          </div>
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Bio</Label>
+                {isEditing ? (
+                  <>
+                    <Textarea
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      rows={3}
+                      className={fieldErrors.bio || getFieldError('bio') ? 'border-red-500 bg-red-50' : ''}
+                      placeholder="Tell us about yourself..."
+                    />
+                    {(fieldErrors.bio || getFieldError('bio')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.bio || getFieldError('bio')}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-900">{profile?.profile?.bio || 'No bio provided'}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Professional Information */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
-              <Award className="h-5 w-5 text-green-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Professional Information</h2>
-            </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Award className="h-5 w-5 text-green-600 mr-2" />
+                Professional Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-semibold">Years of Experience</Label>
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.years_of_experience}
+                      onChange={(e) => setFormData(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || 0 }))}
+                    />
+                  ) : (
+                    <p className="text-sm text-gray-900 font-medium">{profile?.profile?.years_of_experience || 0} years</p>
+                  )}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Years of Experience</label>
+                <div>
+                  <Label className="text-xs font-semibold">Highest Education</Label>
+                  {isEditing ? (
+                    <Select
+                      value={formData.highest_education}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, highest_education: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select education level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="master">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="phd">PhD</SelectItem>
+                        <SelectItem value="professional">Professional Certification</SelectItem>
+                        <SelectItem value="self_taught">Self-Taught</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-sm text-gray-900 font-medium">
+                      {profile?.profile?.highest_education ?
+                        profile.profile.highest_education.charAt(0).toUpperCase() + profile.profile.highest_education.slice(1).replace('_', ' ') :
+                        'Not provided'
+                      }
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Specializations</Label>
                 {isEditing ? (
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.years_of_experience}
-                    onChange={(e) => setFormData(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  />
+                  <>
+                    <Textarea
+                      value={formData.specializations}
+                      onChange={(e) => handleInputChange('specializations', e.target.value)}
+                      rows={2}
+                      className={fieldErrors.specializations || getFieldError('specializations') ? 'border-red-500 bg-red-50' : ''}
+                      placeholder="e.g., Web Development, Machine Learning, Data Science"
+                    />
+                    {(fieldErrors.specializations || getFieldError('specializations')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.specializations || getFieldError('specializations')}
+                      </p>
+                    )}
+                  </>
                 ) : (
-                  <p className="text-sm text-gray-900 font-medium">{profile?.profile?.years_of_experience || 0} years</p>
+                  <p className="text-sm text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Highest Education</label>
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Technologies</Label>
                 {isEditing ? (
-                  <select
-                    value={formData.highest_education}
-                    onChange={(e) => setFormData(prev => ({ ...prev, highest_education: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="">Select education level</option>
-                    <option value="bachelor">Bachelor&apos;s Degree</option>
-                    <option value="master">Master&apos;s Degree</option>
-                    <option value="phd">PhD</option>
-                    <option value="professional">Professional Certification</option>
-                    <option value="self_taught">Self-Taught</option>
-                  </select>
+                  <>
+                    <Textarea
+                      value={formData.technologies}
+                      onChange={(e) => handleInputChange('technologies', e.target.value)}
+                      rows={2}
+                      className={fieldErrors.technologies || getFieldError('technologies') ? 'border-red-500 bg-red-50' : ''}
+                      placeholder="e.g., JavaScript, Python, React, Node.js"
+                    />
+                    {(fieldErrors.technologies || getFieldError('technologies')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.technologies || getFieldError('technologies')}
+                      </p>
+                    )}
+                  </>
                 ) : (
-                  <p className="text-sm text-gray-900 font-medium">
-                    {profile?.profile?.highest_education ? 
-                      profile.profile.highest_education.charAt(0).toUpperCase() + profile.profile.highest_education.slice(1).replace('_', ' ') : 
-                      'Not provided'
-                    }
-                  </p>
+                  <p className="text-sm text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
                 )}
               </div>
-            </div>
 
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Specializations</label>
-              {isEditing ? (
-                <>
-                  <textarea
-                    value={formData.specializations}
-                    onChange={(e) => handleInputChange('specializations', e.target.value)}
-                    rows={2}
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.specializations || getFieldError('specializations') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., Web Development, Machine Learning, Data Science"
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Certifications</Label>
+                {isEditing ? (
+                  <>
+                    <Textarea
+                      value={formData.certifications}
+                      onChange={(e) => handleInputChange('certifications', e.target.value)}
+                      rows={2}
+                      className={fieldErrors.certifications || getFieldError('certifications') ? 'border-red-500 bg-red-50' : ''}
+                      placeholder="List your professional certifications"
+                    />
+                    {(fieldErrors.certifications || getFieldError('certifications')) && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {fieldErrors.certifications || getFieldError('certifications')}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <Label className="text-xs font-semibold">Languages Spoken</Label>
+                {isEditing ? (
+                  <Input
+                    type="text"
+                    value={formData.languages_spoken}
+                    onChange={(e) => setFormData(prev => ({ ...prev, languages_spoken: e.target.value }))}
+                    placeholder="e.g., English, Spanish, French"
                   />
-                  {(fieldErrors.specializations || getFieldError('specializations')) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {fieldErrors.specializations || getFieldError('specializations')}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-900">{profile?.profile?.specializations || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Technologies</label>
-              {isEditing ? (
-                <>
-                  <textarea
-                    value={formData.technologies}
-                    onChange={(e) => handleInputChange('technologies', e.target.value)}
-                    rows={2}
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.technologies || getFieldError('technologies') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., JavaScript, Python, React, Node.js"
-                  />
-                  {(fieldErrors.technologies || getFieldError('technologies')) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {fieldErrors.technologies || getFieldError('technologies')}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-900">{profile?.profile?.technologies || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Certifications</label>
-              {isEditing ? (
-                <>
-                  <textarea
-                    value={formData.certifications}
-                    onChange={(e) => handleInputChange('certifications', e.target.value)}
-                    rows={2}
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:border-blue-500 transition-colors ${
-                      fieldErrors.certifications || getFieldError('certifications') ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="List your professional certifications"
-                  />
-                  {(fieldErrors.certifications || getFieldError('certifications')) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {fieldErrors.certifications || getFieldError('certifications')}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-gray-900">{profile?.profile?.certifications || 'Not provided'}</p>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Languages Spoken</label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.languages_spoken}
-                  onChange={(e) => setFormData(prev => ({ ...prev, languages_spoken: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="e.g., English, Spanish, French"
-                />
-              ) : (
-                <p className="text-sm text-gray-900">{profile?.profile?.languages_spoken || 'Not provided'}</p>
-              )}
-            </div>
-          </div>
-
+                ) : (
+                  <p className="text-sm text-gray-900">{profile?.profile?.languages_spoken || 'Not provided'}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column - Stats */}
         <div className="space-y-4">
           {/* Social Links */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div className="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
-              <Mail className="h-5 w-5 text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Social Links</h2>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">LinkedIn Profile</label>
-              {isEditing ? (
-                <input
-                  type="url"
-                  value={formData.linkedin_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                />
-              ) : (
-                <p className="text-sm text-gray-900 font-medium truncate">{profile?.profile?.linkedin_url || 'Not provided'}</p>
-              )}
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-lg">
+                <Mail className="h-5 w-5 text-purple-600 mr-2" />
+                Social Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label className="text-xs font-semibold">LinkedIn Profile</Label>
+                {isEditing ? (
+                  <Input
+                    type="url"
+                    value={formData.linkedin_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 font-medium truncate">{profile?.profile?.linkedin_url || 'Not provided'}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Account Information */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900 mb-3">Account Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-600">Member since</p>
-                  <p className="text-sm font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Account Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-gray-600">Member since</p>
+                    <p className="text-sm font-semibold text-gray-900">{profile?.user?.created_at ? new Date(profile.user.created_at).toLocaleDateString() : 'N/A'}</p>
+                  </div>
                 </div>
-              </div> 
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <div>
-                  <p className="text-xs text-gray-600">Status</p>
-                  <p className="text-sm font-semibold text-gray-900">{profile?.user?.is_verified ? 'Verified' : 'Not Verified'}</p>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${profile?.user?.is_verified ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <div>
+                    <p className="text-xs text-gray-600">Status</p>
+                    <p className="text-sm font-semibold text-gray-900">{profile?.user?.is_verified ? 'Verified' : 'Not Verified'}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
+            </CardContent>
+          </Card>
         </div>
-
       </div>
 
       {/* Change Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Update Your Password</h2>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-6">
-              <ChangePasswordForm 
-                onSuccess={() => {
-                  setTimeout(() => {
-                    setShowPasswordModal(false);
-                  }, 2000);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Update Your Password</DialogTitle>
+          </DialogHeader>
+          <ChangePasswordForm
+            onSuccess={() => {
+              setTimeout(() => {
+                setShowPasswordModal(false);
+              }, 2000);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

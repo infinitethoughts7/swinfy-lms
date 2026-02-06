@@ -3,6 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/token';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface Learner {
   id: string;
@@ -162,7 +179,7 @@ export default function AttendancePage() {
       router.push('/');
       return;
     }
-    
+
     // Simulate loading
     setIsLoading(true);
     setTimeout(() => {
@@ -199,9 +216,9 @@ export default function AttendancePage() {
   }, [selectedCourse, selectedDate, courses, user]);
 
   const handleAttendanceChange = (learnerId: string, status: 'present' | 'absent' | 'late') => {
-    setAttendanceRecords(prev => 
-      prev.map(record => 
-        record.learner.id === learnerId 
+    setAttendanceRecords(prev =>
+      prev.map(record =>
+        record.learner.id === learnerId
           ? { ...record, status }
           : record
       )
@@ -209,9 +226,9 @@ export default function AttendancePage() {
   };
 
   const handleNotesChange = (learnerId: string, notes: string) => {
-    setAttendanceRecords(prev => 
-      prev.map(record => 
-        record.learner.id === learnerId 
+    setAttendanceRecords(prev =>
+      prev.map(record =>
+        record.learner.id === learnerId
           ? { ...record, notes }
           : record
       )
@@ -229,7 +246,7 @@ export default function AttendancePage() {
     }, 1000);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'present': return 'bg-green-100 text-green-800 border-green-200';
       case 'late': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -240,19 +257,23 @@ export default function AttendancePage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'present': return '✓';
-      case 'late': return '⏰';
-      case 'absent': return '✗';
+      case 'present': return 'V';
+      case 'late': return 'L';
+      case 'absent': return 'X';
       default: return '?';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="text-gray-600">Loading attendance data...</span>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div>
+            <Skeleton className="h-10 w-96 mb-2" />
+            <Skeleton className="h-5 w-64" />
+          </div>
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <Skeleton className="h-96 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -263,233 +284,205 @@ export default function AttendancePage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900"> Live Session Attendance Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Live Session Attendance Management</h1>
           <p className="text-gray-600 mt-2">Track and manage student attendance for your courses</p>
         </div>
 
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
-            {message.text}
-          </div>
+          <Alert className={`mb-6 ${message.type === 'success'
+            ? 'border-green-200 bg-green-50'
+            : 'border-red-200 bg-red-50'
+            }`}>
+            <AlertDescription className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+              {message.text}
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Course Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Course
-              </label>
-              <select
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Choose a course...</option>
-                {courses.map(course => (
-                  <option key={course.id} value={course.id}>
-                    {course.title} ({course.enrolled_learners.length} students)
-                  </option>
-                ))}
-              </select>
-            </div>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Course Selection */}
+              <div>
+                <Label className="mb-2 block">Select Course</Label>
+                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a course..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map(course => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title} ({course.enrolled_learners.length} students)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Date Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Session Date
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              {/* Date Selection */}
+              <div>
+                <Label className="mb-2 block">Session Date</Label>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Attendance Records */}
         {selectedCourse && attendanceRecords.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <Card>
+            <CardHeader>
+              <CardTitle>
                 Attendance Records - {new Date(selectedDate).toLocaleDateString('en-IN', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
                 })}
-              </h2>
+              </CardTitle>
               <p className="text-gray-600 mt-1">
                 {attendanceRecords.length} students enrolled
               </p>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Progress
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {attendanceRecords.map((record) => (
-                    <tr key={record.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-blue-600 font-medium text-sm">
-                              {record.learner.full_name.charAt(0)}
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Avatar className="h-10 w-10 mr-4">
+                              <AvatarFallback className="bg-blue-100 text-blue-600 text-sm font-medium">
+                                {record.learner.full_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {record.learner.full_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {record.learner.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-900">{record.learner.phone}</div>
+                          <div className="text-sm text-gray-500">{record.learner.city}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Progress value={record.learner.progress_percentage} className="w-16 h-2 mr-2" />
+                            <span className="text-sm text-gray-600">
+                              {record.learner.progress_percentage}%
                             </span>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {record.learner.full_name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {record.learner.email}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{record.learner.phone}</div>
-                        <div className="text-sm text-gray-500">{record.learner.city}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${record.learner.progress_percentage}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm text-gray-600">
-                            {record.learner.progress_percentage}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex space-x-2">
-                          {['present', 'late', 'absent'].map((status) => (
-                            <button
-                              key={status}
-                              onClick={() => handleAttendanceChange(record.learner.id, status as any)}
-                              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                                record.status === status
-                                  ? getStatusColor(status)
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            {(['present', 'late', 'absent'] as const).map((status) => (
+                              <Button
+                                key={status}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAttendanceChange(record.learner.id, status)}
+                                className={record.status === status
+                                  ? getStatusBadgeClass(status)
                                   : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                              }`}
-                            >
-                              {getStatusIcon(status)} {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          value={record.notes || ''}
-                          onChange={(e) => handleNotesChange(record.learner.id, e.target.value)}
-                          placeholder="Add notes..."
-                          className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Save Button */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">
-                    {attendanceRecords.filter(r => r.status === 'present').length} Present
-                  </span>
-                  <span className="mx-2">•</span>
-                  <span className="font-medium">
-                    {attendanceRecords.filter(r => r.status === 'late').length} Late
-                  </span>
-                  <span className="mx-2">•</span>
-                  <span className="font-medium">
-                    {attendanceRecords.filter(r => r.status === 'absent').length} Absent
-                  </span>
-                </div>
-                <button
-                  onClick={handleSaveAttendance}
-                  disabled={isSaving}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>💾</span>
-                      <span>Save Attendance</span>
-                    </>
-                  )}
-                </button>
+                                }
+                              >
+                                {getStatusIcon(status)} {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </Button>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={record.notes || ''}
+                            onChange={(e) => handleNotesChange(record.learner.id, e.target.value)}
+                            placeholder="Add notes..."
+                            className="w-full"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            </div>
-          </div>
+
+              {/* Save Button */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mt-4 -mx-6 -mb-6 rounded-b-lg">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">
+                      {attendanceRecords.filter(r => r.status === 'present').length} Present
+                    </span>
+                    <span className="mx-2">|</span>
+                    <span className="font-medium">
+                      {attendanceRecords.filter(r => r.status === 'late').length} Late
+                    </span>
+                    <span className="mx-2">|</span>
+                    <span className="font-medium">
+                      {attendanceRecords.filter(r => r.status === 'absent').length} Absent
+                    </span>
+                  </div>
+                  <Button
+                    onClick={handleSaveAttendance}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Attendance'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* No Data State */}
         {selectedCourse && attendanceRecords.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">📚</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Enrolled</h3>
-            <p className="text-gray-600">This course doesn't have any enrolled students yet.</p>
-          </div>
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="text-gray-400 text-6xl mb-4">*</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Enrolled</h3>
+              <p className="text-gray-600">This course does not have any enrolled students yet.</p>
+            </CardContent>
+          </Card>
         )}
 
         {/* No Course Selected */}
         {!selectedCourse && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">📋</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Course</h3>
-            <p className="text-gray-600">Choose a course from the dropdown above to view attendance records.</p>
-          </div>
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="text-gray-400 text-6xl mb-4">*</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Course</h3>
+              <p className="text-gray-600">Choose a course from the dropdown above to view attendance records.</p>
+            </CardContent>
+          </Card>
         )}
-
-        {/* Prototype Notice */}
-        {/* <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-yellow-400 text-xl mr-3">⚠️</div>
-            <div>
-              <h4 className="text-sm font-medium text-yellow-800">Prototype Mode</h4>
-              <p className="text-sm text-yellow-700 mt-1">
-                This is a prototype version with mock data. All student information and attendance records are simulated for demonstration purposes.
-              </p>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );
